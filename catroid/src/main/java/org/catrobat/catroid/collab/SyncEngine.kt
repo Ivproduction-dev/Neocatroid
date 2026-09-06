@@ -84,6 +84,7 @@ object SyncEngine {
 
     fun assemble(payload: SyncPayload, chunks: List<SyncChunk>): AssembledPayload? {
         val codeParts = chunks.filter { it.kind == SyncChunk.KIND_CODE }
+            .sortedBy { it.index }.distinctBy { it.index }
         if (codeParts.size < payload.codeChunks) return null
         val codeXml = SyncChunks.join(codeParts)
         if (codeXml.isEmpty()) return null

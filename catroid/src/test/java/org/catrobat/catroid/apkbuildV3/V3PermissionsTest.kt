@@ -9,15 +9,21 @@ class V3PermissionsTest {
 
     private val NAME_ATTR = 0x01010003
 
-    private fun permissionNames(manifest: AndroidManifestBlock): List<String> {
+    private fun createEmptyManifest(): AndroidManifestBlock {
+        val manifest = AndroidManifestBlock.empty()
+        manifest.packageName = "org.catrobat.catroid"
         manifest.getOrCreateApplicationElement()
+        return manifest
+    }
+
+    private fun permissionNames(manifest: AndroidManifestBlock): List<String> {
         return manifest.manifestElement.listElements("uses-permission")
             .map { it.searchAttributeByResourceId(NAME_ATTR)?.valueAsString ?: "" }
     }
 
     @Test
     fun syncPermissions_replacesTemplatePermissionsWithSelected() {
-        val manifest = AndroidManifestBlock.empty()
+        val manifest = createEmptyManifest()
         manifest.addUsesPermission("android.permission.CAMERA")
         manifest.addUsesPermission("android.permission.RECORD_AUDIO")
         manifest.addUsesPermission("android.permission.NFC")
@@ -29,7 +35,7 @@ class V3PermissionsTest {
 
     @Test
     fun syncPermissions_dedupesSelectedPermissions() {
-        val manifest = AndroidManifestBlock.empty()
+        val manifest = createEmptyManifest()
 
         V3ApkAssembler.syncPermissions(
             manifest,
@@ -49,11 +55,26 @@ class V3PermissionsTest {
 
     @Test
     fun syncPermissions_emptySelectionClearsAll() {
-        val manifest = AndroidManifestBlock.empty()
+        val manifest = createEmptyManifest()
         manifest.addUsesPermission("android.permission.CAMERA")
 
         V3ApkAssembler.syncPermissions(manifest, emptyList())
 
         assertTrue(permissionNames(manifest).isEmpty())
+    }
+
+    @Test
+    fun syncPermissions_retainsDynamicReceiverPermissionIfDeclared() {
+        val manifest = AndroidManifestBlock.empty()
+        manifest.setPackageName("org.neocatroid.runtime.v5")
+        val root = manifest.manifestElement
+        val perm = root.createChildElement("permission")
+        perm.getOrCreateAndroidAttribute("name", NAME_ATTR)
+            .setValueAsString("org.neocatroid.runtime.v5.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
+        V3ApkAssembler.syncPermissions(manifest, listOf("android.permission.INTERNET"))
+
+        val expected = listOf("android.permission.INTERNET", "org.neocatroid.runtime.v5.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+        assertEquals(expected, permissionNames(manifest))
     }
 }

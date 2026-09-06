@@ -115,6 +115,33 @@ class V3PackageRenameTest {
     }
 
     @Test
+    fun applyPackageRename_renamesDeclaredDynamicReceiverPermissionAndUsesPermission() {
+        val manifest = AndroidManifestBlock.empty()
+        manifest.setPackageName("org.DanVexTeam.NewCatroidRuntime")
+        val root = manifest.manifestElement
+
+        val perm = root.createChildElement("permission")
+        perm.getOrCreateAndroidAttribute("name", NAME_ATTR)
+            .setValueAsString("org.DanVexTeam.NewCatroidRuntime.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
+        val usesPerm = root.createChildElement("uses-permission")
+        usesPerm.getOrCreateAndroidAttribute("name", NAME_ATTR)
+            .setValueAsString("org.DanVexTeam.NewCatroidRuntime.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+
+        V3ApkAssembler.applyPackageRename(manifest, "org.neocatroid.runtime.v5")
+
+        assertEquals("org.neocatroid.runtime.v5", manifest.packageName)
+
+        val updatedPermName = root.listElements("permission").first()
+            .searchAttributeByResourceId(NAME_ATTR)?.valueAsString
+        assertEquals("org.neocatroid.runtime.v5.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", updatedPermName)
+
+        val updatedUsesPermName = root.listElements("uses-permission").first()
+            .searchAttributeByResourceId(NAME_ATTR)?.valueAsString
+        assertEquals("org.neocatroid.runtime.v5.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION", updatedUsesPermName)
+    }
+
+    @Test
     fun makeRuntimeLoaderLauncher_onlyRuntimeLoaderIsLauncherAfterRename() {
         val manifest = AndroidManifestBlock.empty()
         manifest.setPackageName("org.catrobat.catroid")

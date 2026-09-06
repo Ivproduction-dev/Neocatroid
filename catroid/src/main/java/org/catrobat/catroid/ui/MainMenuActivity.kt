@@ -526,8 +526,7 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        if (!BuildConfig.FEATURE_SCRATCH_CONVERTER_ENABLED) {
-        }
+        menu.findItem(R.id.menu_collab)?.isVisible = org.catrobat.catroid.collab.CollabUi.ENABLED
         return true
     }
 
@@ -580,6 +579,11 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.menu_collab -> {
+                val currentProjectName = ProjectManager.getInstance().currentProject?.name ?: ""
+                org.catrobat.catroid.collab.CollabDialog(this, currentProjectName).show()
+                return true
+            }
             R.id.menu_ai_chat -> {
                 if (org.catrobat.catroid.ai.AiAgentManager.instance.isEnabled()) {
                     startActivity(Intent(this, org.catrobat.catroid.ai.chat.ChatActivity::class.java))

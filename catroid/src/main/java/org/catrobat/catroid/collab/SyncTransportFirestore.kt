@@ -14,21 +14,33 @@ class SyncTransportFirestore : SyncTransport {
         chunks: List<SyncChunk>,
         callback: (Boolean) -> Unit
     ) {
-        try {
-            val batch = chunksRef.firestore.batch()
-            for (chunk in chunks) {
-                batch.set(chunksRef.document(chunk.docId()), chunk.toMap())
-            }
-            batch.commit()
-                .addOnSuccessListener { callback(true) }
-                .addOnFailureListener { e ->
-                    Log.w(tag, "chunks failed", e)
-                    callback(false)
-                }
-        } catch (e: Exception) {
-            Log.w(tag, "chunks failed", e)
-            callback(false)
+        if (chunks.isEmpty()) {
+            callback(true)
+            return
         }
+        val chunksSlices = chunks.chunked(400)
+        fun commitSlice(index: Int) {
+            if (index >= chunksSlices.size) {
+                callback(true)
+                return
+            }
+            try {
+                val batch = chunksRef.firestore.batch()
+                for (chunk in chunksSlices[index]) {
+                    batch.set(chunksRef.document(chunk.docId()), chunk.toMap())
+                }
+                batch.commit()
+                    .addOnSuccessListener { commitSlice(index + 1) }
+                    .addOnFailureListener { e ->
+                        Log.w(tag, "chunks slice $index failed", e)
+                        callback(false)
+                    }
+            } catch (e: Exception) {
+                Log.w(tag, "chunks slice $index failed", e)
+                callback(false)
+            }
+        }
+        commitSlice(0)
     }
 
     private fun putPayload(
@@ -68,12 +80,36 @@ class SyncTransportFirestore : SyncTransport {
             doc.collection("chunks").get()
                 .addOnSuccessListener { snap ->
                     try {
-                        val batch = doc.firestore.batch()
-                        for (child in snap.documents) batch.delete(child.reference)
-                        batch.delete(doc)
-                        batch.commit()
-                            .addOnSuccessListener { callback(true) }
-                            .addOnFailureListener { callback(false) }
+                        val docs = snap.documents
+                        if (docs.isEmpty()) {
+                            doc.delete()
+                                .addOnSuccessListener { callback(true) }
+                                .addOnFailureListener { callback(false) }
+                            return@addOnSuccessListener
+                        }
+                        val slices = docs.chunked(400)
+                        fun deleteSlice(index: Int) {
+                            if (index >= slices.size) {
+                                doc.delete()
+                                    .addOnSuccessListener { callback(true) }
+                                    .addOnFailureListener { callback(false) }
+                                return
+                            }
+                            try {
+                                val batch = doc.firestore.batch()
+                                for (child in slices[index]) batch.delete(child.reference)
+                                batch.commit()
+                                    .addOnSuccessListener { deleteSlice(index + 1) }
+                                    .addOnFailureListener { e ->
+                                        Log.w(tag, "dropPayload batch $index failed, continuing", e)
+                                        deleteSlice(index + 1)
+                                    }
+                            } catch (e: Exception) {
+                                Log.w(tag, "dropPayload batch $index error, continuing", e)
+                                deleteSlice(index + 1)
+                            }
+                        }
+                        deleteSlice(0)
                     } catch (e: Exception) {
                         callback(false)
                     }
@@ -104,21 +140,23 @@ class SyncTransportFirestore : SyncTransport {
     }
 
     override fun fetchChunks(sid: String, collection: String, id: String, callback: (List<SyncChunk>) -> Unit) {
-        try {
-            val ref = root(sid)?.collection(collection)?.document(id)?.collection("chunks")
-            if (ref == null) {
-                callback(emptyList())
-                return
-            }
-            ref.get()
-                .addOnSuccessListener { snap ->
-                    callback(snap.documents.mapNotNull { SyncChunk.fromMap(it.data) })
+        val all = ArrayList<SyncChunk>()
+        fun loadNext(afterDocId: String?) {
+            fetchChunksPaged(sid, collection, id, 100, afterDocId) { page ->
+                if (page.isEmpty()) {
+                    callback(all)
+                } else {
+                    all.addAll(page)
+                    if (page.size < 100) {
+                        callback(all)
+                    } else {
+                        val lastId = page.last().docId()
+                        loadNext(lastId)
+                    }
                 }
-                .addOnFailureListener { callback(emptyList()) }
-        } catch (e: Exception) {
-            Log.w(tag, "fetch chunks failed", e)
-            callback(emptyList())
+            }
         }
+        loadNext(null)
     }
 
     override fun fetchChunksPaged(
@@ -195,8 +233,9 @@ class SyncTransportFirestore : SyncTransport {
         return try {
             root(sid)?.collection("states")?.addSnapshotListener { snap, error ->
                 if (error != null || snap == null) return@addSnapshotListener
-                for (doc in snap.documents) {
-                    SyncPayload.fromMap(doc.data)?.let { callback(doc.id, it) }
+                for (change in snap.documentChanges) {
+                    if (change.type != com.google.firebase.firestore.DocumentChange.Type.ADDED) continue
+                    SyncPayload.fromMap(change.document.data)?.let { callback(change.document.id, it) }
                 }
             }
         } catch (e: Exception) {

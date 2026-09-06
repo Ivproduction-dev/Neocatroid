@@ -1,5 +1,6 @@
 package org.catrobat.catroid.collab
 
+import android.util.Log
 import java.io.File
 
 data class SyncIdentity(
@@ -9,7 +10,13 @@ data class SyncIdentity(
     val role: String
 )
 
-data class GuestUploadResult(val uploaded: Boolean, val summary: String, val skipped: List<String>, val blocked: String = "")
+data class GuestUploadResult(
+    val uploaded: Boolean,
+    val summary: String,
+    val skipped: List<String>,
+    val blocked: String = "",
+    val snapshotToSave: Pair<String, List<ManifestEntry>>? = null
+)
 
 data class HostApplyResult(
     val applied: Boolean,
@@ -133,8 +140,17 @@ object SyncFlows {
             media = manifest
         )
         transport.uploadPatch(sid, "p_" + identity.uid + "_" + now, payload, chunks) { ok ->
-            if (ok) files.saveSnapshot(FileSnapshot(current, manifest))
-            onDone(GuestUploadResult(ok, summary, plan.skipped.map { it.path }))
+            if (ok) {
+                val includedPaths = plan.included.map { it.path }.toSet()
+                val changedPaths = changed.map { it.path }.toSet()
+                val keptOld = (snapshot?.media ?: emptyList()).filter { it.path !in changedPaths }
+                val newlySynced = manifest.filter { it.path in includedPaths }
+                val newSnapshotEntries = keptOld + newlySynced
+                onDone(GuestUploadResult(true, summary, plan.skipped.map { it.path },
+                    snapshotToSave = Pair(current, newSnapshotEntries)))
+            } else {
+                onDone(GuestUploadResult(false, summary, plan.skipped.map { it.path }))
+            }
         }
     }
 
@@ -177,7 +193,7 @@ object SyncFlows {
             val (merged, conflicts) = try {
                 SyncEngine.mergeOrTake(merger, baseXml, local, remote.codeXml)
             } catch (e: Exception) {
-                Pair(remote.codeXml, 0)
+                Pair(local, 0)
             }
             files.writeCodeXml(merged)
             val written = writeMediaVerified(files, remote.media)
@@ -221,7 +237,7 @@ object SyncFlows {
             val (merged, _) = try {
                 SyncEngine.mergeOrTake(merger, snapshot?.codeXml, local, remote.codeXml)
             } catch (e: Exception) {
-                Pair(remote.codeXml, 0)
+                Pair(local, 0)
             }
             files.writeCodeXml(merged)
             val written = writeMediaVerified(files, remote.media)
@@ -242,6 +258,7 @@ object SyncFlows {
                 files.writeMedia(path, bytes)
                 out[path] = bytes
             } catch (e: Exception) {
+                Log.w("SyncFlows", "write media failed: " + path, e)
             }
         }
         return out

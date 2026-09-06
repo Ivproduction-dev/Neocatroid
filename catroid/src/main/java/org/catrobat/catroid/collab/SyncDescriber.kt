@@ -19,8 +19,12 @@ object SyncDescriber {
         for ((id, scene) in oldScenes) {
             if (!newScenes.containsKey(id)) lines.add("-" + "scene " + scene.name)
         }
-        val oldSprites = old.sceneList.flatMap { it.spriteList }.associateBy { it.spriteId }
-        val newSprites = new.sceneList.flatMap { it.spriteList }.associateBy { it.spriteId }
+        val oldSpriteSource = old.sceneList.flatMap { it.spriteList } +
+            (old.globalScene?.spriteList ?: emptyList())
+        val newSpriteSource = new.sceneList.flatMap { it.spriteList } +
+            (new.globalScene?.spriteList ?: emptyList())
+        val oldSprites = oldSpriteSource.associateBy { it.spriteId }
+        val newSprites = newSpriteSource.associateBy { it.spriteId }
         for ((id, sprite) in newSprites) {
             val prev = oldSprites[id]
             if (prev == null) {

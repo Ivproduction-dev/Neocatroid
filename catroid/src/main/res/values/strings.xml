@@ -5817,6 +5817,8 @@ needs read and write access to it. You can always change permissions through you
     <string name="collab_role_editor">Editor</string>
     <string name="collab_role_viewer">Viewer</string>
     <string name="collab_members">Members</string>
+    <string name="collab_select_project">Select project for collaboration</string>
+    <string name="collab_active_project">Project</string>
     <string name="collab_requests">Join requests</string>
     <string name="collab_approve_editor">Editor</string>
     <string name="collab_approve_viewer">Viewer</string>
@@ -5830,6 +5832,10 @@ needs read and write access to it. You can always change permissions through you
     <string name="collab_git_init">Init repo</string>
     <string name="collab_git_no_token">not set</string>
     <string name="collab_git_ready">Repo ready</string>
+    <string name="collab_git_get_pat">Get PAT on GitHub</string>
+    <string name="collab_git_login_oauth">Sign in with GitHub</string>
+    <string name="collab_git_clear">Delete token</string>
+    <string name="collab_look_locked_by">Look is being edited by %1$s</string>
     <string name="collab_snapshot_waiting">Waiting for project from host…</string>
     <string name="collab_snapshot_too_big">Project too big, send the file manually</string>
     <string name="collab_snapshot_ready">Project sent</string>

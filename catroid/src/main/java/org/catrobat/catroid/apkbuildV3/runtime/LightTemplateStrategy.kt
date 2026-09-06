@@ -29,12 +29,20 @@ class LightTemplateStrategy(private val context: Context) {
     private var metadata: ProjectLoaderV3.ProjectMetadata? = null
     private val loadedScenes = mutableSetOf<String>()
 
+    @Volatile
+    var lastError: String? = null
+        private set
+
     fun initialize(cacheDir: File, onProgress: ((Float) -> Unit)? = null): Boolean {
+        lastError = null
         return try {
             onProgress?.invoke(0f)
 
             val loader = ProjectLoaderV3(context)
-            val meta = loader.loadLight(cacheDir) ?: return false
+            val meta = loader.loadLight(cacheDir) ?: run {
+                lastError = loader.lastError ?: "unknown loader failure"
+                return false
+            }
             metadata = meta
             onProgress?.invoke(0.5f)
 
@@ -50,8 +58,9 @@ class LightTemplateStrategy(private val context: Context) {
                     "(preloaded: ${firstScene?.name})")
 
             true
-        } catch (e: Exception) {
-            Log.e(tag, "Light template initialization failed", e)
+        } catch (t: Throwable) {
+            lastError = "strategy: ${t.javaClass.simpleName}: ${t.message}"
+            Log.e(tag, "Light template initialization failed", t)
             false
         }
     }

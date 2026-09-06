@@ -48,5 +48,24 @@ class LookAdapter(items: List<LookData?>?) : ExtendedRVAdapter<LookData?>(items)
         } else {
             holder.details.visibility = View.GONE
         }
+        val spriteId = org.catrobat.catroid.ProjectManager.getInstance().currentSprite?.name.orEmpty()
+        val lookName = item?.name.orEmpty()
+        val density = holder.itemView.context.resources.displayMetrics.density
+        val locker = if (lookName.isNotEmpty()) org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, lookName) else null
+
+        if (locker != null) {
+            holder.itemView.alpha = 0.72f
+            val color = org.catrobat.catroid.collab.PresenceColors.colorInt(locker.colorHue)
+            holder.itemView.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(color), density)
+        } else if (lookName.isNotEmpty() && org.catrobat.catroid.collab.ScriptLockManager.isLookHeldByMe(spriteId, lookName)) {
+            holder.itemView.alpha = 1.0f
+            val myColor = org.catrobat.catroid.collab.PresenceColors.colorInt(org.catrobat.catroid.collab.PresenceRenderer.myHue)
+            holder.itemView.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(myColor), density)
+        } else {
+            holder.itemView.alpha = 1.0f
+            if (holder.itemView.foreground is org.catrobat.catroid.collab.PresenceBorderDrawable) {
+                holder.itemView.foreground = null
+            }
+        }
     }
 }

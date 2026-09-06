@@ -1,5 +1,6 @@
 package org.catrobat.catroid.collab
 
+import android.util.Log
 import java.io.File
 
 data class MediaRef(val path: String, val size: Long)
@@ -56,9 +57,15 @@ class DirSyncFiles(private val projectDir: File, private val snapshotDir: File) 
 
     override fun writeCodeXml(text: String) {
         try {
-            File(projectDir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)
-                .writeText(text, Charsets.UTF_8)
+            val dest = File(projectDir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)
+            val tmp = File(projectDir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME + ".tmp")
+            tmp.writeText(text, Charsets.UTF_8)
+            if (!tmp.renameTo(dest)) {
+                dest.delete()
+                tmp.renameTo(dest)
+            }
         } catch (e: Exception) {
+            Log.w("DirSyncFiles", "writeCodeXml failed", e)
         }
     }
 
@@ -74,7 +81,7 @@ class DirSyncFiles(private val projectDir: File, private val snapshotDir: File) 
                     return@forEach
                 }
                 val segments = rel.split("/")
-                if (segments.any { it == "images" || it == "sounds" }) {
+                if (segments.any { it == "images" || it == "sounds" || it == "files" || it == "libs" }) {
                     out.add(MediaRef(rel, file.length()))
                 }
             }
@@ -113,10 +120,14 @@ class DirSyncFiles(private val projectDir: File, private val snapshotDir: File) 
                 }
             }
             val md5 = digest.digest().joinToString("") { "%02x".format(it) }
-            synchronized(hashCache) {
-                if (hashCache.size > 4096) hashCache.clear()
-                hashCache[path] = HashRow(mtime, size, md5)
-                hashRuns++
+            val mtimeAfter = file.lastModified()
+            val sizeAfter = file.length()
+            if (mtime == mtimeAfter && size == sizeAfter) {
+                synchronized(hashCache) {
+                    if (hashCache.size > 4096) hashCache.clear()
+                    hashCache[path] = HashRow(mtime, size, md5)
+                    hashRuns++
+                }
             }
             md5
         } catch (e: Exception) {
@@ -179,10 +190,23 @@ class DirSyncFiles(private val projectDir: File, private val snapshotDir: File) 
     override fun saveSnapshot(snapshot: FileSnapshot) {
         try {
             snapshotDir.mkdirs()
-            File(snapshotDir, "code.xml").writeText(snapshot.codeXml, Charsets.UTF_8)
+            val destXml = File(snapshotDir, "code.xml")
+            val tmpXml = File(snapshotDir, "code.xml.tmp")
+            tmpXml.writeText(snapshot.codeXml, Charsets.UTF_8)
+            if (!tmpXml.renameTo(destXml)) {
+                destXml.delete()
+                tmpXml.renameTo(destXml)
+            }
             val body = snapshot.media.joinToString("\n") { it.path + "|" + it.md5 + "|" + it.size }
-            File(snapshotDir, "manifest").writeText(if (body.isEmpty()) "" else body + "\n", Charsets.UTF_8)
+            val destManifest = File(snapshotDir, "manifest")
+            val tmpManifest = File(snapshotDir, "manifest.tmp")
+            tmpManifest.writeText(if (body.isEmpty()) "" else body + "\n", Charsets.UTF_8)
+            if (!tmpManifest.renameTo(destManifest)) {
+                destManifest.delete()
+                tmpManifest.renameTo(destManifest)
+            }
         } catch (e: Exception) {
+            Log.w("DirSyncFiles", "saveSnapshot failed", e)
         }
     }
 

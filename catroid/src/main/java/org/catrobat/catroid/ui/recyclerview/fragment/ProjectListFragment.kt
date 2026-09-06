@@ -298,6 +298,12 @@ class ProjectListFragment : RecyclerViewFragment<ProjectData?>(), ProjectLoadLis
                 }
                 return true
             }
+            R.id.menu_collab -> {
+                val act = activity as? androidx.appcompat.app.AppCompatActivity ?: return true
+                val curName = org.catrobat.catroid.ProjectManager.getInstance().currentProject?.name.orEmpty()
+                org.catrobat.catroid.collab.CollabDialog(act, curName).show()
+                return true
+            }
             else -> return super.onOptionsItemSelected(item)
         }
         return true
@@ -704,6 +710,7 @@ class ProjectListFragment : RecyclerViewFragment<ProjectData?>(), ProjectLoadLis
     override fun onCreateOptionsMenu(menu: Menu, inflater: android.view.MenuInflater) {
         inflater.inflate(R.menu.menu_projects_activity, menu)
         menu.findItem(R.id.merge)?.isVisible = org.catrobat.catroid.BuildConfig.FEATURE_MERGE_ENABLED
+        menu.findItem(R.id.menu_collab)?.isVisible = org.catrobat.catroid.collab.CollabUi.ENABLED
         super.onCreateOptionsMenu(menu, inflater)
     }
 
@@ -756,6 +763,7 @@ class ProjectListFragment : RecyclerViewFragment<ProjectData?>(), ProjectLoadLis
                 view, requireContext(),
                 R.menu.menu_project_activity, hiddenMenuOptionIds
             )
+            popupMenu.menu.findItem(R.id.collab)?.isVisible = org.catrobat.catroid.collab.CollabUi.ENABLED
             popupMenu.setOnMenuItemClickListener { menuItem: MenuItem ->
                 when (menuItem.itemId) {
                     R.id.copy -> copyItems(itemList)
@@ -764,6 +772,13 @@ class ProjectListFragment : RecyclerViewFragment<ProjectData?>(), ProjectLoadLis
                     R.id.project_options -> showProjectOptionsFragment(item)
                     R.id.project_files -> showProjectFilesFragment(item)
                     R.id.project_libs -> showProjectLibsFragment(item)
+                    R.id.collab -> {
+                        val act = activity as? androidx.appcompat.app.AppCompatActivity
+                        if (act != null && item != null) {
+                            val projectName = item.name.orEmpty().ifEmpty { item.directory?.name.orEmpty() }
+                            org.catrobat.catroid.collab.CollabDialog(act, projectName).show()
+                        }
+                    }
                 }
                 true
             }

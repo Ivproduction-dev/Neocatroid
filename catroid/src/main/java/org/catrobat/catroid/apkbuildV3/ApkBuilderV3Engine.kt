@@ -78,7 +78,7 @@ object ApkBuilderV3Engine {
 
             listener.onProgress(50f, "Verifying payload integrity...", encryptedPayload.name)
 
-            if (!IntegrityValidator.validate(encryptedPayload, keyResult.selectedKey)) {
+            if (!IntegrityValidator.validate(encryptedPayload, keyResult.selectedKey, tempDir)) {
                 return@withContext AssemblyResult.Failure("Payload integrity check failed. " +
                         "The encrypted project may be corrupted.")
             }
@@ -160,14 +160,27 @@ object ApkBuilderV3Engine {
         File(stagingDir, Constants.CODE_XML_FILE_NAME).writeText(projectXml)
         onFile(Constants.CODE_XML_FILE_NAME)
 
-        copyDir(File(projectDir, "files"), File(stagingDir, "files"), onFile)
+        copyDirRecursive(File(projectDir, "files"), File(stagingDir, "files"), onFile)
 
-        for (scene in project.sceneList) {
-            val sceneDirName = scene.getDirectory().name
-            copyDir(File(projectDir, "$sceneDirName/images"), File(stagingDir, "$sceneDirName/images"), onFile)
-            copyDir(File(projectDir, "$sceneDirName/sounds"), File(stagingDir, "$sceneDirName/sounds"), onFile)
+        val allScenes = project.sceneList.toMutableList()
+        if (project.hasGlobalScene() && project.globalScene != null &&
+            allScenes.none { it.name == project.globalScene.name }
+        ) {
+            allScenes.add(project.globalScene)
         }
-        Log.d(TAG, "stageProjectPayload: staged ${project.sceneList.size} scenes")
+        for (scene in allScenes) {
+            val sceneDirName = scene.getDirectory().name
+            copyDirRecursive(File(projectDir, "$sceneDirName/images"), File(stagingDir, "$sceneDirName/images"), onFile)
+            copyDirRecursive(File(projectDir, "$sceneDirName/sounds"), File(stagingDir, "$sceneDirName/sounds"), onFile)
+            for (shot in listOf("automatic_screenshot.png", "manual_screenshot.png")) {
+                val src = File(projectDir, "$sceneDirName/$shot")
+                if (src.isFile) {
+                    onFile("$sceneDirName/$shot")
+                    MemoryAwarePipeline.copyFile(src, File(stagingDir, "$sceneDirName/$shot"))
+                }
+            }
+        }
+        Log.d(TAG, "stageProjectPayload: staged ${allScenes.size} scenes")
 
         ZipArchiver().zipDedup(payloadZip, stagingDir.listFiles() ?: emptyArray())
         onFile(payloadZip.name)
@@ -176,11 +189,23 @@ object ApkBuilderV3Engine {
     }
 
     private fun copyDir(src: File, dst: File, onFile: (String) -> Unit) {
-        if (!src.exists() || !src.isDirectory) return
+        copyDirRecursive(src, dst, onFile)
+    }
+
+    private fun copyDirRecursive(src: File, dst: File, onFile: (String) -> Unit) {
+        if (!src.exists()) return
+        if (src.isFile) {
+            onFile(src.name)
+            MemoryAwarePipeline.copyFile(src, File(dst, src.name))
+            return
+        }
+        if (!src.isDirectory) return
         dst.mkdirs()
-        src.listFiles()?.forEach { file ->
-            onFile("${src.name}/${file.name}")
-            MemoryAwarePipeline.copyFile(file, File(dst, file.name))
+        src.walkTopDown().forEach { file ->
+            if (file == src || file.isDirectory) return@forEach
+            val rel = file.relativeTo(src).path.replace('\\', '/')
+            onFile("${src.name}/$rel")
+            MemoryAwarePipeline.copyFile(file, File(dst, rel))
         }
     }
 

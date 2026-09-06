@@ -35,11 +35,14 @@ object SyncStream {
         companion object {
             fun fromMap(map: Map<String, Any?>?): DownloadProgress? {
                 if (map == null) return null
-                val total = (map["totalBytes"] as? Number)?.toLong() ?: return null
+                val total = (map["totalBytes"] as? Number)?.toLong()
+                    ?: (map["totalBytes"] as? String)?.toLongOrNull() ?: return null
                 val progress = DownloadProgress(total)
-                progress.receivedBytes = (map["receivedBytes"] as? Number)?.toLong() ?: 0L
+                progress.receivedBytes = (map["receivedBytes"] as? Number)?.toLong()
+                    ?: (map["receivedBytes"] as? String)?.toLongOrNull() ?: 0L
                 progress.lastDocId = (map["lastDocId"] as? String)?.takeIf { it.isNotEmpty() }
-                progress.codeDone = map["codeDone"] as? Boolean ?: false
+                progress.codeDone = (map["codeDone"] as? Boolean)
+                    ?: ((map["codeDone"] as? String)?.equals("true", ignoreCase = true) == true)
                 progress.dirPath = map["dirPath"] as? String ?: ""
                 val raw = map["verified"] as? String ?: ""
                 for (line in raw.lines()) {

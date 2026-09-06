@@ -4,20 +4,24 @@ import android.graphics.drawable.GradientDrawable
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.catrobat.catroid.R
 import org.catrobat.catroid.utils.ToastUtil
+import java.io.File
 
 class CollabDialog(
     private val activity: AppCompatActivity,
-    private val projectName: String
+    private var projectName: String
 ) {
+    private var projectSpinner: Spinner? = null
     private var dialog: AlertDialog? = null
     private var root: LinearLayout? = null
     private var membersBox: LinearLayout? = null
@@ -158,6 +162,35 @@ class CollabDialog(
     }
 
     private fun buildInactive(container: LinearLayout) {
+        val root = org.catrobat.catroid.common.FlavoredConstants.DEFAULT_ROOT_DIRECTORY
+        val availableProjects = try {
+            org.catrobat.catroid.utils.FileMetaDataExtractor.getProjectNames(root).sorted()
+        } catch (e: Exception) {
+            emptyList<String>()
+        }
+
+        if (availableProjects.isNotEmpty()) {
+            container.addView(TextView(activity).apply {
+                text = activity.getString(R.string.collab_select_project)
+                setPadding(0, 0, 0, dp(4))
+            })
+            projectSpinner = Spinner(activity).apply {
+                adapter = ArrayAdapter(activity, android.R.layout.simple_spinner_dropdown_item, availableProjects)
+                setPadding(0, 0, 0, dp(8))
+                val defaultIndex = if (projectName.isNotEmpty()) availableProjects.indexOf(projectName) else -1
+                if (defaultIndex >= 0) {
+                    setSelection(defaultIndex)
+                }
+                container.addView(this)
+            }
+        } else if (projectName.isNotEmpty()) {
+            container.addView(TextView(activity).apply {
+                text = "${activity.getString(R.string.collab_active_project)}: $projectName"
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(0, 0, 0, dp(8))
+            })
+        }
+
         val nameInput = EditText(activity).apply {
             hint = activity.getString(R.string.collab_name_hint)
             setText(CollabAuth.savedDisplayName())
@@ -270,15 +303,64 @@ class CollabDialog(
         } catch (e: Exception) {
             false
         }
-        container.addView(TextView(activity).apply {
+        val statusRow = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            container.addView(this)
+        }
+        statusRow.addView(TextView(activity).apply {
             text = activity.getString(R.string.collab_git_token_hint) + ": " +
                 if (hasToken) "OK" else activity.getString(R.string.collab_git_no_token)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         })
+        if (hasToken) {
+            statusRow.addView(Button(activity).apply {
+                text = activity.getString(R.string.collab_git_clear)
+                setOnClickListener {
+                    try {
+                        org.catrobat.catroid.utils.git.TokenManager.clearToken(activity)
+                    } catch (e: Exception) {
+                    }
+                    refresh()
+                }
+            })
+        }
+
+        val actionRow = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            container.addView(this)
+        }
+        actionRow.addView(Button(activity).apply {
+            text = activity.getString(R.string.collab_git_get_pat)
+            setOnClickListener {
+                val url = "https://github.com/settings/tokens/new?scopes=repo&description=NeoCatroid"
+                try {
+                    activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                } catch (e: Exception) {
+                    ToastUtil.showError(activity, R.string.error_internet_connection)
+                }
+            }
+        })
+        val clientId = org.catrobat.catroid.BuildConfig.GITHUB_CLIENT_ID
+        if (!clientId.isNullOrEmpty()) {
+            actionRow.addView(Button(activity).apply {
+                text = activity.getString(R.string.collab_git_login_oauth)
+                setOnClickListener {
+                    val authUrl = "https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo&redirect_uri=NeoCatroid://github-callback"
+                    try {
+                        activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(authUrl)))
+                    } catch (e: Exception) {
+                        ToastUtil.showError(activity, R.string.error_internet_connection)
+                    }
+                }
+            })
+        }
+
         val tokenRow = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             container.addView(this)
         }
         val tokenInput = EditText(activity).apply {
+            hint = activity.getString(R.string.collab_git_token_hint)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             tokenRow.addView(this)
@@ -352,6 +434,32 @@ class CollabDialog(
     }
 
     private fun startCreate(name: String) {
+        val selected = (projectSpinner?.selectedItem as? String).orEmpty()
+        val targetProject = if (selected.isNotEmpty()) selected else projectName
+        if (targetProject.isEmpty()) {
+            ToastUtil.showError(activity, R.string.collab_project_mismatch)
+            return
+        }
+        projectName = targetProject
+
+        val root = org.catrobat.catroid.common.FlavoredConstants.DEFAULT_ROOT_DIRECTORY
+        val curProj = org.catrobat.catroid.ProjectManager.getInstance().currentProject
+        if (curProj == null || curProj.name != targetProject) {
+            val encoded = org.catrobat.catroid.utils.FileMetaDataExtractor.encodeSpecialCharsForFileSystem(targetProject)
+            var dir = File(root, encoded)
+            if (!dir.isDirectory) {
+                dir = root.listFiles()?.firstOrNull { f ->
+                    f.isDirectory && try {
+                        val meta = org.catrobat.catroid.content.backwardcompatibility.ProjectMetaDataParser(File(f, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)).projectMetaData
+                        meta.name == targetProject
+                    } catch (e: Exception) { false }
+                } ?: dir
+            }
+            if (dir.isDirectory) {
+                org.catrobat.catroid.io.asynctask.loadProject(dir, activity)
+            }
+        }
+
         CollabAuth.saveDisplayName(name)
         val hue = PresenceColors.hueFor(emptyList())
         PresenceRenderer.myHue = hue

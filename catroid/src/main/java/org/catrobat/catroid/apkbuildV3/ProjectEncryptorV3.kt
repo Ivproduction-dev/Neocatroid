@@ -123,8 +123,9 @@ object ProjectEncryptorV3 {
             val chunkStart = dataStartPos + offset
 
             fileIn.channel.position(chunkStart)
-            val iv = ByteArray(GCM_IV_SIZE).also { fileIn.read(it) }
-            val ciphertext = ByteArray(encLen - GCM_IV_SIZE).also { fileIn.read(it) }
+            val iv = ByteArray(GCM_IV_SIZE).also { readFully(fileIn, it) }
+            require(encLen >= GCM_IV_SIZE) { "Corrupted chunk $chunkIndex: encLen=$encLen" }
+            val ciphertext = ByteArray(encLen - GCM_IV_SIZE).also { readFully(fileIn, it) }
 
             val cipher = Cipher.getInstance(ALGORITHM)
             cipher.init(Cipher.DECRYPT_MODE, aesKey, GCMParameterSpec(GCM_TAG_LENGTH, iv))
@@ -154,12 +155,12 @@ object ProjectEncryptorV3 {
     fun readIntegrityHash(encryptedFile: File): ByteArray {
         return FileInputStream(encryptedFile).use { fileIn ->
             val magic = ByteArray(4)
-            fileIn.read(magic)
+            readFully(fileIn, magic)
             require(magic.contentEquals(MAGIC)) { "Not a V3 encrypted file" }
 
-            fileIn.skip(12)
+            skipFully(fileIn, 12)
             val hash = ByteArray(32)
-            fileIn.read(hash)
+            readFully(fileIn, hash)
             hash
         }
     }
@@ -167,11 +168,29 @@ object ProjectEncryptorV3 {
     private fun readTotalChunks(encryptedFile: File): Int {
         return FileInputStream(encryptedFile).use { fileIn ->
             val magic = ByteArray(4)
-            fileIn.read(magic)
+            readFully(fileIn, magic)
             require(magic.contentEquals(MAGIC)) { "Not a V3 encrypted file" }
 
-            fileIn.skip(8)
+            skipFully(fileIn, 8)
             readInt(fileIn)
+        }
+    }
+
+    internal fun readFully(fileIn: FileInputStream, buf: ByteArray, off: Int = 0, len: Int = buf.size - off) {
+        var read = 0
+        while (read < len) {
+            val n = fileIn.read(buf, off + read, len - read)
+            require(n >= 0) { "Unexpected EOF reading encrypted file" }
+            read += n
+        }
+    }
+
+    internal fun skipFully(fileIn: FileInputStream, n: Long) {
+        var remaining = n
+        while (remaining > 0) {
+            val skipped = fileIn.skip(remaining)
+            require(skipped > 0) { "Unexpected EOF skipping encrypted file header" }
+            remaining -= skipped
         }
     }
 
@@ -200,7 +219,7 @@ object ProjectEncryptorV3 {
 
     private fun readInt(fileIn: FileInputStream): Int {
         val b = ByteArray(4)
-        fileIn.read(b)
+        readFully(fileIn, b)
         return ((b[0].toInt() and 0xFF) shl 24) or
                 ((b[1].toInt() and 0xFF) shl 16) or
                 ((b[2].toInt() and 0xFF) shl 8) or
@@ -209,7 +228,7 @@ object ProjectEncryptorV3 {
 
     private fun readLong(fileIn: FileInputStream): Long {
         val b = ByteArray(8)
-        fileIn.read(b)
+        readFully(fileIn, b)
         return ((b[0].toLong() and 0xFF) shl 56) or
                 ((b[1].toLong() and 0xFF) shl 48) or
                 ((b[2].toLong() and 0xFF) shl 40) or

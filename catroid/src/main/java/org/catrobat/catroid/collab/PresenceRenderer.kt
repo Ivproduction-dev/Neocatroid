@@ -27,7 +27,7 @@ object PresenceRenderer {
     private var latest: List<MemberPresence> = emptyList()
     private val drawableCache = HashMap<String, PresenceBorderDrawable?>()
     private val handler = Handler(Looper.getMainLooper())
-    private var pendingNotify = false
+    @Volatile private var pendingNotify = false
 
     private val debounced = Runnable {
         pendingNotify = false

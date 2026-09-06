@@ -251,11 +251,19 @@ object V3ApkAssembler {
 
     internal fun syncPermissions(manifest: AndroidManifestBlock, permissions: List<String>) {
         val root = manifest.manifestElement
+        val dynamicReceiverPerm = "${manifest.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        val hasDeclaredDynamicPerm = root?.listElements("permission")?.any {
+            it.searchAttributeByResourceId(ATTR_NAME)?.valueAsString == dynamicReceiverPerm
+        } == true
+
         if (root != null) {
-            root.listElements("uses-permission").toList().forEach { root.remove(it) }
+            root.listElements("uses-permission").toList().forEach { it.removeSelf() }
         }
         for (perm in permissions.distinct()) {
             manifest.addUsesPermission(perm)
+        }
+        if (hasDeclaredDynamicPerm) {
+            manifest.addUsesPermission(dynamicReceiverPerm)
         }
     }
 
@@ -308,6 +316,29 @@ object V3ApkAssembler {
             val oldAuth = attr?.getValueString()
             if (oldAuth != null) {
                 attr.setValueAsString(replacePackageInAuthority(oldAuth, oldPackage, newPackage))
+            }
+        }
+
+        val manifestElem = manifest.manifestElement
+        if (manifestElem != null) {
+            for (perm in manifestElem.listElements("permission")) {
+                val nameAttr = perm.searchAttributeByResourceId(ATTR_NAME)
+                val oldName = nameAttr?.valueAsString ?: ""
+                if (oldName.contains("DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")) {
+                    nameAttr?.valueAsString = "$newPackage.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+                } else if (oldName.startsWith("$oldPackage.")) {
+                    nameAttr?.valueAsString = newPackage + oldName.removePrefix(oldPackage)
+                }
+            }
+
+            for (usesPerm in manifestElem.listElements("uses-permission")) {
+                val nameAttr = usesPerm.searchAttributeByResourceId(ATTR_NAME)
+                val oldName = nameAttr?.valueAsString ?: ""
+                if (oldName.contains("DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")) {
+                    nameAttr?.valueAsString = "$newPackage.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+                } else if (oldName.startsWith("$oldPackage.")) {
+                    nameAttr?.valueAsString = newPackage + oldName.removePrefix(oldPackage)
+                }
             }
         }
 
@@ -641,6 +672,14 @@ object V3ApkAssembler {
         ZipFile(signedApk).use { zf ->
             requireNotNull(zf.getEntry("AndroidManifest.xml")) { "В APK нет AndroidManifest.xml" }
             requireNotNull(zf.getEntry("classes.dex")) { "В APK нет classes.dex — шаблон повреждён" }
+            val payload = zf.getEntry("assets/$ASSET_PAYLOAD")
+            require(payload != null && payload.size != 0L) {
+                "В APK нет assets/$ASSET_PAYLOAD — игра не загрузится (payload потерян при сборке)"
+            }
+            val names = java.util.Collections.list(zf.entries()).map { it.name }
+            require(names.any { it.startsWith("assets/nk_") && it.endsWith(".nk") }) {
+                "В APK нет ключей шифрования assets/nk_*.nk — игра не загрузится (ключи потеряны при сборке)"
+            }
         }
         val result = ApkVerifier.Builder(signedApk).build().verify()
         require(result.isVerified) {

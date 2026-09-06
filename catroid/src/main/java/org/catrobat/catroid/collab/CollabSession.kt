@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 object CollabSession {
     const val ROOT = "collabSessions"
@@ -27,7 +28,8 @@ object CollabSession {
     @Volatile var myRole: String = CollabRoles.VIEWER
     @Volatile var isHost: Boolean = false
     @Volatile var projectName: String = ""
-    @Volatile var foregroundActivities = 0
+    private val _foregroundActivities = AtomicInteger(0)
+    val foregroundActivities: Int get() = _foregroundActivities.get()
 
     var onMembersChanged: ((Map<String, CollabMember>) -> Unit)? = null
     var onPresenceChanged: ((List<MemberPresence>) -> Unit)? = null
@@ -40,8 +42,9 @@ object CollabSession {
     private const val KEY_UID = "session_uid"
     private const val KEY_NAME = "session_name"
     private const val KEY_HUE = "session_hue"
+    private const val KEY_PROJECT = "session_project"
 
-    private data class StoredSession(val sid: String, val uid: String, val name: String, val hue: Float)
+    private data class StoredSession(val sid: String, val uid: String, val name: String, val hue: Float, val project: String)
 
     val isActive: Boolean get() = sessionId != null && myUid != null
 
@@ -76,11 +79,11 @@ object CollabSession {
             val app = context.applicationContext as? Application ?: return
             app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
                 override fun onActivityStarted(activity: Activity) {
-                    foregroundActivities++
+                    _foregroundActivities.incrementAndGet()
                 }
 
                 override fun onActivityStopped(activity: Activity) {
-                    if (foregroundActivities > 0) foregroundActivities--
+                    _foregroundActivities.updateAndGet { if (it > 0) it - 1 else 0 }
                 }
 
                 override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
@@ -324,19 +327,28 @@ object CollabSession {
     fun startListeners() {
         val sid = sessionId
         val database = db()
-        if (sid == null || database == null) return
+        if (sid == null || database == null || !isActive) return
         stopListeners()
         metaReg = metaRef(sid)?.collection("meta")?.document("meta")?.addSnapshotListener { snap, error ->
+            if (!isActive) return@addSnapshotListener
             if (error != null) {
                 handleListenerError(error)
                 return@addSnapshotListener
             }
             if (snap == null || !snap.exists()) return@addSnapshotListener
             val meta = CollabMeta.fromMap(snap.data)
-            if (projectName.isEmpty()) projectName = meta.projectName
+            val wasEmpty = projectName.isEmpty()
+            if (wasEmpty) {
+                projectName = meta.projectName
+                persistStored()
+            }
             onMetaChanged?.invoke(meta)
+            if (wasEmpty && !isHost) {
+                SyncWorker.ensureProject()
+            }
         }
         membersReg = membersRef(sid)?.addSnapshotListener { snap, error ->
+            if (!isActive) return@addSnapshotListener
             if (error != null) {
                 handleListenerError(error)
                 return@addSnapshotListener
@@ -348,6 +360,7 @@ object CollabSession {
             onMembersChanged?.invoke(map)
         }
         presenceReg = presenceRef(sid)?.addSnapshotListener { snap, error ->
+            if (!isActive) return@addSnapshotListener
             if (error != null) {
                 handleListenerError(error)
                 return@addSnapshotListener
@@ -369,6 +382,7 @@ object CollabSession {
         }
         if (isHost) {
             requestsReg = requestsRef(sid)?.addSnapshotListener { snap, error ->
+                if (!isActive) return@addSnapshotListener
                 if (error != null || snap == null) return@addSnapshotListener
                 val map = LinkedHashMap<String, CollabRequest>()
                 for (doc in snap.documents) {
@@ -392,6 +406,11 @@ object CollabSession {
     }
 
     fun leave() {
+        try {
+            mainHandler.removeCallbacks(heartbeat)
+        } catch (e: Exception) {
+            Log.w(TAG, "heartbeat stop failed", e)
+        }
         try {
             SyncWorker.stop()
         } catch (e: Exception) {
@@ -446,7 +465,7 @@ object CollabSession {
                         val member = CollabMember.fromMap(snap.data)
                         PresenceRenderer.myName = stored.name
                         PresenceRenderer.myHue = stored.hue
-                        enterLocalState(stored.sid, uid, "")
+                        enterLocalState(stored.sid, uid, stored.project)
                         isHost = member.role == CollabRoles.HOST
                         myRole = member.role
                         startListeners()
@@ -476,6 +495,7 @@ object CollabSession {
                 ?.putString(KEY_UID, myUid)
                 ?.putString(KEY_NAME, PresenceRenderer.myName)
                 ?.putFloat(KEY_HUE, PresenceRenderer.myHue)
+                ?.putString(KEY_PROJECT, projectName)
                 ?.apply()
         } catch (e: Exception) {
             Log.w(TAG, "persist failed", e)
@@ -488,7 +508,12 @@ object CollabSession {
             val sid = prefs.getString(KEY_SID, "").orEmpty()
             val uid = prefs.getString(KEY_UID, "").orEmpty()
             if (sid.isEmpty() || uid.isEmpty()) return null
-            StoredSession(sid, uid, prefs.getString(KEY_NAME, "").orEmpty(), prefs.getFloat(KEY_HUE, 0f))
+            StoredSession(
+                sid, uid,
+                prefs.getString(KEY_NAME, "").orEmpty(),
+                prefs.getFloat(KEY_HUE, 0f),
+                prefs.getString(KEY_PROJECT, "").orEmpty()
+            )
         } catch (e: Exception) {
             null
         }
@@ -496,7 +521,13 @@ object CollabSession {
 
     private fun clearStored() {
         try {
-            prefs()?.edit()?.remove(KEY_SID)?.remove(KEY_UID)?.remove(KEY_NAME)?.remove(KEY_HUE)?.apply()
+            prefs()?.edit()
+                ?.remove(KEY_SID)
+                ?.remove(KEY_UID)
+                ?.remove(KEY_NAME)
+                ?.remove(KEY_HUE)
+                ?.remove(KEY_PROJECT)
+                ?.apply()
         } catch (e: Exception) {
             Log.w(TAG, "clear stored failed", e)
         }

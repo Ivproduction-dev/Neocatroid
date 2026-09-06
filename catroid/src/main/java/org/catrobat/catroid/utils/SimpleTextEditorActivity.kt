@@ -44,12 +44,24 @@ class SimpleTextEditorActivity : AppCompatActivity() {
         currentFile = File(filePath)
         supportActionBar?.title = currentFile.name
 
+        if (org.catrobat.catroid.collab.CollabSession.isActive) {
+            val fileName = currentFile.name
+            org.catrobat.catroid.collab.PresenceReporter.reportDetail("file:$fileName")
+            val locker = org.catrobat.catroid.collab.ScriptLockManager.projectFileLockerOf(fileName)
+            if (locker != null) {
+                editText.isEnabled = false
+                supportActionBar?.subtitle = getString(R.string.collab_locked_by, locker.name)
+                org.catrobat.catroid.utils.ToastUtil.showError(this, getString(R.string.collab_locked_by, locker.name))
+            } else {
+                org.catrobat.catroid.collab.ScriptLockManager.claimProjectFile(fileName)
+            }
+        }
+
         loadFileContent()
     }
 
     private fun loadFileContent() {
         if (!currentFile.exists()) return
-
 
         if (currentFile.length() > MAX_FILE_SIZE) {
             editText.setText("// Файл слишком большой (${currentFile.length() / 1024} KB).\n// Редактирование недоступно во избежание зависаний.")
@@ -57,11 +69,9 @@ class SimpleTextEditorActivity : AppCompatActivity() {
             return
         }
 
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val text = currentFile.readText()
-
 
                 withContext(Dispatchers.Main) {
                     editText.setText(text)
@@ -75,9 +85,11 @@ class SimpleTextEditorActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menu?.add(0, 1, 0, "Сохранить")
-            ?.setIcon(R.drawable.baseline_save_alt_24_w)
-            ?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        if (this::editText.isInitialized && editText.isEnabled) {
+            menu?.add(0, 1, 0, "Сохранить")
+                ?.setIcon(R.drawable.baseline_save_alt_24_w)
+                ?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        }
         return true
     }
 
@@ -97,12 +109,20 @@ class SimpleTextEditorActivity : AppCompatActivity() {
 
     private fun saveFile() {
         if (!this::currentFile.isInitialized) return
-
+        val fileName = currentFile.name
+        if (org.catrobat.catroid.collab.CollabSession.isActive) {
+            val locker = org.catrobat.catroid.collab.ScriptLockManager.projectFileLockerOf(fileName)
+            if (locker != null) {
+                org.catrobat.catroid.utils.ToastUtil.showError(this, getString(R.string.collab_locked_by, locker.name))
+                return
+            }
+        }
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val content = editText.text.toString()
                 currentFile.writeText(content)
+                org.catrobat.catroid.collab.SyncWorker.markDirty()
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@SimpleTextEditorActivity, "Сохранено", Toast.LENGTH_SHORT).show()
                 }
@@ -112,5 +132,14 @@ class SimpleTextEditorActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        if (this::currentFile.isInitialized && org.catrobat.catroid.collab.CollabSession.isActive) {
+            val fileName = currentFile.name
+            org.catrobat.catroid.collab.ScriptLockManager.releaseProjectFile(fileName)
+            org.catrobat.catroid.collab.PresenceReporter.clearDetail()
+        }
+        super.onDestroy()
     }
 }

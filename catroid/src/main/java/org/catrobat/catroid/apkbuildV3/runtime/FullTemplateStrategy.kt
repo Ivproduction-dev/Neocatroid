@@ -12,14 +12,22 @@ import java.io.File
 class FullTemplateStrategy(private val context: Context) {
     private val tag = "FullTemplateStrategy"
 
+    @Volatile
+    var lastError: String? = null
+        private set
+
     fun load(cacheDir: File, onProgress: ((Float) -> Unit)? = null): Boolean {
+        lastError = null
         return try {
             onProgress?.invoke(0f)
 
             val loader = ProjectLoaderV3(context)
             val result = loader.loadFull(cacheDir) { progress ->
                 onProgress?.invoke(progress * 0.6f)
-            } ?: return false
+            } ?: run {
+                lastError = loader.lastError ?: "unknown loader failure"
+                return false
+            }
 
             val project = result.project
             val projectDir = result.projectDir
@@ -36,8 +44,9 @@ class FullTemplateStrategy(private val context: Context) {
             project.setDirectory(projectDir)
 
             true
-        } catch (e: Exception) {
-            Log.e(tag, "Full template loading failed", e)
+        } catch (t: Throwable) {
+            lastError = "strategy: ${t.javaClass.simpleName}: ${t.message}"
+            Log.e(tag, "Full template loading failed", t)
             false
         }
     }

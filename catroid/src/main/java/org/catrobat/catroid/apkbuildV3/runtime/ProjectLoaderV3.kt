@@ -21,32 +21,46 @@ class ProjectLoaderV3(private val context: Context) {
         val projectDir: File
     )
 
+    @Volatile
+    var lastError: String? = null
+        private set
+
+    private fun fail(stage: String, msg: String): Nothing? {
+        lastError = "$stage: $msg"
+        Log.e(tag, lastError!!)
+        return null
+    }
+
     fun loadFull(cacheDir: File, onProgress: ((Float) -> Unit)? = null): FullProjectResult? {
+        lastError = null
         return try {
             onProgress?.invoke(0f)
-            val key = resolveKey() ?: return null
+            val key = resolveKey() ?: return fail("key", "no dynamic key in assets")
             onProgress?.invoke(0.1f)
 
             val encryptedFile = File(cacheDir, payloadAssetName)
-            context.assets.open(payloadAssetName).use { input ->
-                encryptedFile.outputStream().use { output ->
-                    input.copyTo(output)
+            try {
+                context.assets.open(payloadAssetName).use { input ->
+                    encryptedFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
+            } catch (t: Throwable) {
+                return fail("payload", "asset $payloadAssetName missing/unreadable (${t.javaClass.simpleName}: ${t.message})")
             }
             onProgress?.invoke(0.2f)
 
-            if (!IntegrityValidator.validate(encryptedFile, key)) {
-                Log.e(tag, "Integrity validation failed")
+            if (!IntegrityValidator.validate(encryptedFile, key, cacheDir)) {
+                val size = runCatching { encryptedFile.length() }.getOrDefault(-1)
                 encryptedFile.delete()
-                return null
+                return fail("integrity", "hash mismatch or undecryptable (size=$size)")
             }
             onProgress?.invoke(0.3f)
 
             val decryptedZip = File(cacheDir, "project_decrypted.zip")
             if (!ProjectEncryptorV3.decryptAll(encryptedFile, key, decryptedZip)) {
-                Log.e(tag, "Full decryption failed")
                 encryptedFile.delete()
-                return null
+                return fail("decrypt", "AES-GCM failed (wrong key or corrupted payload)")
             }
             encryptedFile.delete()
             onProgress?.invoke(0.6f)
@@ -55,48 +69,60 @@ class ProjectLoaderV3(private val context: Context) {
                 deleteRecursively()
                 mkdirs()
             }
-            ZipArchiver().unzip(decryptedZip, extractDir)
+            try {
+                ZipArchiver().unzip(decryptedZip, extractDir)
+            } catch (t: Throwable) {
+                decryptedZip.delete()
+                return fail("unzip", "${t.javaClass.simpleName}: ${t.message}")
+            }
             decryptedZip.delete()
             onProgress?.invoke(0.8f)
 
-            val restored = DedupManifestApplier.apply(extractDir)
+            val restored = runCatching { DedupManifestApplier.apply(extractDir) }.getOrDefault(0)
             if (restored > 0) {
                 Log.i(tag, "Restored $restored deduplicated file(s)")
             }
 
-            val project = XstreamSerializer.getInstance().loadProject(extractDir, context)
-                ?: return null
+            val project = try {
+                XstreamSerializer.getInstance().loadProject(extractDir, context)
+            } catch (t: Throwable) {
+                return fail("parse", "${t.javaClass.simpleName}: ${t.message}")
+            } ?: return fail("parse", "loadProject returned null (no code.xml?)")
             onProgress?.invoke(1f)
 
             Log.i(tag, "Full project loaded: ${project.name} (${project.sceneList.size} scenes)")
             FullProjectResult(project, extractDir)
-        } catch (e: Exception) {
-            Log.e(tag, "Failed to load full project", e)
-            null
+        } catch (t: Throwable) {
+            fail("fatal", "${t.javaClass.simpleName}: ${t.message}")
         }
     }
 
     fun loadLight(cacheDir: File): ProjectMetadata? {
+        lastError = null
         return try {
-            val key = resolveKey() ?: return null
+            val key = resolveKey() ?: return fail("key", "no dynamic key in assets")
 
             val encryptedFile = File(cacheDir, payloadAssetName)
-            context.assets.open(payloadAssetName).use { input ->
-                encryptedFile.outputStream().use { output ->
-                    input.copyTo(output)
+            try {
+                context.assets.open(payloadAssetName).use { input ->
+                    encryptedFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
+            } catch (t: Throwable) {
+                return fail("payload", "asset $payloadAssetName missing/unreadable (${t.javaClass.simpleName}: ${t.message})")
             }
 
-            if (!IntegrityValidator.validate(encryptedFile, key)) {
-                Log.e(tag, "Integrity validation failed (light load)")
+            if (!IntegrityValidator.validate(encryptedFile, key, cacheDir)) {
+                val size = runCatching { encryptedFile.length() }.getOrDefault(-1)
                 encryptedFile.delete()
-                return null
+                return fail("integrity", "hash mismatch or undecryptable (size=$size)")
             }
 
             val decryptedZip = File(cacheDir, "project_light_decrypted.zip")
             if (!ProjectEncryptorV3.decryptAll(encryptedFile, key, decryptedZip)) {
                 encryptedFile.delete()
-                return null
+                return fail("decrypt", "AES-GCM failed (wrong key or corrupted payload)")
             }
 
             val extractDir = File(cacheDir, "project_light").apply {
@@ -104,15 +130,22 @@ class ProjectLoaderV3(private val context: Context) {
                 mkdirs()
             }
 
-            ZipArchiver().unzip(decryptedZip, extractDir)
+            try {
+                ZipArchiver().unzip(decryptedZip, extractDir)
+            } catch (t: Throwable) {
+                return fail("unzip", "${t.javaClass.simpleName}: ${t.message}")
+            }
 
-            val restored = DedupManifestApplier.apply(extractDir)
+            val restored = runCatching { DedupManifestApplier.apply(extractDir) }.getOrDefault(0)
             if (restored > 0) {
                 Log.i(tag, "Restored $restored deduplicated file(s) (light load)")
             }
 
-            val project = XstreamSerializer.getInstance().loadProject(extractDir, context)
-                ?: return null
+            val project = try {
+                XstreamSerializer.getInstance().loadProject(extractDir, context)
+            } catch (t: Throwable) {
+                return fail("parse", "${t.javaClass.simpleName}: ${t.message}")
+            } ?: return fail("parse", "loadProject returned null (no code.xml?)")
 
             val metadata = ProjectMetadata(
                 project = project,
@@ -124,20 +157,26 @@ class ProjectLoaderV3(private val context: Context) {
             Log.i(tag, "Light project metadata loaded: ${project.name} (${project.sceneList.size} scenes)")
 
             metadata
-        } catch (e: Exception) {
-            Log.e(tag, "Failed to load light project", e)
-            null
+        } catch (t: Throwable) {
+            fail("fatal", "${t.javaClass.simpleName}: ${t.message}")
         }
     }
 
     private fun resolveKey(): ByteArray? {
-        val dynamicKey = DynamicKeyResolver.resolveKey(context)
+        val dynamicKey = try {
+            DynamicKeyResolver.resolveKey(context)
+        } catch (t: Throwable) {
+            lastError = "key: resolver crashed (${t.javaClass.simpleName}: ${t.message})"
+            Log.e(tag, lastError!!, t)
+            return null
+        }
         if (dynamicKey != null) {
             Log.i(tag, "Using dynamic key (${dynamicKey.size} bytes)")
             return dynamicKey
         }
 
-        Log.e(tag, "No dynamic key found")
+        lastError = "key: no dynamic key in assets"
+        Log.e(tag, lastError!!)
         return null
     }
 

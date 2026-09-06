@@ -15,7 +15,10 @@ import org.catrobat.catroid.utils.git.GitController
 import org.catrobat.catroid.utils.git.TokenManager
 import org.catrobat.catroid.utils.git.XStreamUtilGit
 import java.io.File
+import java.util.Collections
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class JGitOps(private val token: () -> String?) : GitOps {
     override fun commitPush(workTree: File, message: String, authorName: String, authorEmail: String): Boolean {
@@ -79,18 +82,24 @@ object SyncWorker {
     @Volatile private var dirty = false
     @Volatile private var lastEdit = 0L
     @Volatile private var pendingGitPush = false
-    @Volatile private var pendingApply: String? = null
+    private val pendingApplyRef = AtomicReference<String?>(null)
     @Volatile private var pendingOpen: File? = null
     @Volatile private var lastAppliedAt: Long = 0L
-    private val fullStateIds = LinkedHashSet<String>()
+    private val fullStateIds = Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     @Volatile private var lastBroadcastXml: String? = null
     @Volatile private var lastStateId: String? = null
+    private val dlRunning = AtomicBoolean(false)
+    private var skippedMediaRetryCount = 0
 
-    private val seenPatches = LinkedHashSet<String>()
+    private val seenPatches = Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     private var patchesHandle: Any? = null
     private var statesHandle: Any? = null
     private var snapshotReqHandle: Any? = null
-    private val seenSnapshotReqs = LinkedHashSet<String>()
+    private val lastSnapshotReqTimes = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private val dirFilesCache = java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles>()
+    private data class RoleRow(val role: String?, val at: Long)
+    private val roleCache = java.util.concurrent.ConcurrentHashMap<String, RoleRow>()
+    @Volatile private var startedAt: Long = 0L
 
     private val tick = object : Runnable {
         override fun run() {
@@ -146,6 +155,45 @@ object SyncWorker {
         return File(CatroidApplication.getAppContext().filesDir, "collab/" + id)
     }
 
+    private fun boundProjectDirFile(sessionId: String): File {
+        return File(snapshotDir(sessionId), "project_dir")
+    }
+
+    fun boundProjectDir(sessionId: String): File? {
+        return try {
+            val f = boundProjectDirFile(sessionId)
+            if (!f.exists()) null
+            else {
+                val path = f.readText(Charsets.UTF_8).trim()
+                File(path).takeIf { it.isDirectory && File(it, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME).exists() }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun saveBoundProjectDir(sessionId: String, dir: File) {
+        try {
+            val f = boundProjectDirFile(sessionId)
+            f.parentFile?.mkdirs()
+            f.writeText(dir.absolutePath, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.w(TAG, "save bound project dir failed", e)
+        }
+    }
+
+    fun isCurrentProjectMatching(sessionId: String?, sessionName: String?): Boolean {
+        val curProj = ProjectManager.getInstance().currentProject ?: return false
+        if (sessionName.isNullOrEmpty()) return false
+        if (sessionId != null) {
+            val bound = boundProjectDir(sessionId)
+            if (bound != null && curProj.directory?.canonicalPath == bound.canonicalPath) {
+                return true
+            }
+        }
+        return curProj.name == sessionName
+    }
+
     fun projectDir(): File? {
         return try {
             ProjectManager.getInstance().currentProject?.directory
@@ -165,11 +213,18 @@ object SyncWorker {
         hostMode = host
         running = true
         seenPatches.clear()
+        fullStateIds.clear()
         lastBroadcastXml = null
         lastStateId = null
-        pendingApply = null
+        pendingApplyRef.set(null)
+        dlRunning.set(false)
+        skippedMediaRetryCount = 0
         dirty = true
         lastEdit = 0L
+        startedAt = nowProvider()
+        if (host) {
+            projectDir()?.let { saveBoundProjectDir(sessionId, it) }
+        }
         try {
             timer.postDelayed(tick, SyncLimits.IDLE_MS)
             if (host) {
@@ -208,9 +263,13 @@ object SyncWorker {
         patchesHandle = null
         statesHandle = null
         snapshotReqHandle = null
-        seenSnapshotReqs.clear()
+        lastSnapshotReqTimes.clear()
+        dirFilesCache.clear()
+        roleCache.clear()
         sid = null
-        pendingApply = null
+        pendingApplyRef.set(null)
+        dlRunning.set(false)
+        skippedMediaRetryCount = 0
     }
 
     fun ensureProject() {
@@ -219,8 +278,34 @@ object SyncWorker {
         executor.execute {
             try {
                 val identity = sessionProvider() ?: return@execute
-                if (localHasProject(CollabSession.projectName)) return@execute
-                transport.requestSnapshot(session, SnapshotRequest(identity.uid, identity.name, nowProvider())) { ok ->
+                val sProject = CollabSession.projectName
+                if (sProject.isEmpty()) return@execute
+                val curProj = ProjectManager.getInstance().currentProject
+
+                val bound = boundProjectDir(session)
+                if (bound != null) {
+                    if (curProj != null && curProj.directory?.canonicalPath == bound.canonicalPath) {
+                        val hasBaseline = files()?.loadSnapshot() != null
+                        if (hasBaseline) return@execute
+                    } else {
+                        pendingOpen = bound
+                        status(identity.name + ": " + appString(R.string.collab_snapshot_received))
+                        try {
+                            onReloadRequested?.invoke(bound.name)
+                        } catch (e: Exception) {
+                        }
+                        return@execute
+                    }
+                }
+
+                val hasMatch = isCurrentProjectMatching(session, sProject)
+                val hasBaseline = files()?.loadSnapshot() != null
+                if (hasMatch && hasBaseline) {
+                    curProj?.directory?.let { saveBoundProjectDir(session, it) }
+                    return@execute
+                }
+                val haveMap = buildHaveMap(session)
+                transport.requestSnapshot(session, SnapshotRequest(identity.uid, identity.name, nowProvider(), haveMap)) { ok ->
                     if (ok) status(identity.name + ": " + appString(R.string.collab_snapshot_waiting))
                 }
             } catch (e: Exception) {
@@ -238,7 +323,7 @@ object SyncWorker {
     }
 
     private fun localHasProject(name: String): Boolean {
-        if (name.isEmpty()) return true
+        if (name.isEmpty()) return false
         return try {
             val root = org.catrobat.catroid.common.FlavoredConstants.DEFAULT_ROOT_DIRECTORY
             org.catrobat.catroid.utils.FileMetaDataExtractor.getProjectNames(root).contains(name)
@@ -267,26 +352,31 @@ object SyncWorker {
             openProject(activity, dir)
             return true
         }
-        val pending = pendingApply ?: return false
-        if (PresenceReporter.isInsideSprite()) return false
-        pendingApply = null
+        val pending = pendingApplyRef.getAndSet(null) ?: return false
+        if (PresenceReporter.isInsideSprite()) {
+            pendingApplyRef.compareAndSet(null, pending)
+            return false
+        }
         reloadProject(activity, pending)
         return true
     }
 
     private fun openProject(activity: Activity, dir: File) {
+        if (activity.isFinishing || activity.isDestroyed) return
         try {
             ProjectLoader(dir, activity).setListener(object : ProjectLoader.ProjectLoadListener {
                 override fun onLoadFinished(success: Boolean) {
                     if (!success) return
                     try {
                         activity.runOnUiThread {
+                            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
                             val intent = android.content.Intent(activity, ProjectActivity::class.java)
                             intent.putExtra(
                                 ProjectActivity.EXTRA_FRAGMENT_POSITION,
                                 ProjectActivity.FRAGMENT_SCENES
                             )
                             activity.startActivity(intent)
+                            activity.finish()
                         }
                     } catch (e: Exception) {
                         Log.w(TAG, "open ui failed", e)
@@ -309,10 +399,29 @@ object SyncWorker {
     private fun runSync(session: String) {
         executor.execute {
             try {
-                saveProjectSerial(
-                    ProjectManager.getInstance().currentProject,
-                    CatroidApplication.getAppContext()
-                )
+                val files = files()
+                val currentProject = ProjectManager.getInstance().currentProject
+                if (currentProject != null) {
+                    val diskBefore = files?.readCodeXml()
+                val hasPendingRemote = pendingApplyRef.get() != null
+
+                    synchronized(currentProject) {
+                        saveProjectSerial(currentProject, CatroidApplication.getAppContext())
+                    }
+
+                    if (hasPendingRemote && files != null && diskBefore != null) {
+                        val localXml = files.readCodeXml()
+                        if (localXml != null && localXml != diskBefore) {
+                            val snapshot = files.loadSnapshot()
+                            val baseXml = snapshot?.codeXml
+                            val (merged, _) = merger.mergeXml(baseXml, localXml, diskBefore)
+                            files.writeCodeXml(merged)
+                            files.saveSnapshot(FileSnapshot(merged, SyncEngine.manifestOf(files)))
+                            lastBroadcastXml = merged
+                            pendingApplyRef.set(null)
+                        }
+                    }
+                }
                 if (hostMode) hostCommit(session) else guestUpload(session)
             } catch (e: Exception) {
                 Log.w(TAG, "sync failed", e)
@@ -321,11 +430,20 @@ object SyncWorker {
     }
 
     private fun guestUpload(session: String) {
+        if (dlStid != null) return
         val identity = sessionProvider() ?: return
         val files = files() ?: return
-        val localName = projectName()
-        SyncFlows.guestUpload(session, identity, files, files.loadSnapshot(), transport,
-            describeXml, nowProvider(), localName, CollabSession.projectName) { result ->
+        var snapshot = files.loadSnapshot()
+        if (snapshot == null) {
+            val codeXml = files.readCodeXml() ?: return
+            snapshot = FileSnapshot(codeXml, SyncEngine.manifestOf(files))
+            files.saveSnapshot(snapshot)
+        }
+        val sProject = CollabSession.projectName
+        if (!isCurrentProjectMatching(session, sProject)) return
+        val localName = if (isCurrentProjectMatching(session, sProject)) sProject else projectName()
+        SyncFlows.guestUpload(session, identity, files, snapshot, transport,
+            describeXml, nowProvider(), localName, sProject) { result ->
             if (!result.uploaded) {
                 if (result.blocked == SyncFlows.BLOCKED_MISMATCH) {
                     try {
@@ -335,8 +453,23 @@ object SyncWorker {
                 }
                 return@guestUpload
             }
+            result.snapshotToSave?.let { (xml, entries) ->
+                executor.execute {
+                    files.saveSnapshot(FileSnapshot(xml, entries))
+                }
+            }
             var text = result.summary
-            if (result.skipped.isNotEmpty()) text += " (large files skipped: " + result.skipped.size + ")"
+            if (result.skipped.isNotEmpty()) {
+                text += " (uploading media: ${result.skipped.size} left)"
+                if (skippedMediaRetryCount < 5) {
+                    skippedMediaRetryCount++
+                    markDirty()
+                } else {
+                    Log.w(TAG, "skipped media upload reached max retries")
+                }
+            } else {
+                skippedMediaRetryCount = 0
+            }
             status(text)
         }
     }
@@ -352,7 +485,8 @@ object SyncWorker {
     private fun projectMissing(): Boolean {
         val sessionName = CollabSession.projectName
         if (sessionName.isEmpty()) return false
-        return projectName() != sessionName
+        val sid = sid ?: return projectName() != sessionName
+        return !isCurrentProjectMatching(sid, sessionName)
     }
 
     private fun hostCommit(session: String) {
@@ -396,22 +530,25 @@ object SyncWorker {
         val inline = inlineFor(manifest, files)
         val chunks = SyncEngine.buildChunks(codeXml, inline)
         val previous = lastStateId
-        val stid = "s_" + nowProvider()
+        val now = nowProvider()
+        val stid = "s_" + now
         val identity = sessionProvider() ?: return
         val payload = SyncPayload(
             fromUid = identity.uid,
             fromName = identity.name,
-            at = nowProvider(),
+            at = now,
             summary = summary,
             codeChunks = SyncChunks.split(codeXml).size,
             media = manifest
         )
         transport.publishState(session, stid, payload, chunks) { ok ->
             if (ok) {
-                lastStateId = stid
-                files.saveLastState(stid)
-                if (previous != null && !fullStateIds.contains(previous)) {
-                    transport.deleteState(session, previous)
+                executor.execute {
+                    lastStateId = stid
+                    files.saveLastState(stid)
+                    if (previous != null && !fullStateIds.contains(previous)) {
+                        transport.deleteState(session, previous)
+                    }
                 }
                 status(summary)
             }
@@ -437,9 +574,13 @@ object SyncWorker {
     private fun onSnapshotRequest(req: SnapshotRequest) {
         val session = sid ?: return
         if (!hostMode || !running) return
-        synchronized(this) {
-            if (!seenSnapshotReqs.add(req.uid)) return
+        val now = nowProvider()
+        var passed = false
+        lastSnapshotReqTimes.compute(req.uid) { _, prev ->
+            val p = prev ?: 0L
+            if (now - p < 5000L) p else { passed = true; now }
         }
+        if (!passed) return
         executor.execute {
             try {
                 serveSnapshot(session, req)
@@ -452,25 +593,31 @@ object SyncWorker {
     private fun serveSnapshot(session: String, req: SnapshotRequest) {
         val identity = sessionProvider() ?: return
         val files = files() ?: return
-        if (projectName() != CollabSession.projectName) {
+        if (!isCurrentProjectMatching(session, CollabSession.projectName)) {
             transport.deleteSnapshotRequest(session, req.uid)
             return
         }
-        saveProjectSerial(ProjectManager.getInstance().currentProject, CatroidApplication.getAppContext())
+        ProjectManager.getInstance().currentProject?.let { curProj ->
+            synchronized(curProj) {
+                saveProjectSerial(curProj, CatroidApplication.getAppContext())
+            }
+        }
         val codeXml = files.readCodeXml() ?: return
         val manifest = SyncEngine.manifestOf(files)
         val codeBytes = codeXml.toByteArray(Charsets.UTF_8).size.toLong()
+        val uploadBytes = codeBytes + manifest.sumOf { e -> if (req.have[e.path] == e.md5) 0L else e.size }
         val total = codeBytes + manifest.sumOf { it.size }
-        if (total > SyncLimits.SNAPSHOT_BYTES) {
+        if (uploadBytes > SyncLimits.SNAPSHOT_BYTES) {
             transport.deleteSnapshotRequest(session, req.uid)
             status(appString(R.string.collab_snapshot_too_big))
             return
         }
-        val stid = "s_full_" + nowProvider()
+        val now = nowProvider()
+        val stid = "s_full_" + now
         val payload = SyncPayload(
             fromUid = identity.uid,
             fromName = identity.name,
-            at = nowProvider(),
+            at = now,
             summary = identity.name + ": full snapshot",
             codeChunks = SyncChunks.split(codeXml).size,
             media = manifest,
@@ -478,8 +625,10 @@ object SyncWorker {
         )
         transport.putMeta(session, "states", stid, payload) { ok ->
             if (!ok) return@putMeta
-            lastStateId = stid
-            fullStateIds.add(stid)
+            executor.execute {
+                lastStateId = stid
+                fullStateIds.add(stid)
+            }
             status(payload.summary)
             executor.execute {
                 try {
@@ -503,7 +652,7 @@ object SyncWorker {
             SyncChunk(SyncChunk.KIND_CODE, "", index, part)
         }
         var uploaded = codeXml.toByteArray(Charsets.UTF_8).size.toLong()
-        val total = uploaded + manifest.sumOf { it.size }
+        val total = uploaded + manifest.sumOf { e -> if (req.have[e.path] == e.md5) 0L else e.size }
         status(percentOf(uploaded, total))
         transport.putChunkBatch(session, "states", stid, codeChunks) { ok ->
             if (!ok) {
@@ -537,6 +686,10 @@ object SyncWorker {
             return
         }
         val entry = manifest[index]
+        if (req.have[entry.path] == entry.md5) {
+            executor.execute { uploadNextFile(session, stid, manifest, files, index + 1, uploaded + entry.size, total, req) }
+            return
+        }
         val chunks = ArrayList<SyncChunk>()
         var offset = 0L
         var chunkIndex = 0
@@ -636,9 +789,8 @@ object SyncWorker {
     private fun onPatch(pid: String, payload: SyncPayload) {
         val session = sid ?: return
         if (!hostMode || !running) return
-        synchronized(this) {
-            if (!seenPatches.add(pid)) return
-        }
+        if (payload.at in 1..<startedAt) return
+        if (!seenPatches.add(pid)) return
         if (payload.fromUid == sessionProvider()?.uid) return
         executor.execute {
             try {
@@ -651,16 +803,30 @@ object SyncWorker {
 
     private fun applyPatch(session: String, pid: String, payload: SyncPayload) {
         val files = files() ?: return
-        saveProjectSerial(ProjectManager.getInstance().currentProject, CatroidApplication.getAppContext())
-        var role: String? = null
-        val gate = java.util.concurrent.CountDownLatch(1)
-        transport.memberRole(session, payload.fromUid) {
-            role = it
-            gate.countDown()
+        ProjectManager.getInstance().currentProject?.let { curProj ->
+            synchronized(curProj) {
+                saveProjectSerial(curProj, CatroidApplication.getAppContext())
+            }
         }
-        try {
-            gate.await(15, java.util.concurrent.TimeUnit.SECONDS)
-        } catch (e: Exception) {
+        var role: String? = roleCache[payload.fromUid]
+            ?.takeIf { nowProvider() - it.at < 60000L }?.role
+        if (role == null) {
+            val gate = java.util.concurrent.CountDownLatch(1)
+            var fetched: String? = null
+            transport.memberRole(session, payload.fromUid) {
+                fetched = it
+                gate.countDown()
+            }
+            try {
+                gate.await(15, java.util.concurrent.TimeUnit.SECONDS)
+            } catch (e: Exception) {
+            }
+            role = fetched
+            roleCache[payload.fromUid] = RoleRow(fetched, nowProvider())
+        }
+        if (role == null) {
+            seenPatches.remove(pid)
+            return
         }
         SyncFlows.hostApplyPatch(session, pid, payload, role, files, lastBroadcastXml ?: files.loadSnapshot()?.codeXml,
             transport, merger,
@@ -676,8 +842,9 @@ object SyncWorker {
                     pendingGitPush = true
                 }
             }
-            lastBroadcastXml = files.readCodeXml()
-            broadcast(session, result.summary, files.readCodeXml().orEmpty(), files.loadSnapshot()?.media ?: emptyList(), files)
+            val broadcastXml = files.readCodeXml().orEmpty()
+            lastBroadcastXml = broadcastXml
+            broadcast(session, result.summary, broadcastXml, files.loadSnapshot()?.media ?: emptyList(), files)
             offerReload(result.summary)
             var text = result.summary
             if (result.conflicts > 0) text += " (" + result.conflicts + " conflicts)"
@@ -734,11 +901,12 @@ object SyncWorker {
     }
 
     private fun materializeState(session: String, stid: String, payload: SyncPayload) {
-        if (dlStid != null) return
+        if (!dlRunning.compareAndSet(false, true)) return
         executor.execute {
             try {
                 startDownload(session, stid, payload)
             } catch (e: Exception) {
+                dlRunning.set(false)
                 Log.w(TAG, "materialize failed", e)
             }
         }
@@ -777,17 +945,43 @@ object SyncWorker {
                 }
             }
         } else {
-            val fresh = SyncFlows.materializeDir(root, CollabSession.projectName, existing) ?: return
+            val bound = boundProjectDir(session)
+            val fresh = if (bound != null && bound.isDirectory) bound else SyncFlows.materializeDir(root, CollabSession.projectName, existing) ?: run {
+                dlRunning.set(false)
+                return
+            }
             dir = fresh
-            progress = SyncStream.DownloadProgress(total)
-            progress.dirPath = dir.absolutePath
+            var alreadyHaveBytes = 0L
             for (entry in payload.media) {
+                val file = File(dir, entry.path)
                 if (entry.size == 0L) {
                     try {
-                        val file = File(dir, entry.path)
                         file.parentFile?.mkdirs()
-                        file.writeBytes(ByteArray(0))
-                        progress.verified[entry.path] = entry.md5
+                        if (!file.exists()) file.writeBytes(ByteArray(0))
+                    } catch (e: Exception) {
+                    }
+                } else if (file.isFile && file.length() == entry.size) {
+                    try {
+                        val localMd5 = computeMd5(file)
+                        if (localMd5 == entry.md5) alreadyHaveBytes += entry.size
+                    } catch (e: Exception) {
+                    }
+                }
+            }
+            val effectiveTotal = (total - alreadyHaveBytes).coerceAtLeast(0L)
+            progress = SyncStream.DownloadProgress(effectiveTotal)
+            progress.dirPath = dir.absolutePath
+            for (entry in payload.media) {
+                val file = File(dir, entry.path)
+                if (entry.size == 0L) {
+                    progress.verified[entry.path] = entry.md5
+                } else if (file.isFile && file.length() == entry.size) {
+                    try {
+                        val localMd5 = computeMd5(file)
+                        if (localMd5 == entry.md5) {
+                            progress.verified[entry.path] = entry.md5
+                            progress.receivedBytes += entry.size
+                        }
                     } catch (e: Exception) {
                     }
                 }
@@ -809,6 +1003,42 @@ object SyncWorker {
 
     private fun verifiedContains(progress: SyncStream.DownloadProgress, entry: ManifestEntry): Boolean {
         return progress.verified[entry.path] == entry.md5
+    }
+
+    private fun computeMd5(file: File): String {
+        val digest = java.security.MessageDigest.getInstance("MD5")
+        file.inputStream().buffered(65536).use { input ->
+            val buffer = ByteArray(65536)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private fun buildHaveMap(session: String): Map<String, String> {
+        return try {
+            val dir = boundProjectDir(session)
+                ?: ProjectManager.getInstance().currentProject?.directory
+                ?: return emptyMap()
+            val base = dir.canonicalPath
+            val syncFiles = dirFilesCache.getOrPut(base) { DirSyncFiles(dir, snapshotDir(session)) }
+            val result = LinkedHashMap<String, String>()
+            dir.walkTopDown().filter { it.isFile }.forEach { file ->
+                val rel = try {
+                    file.canonicalPath.removePrefix(base).trimStart('/', '\\').replace('\\', '/')
+                } catch (e: Exception) { return@forEach }
+                val segments = rel.split("/")
+                if (segments.any { it == "images" || it == "sounds" || it == "files" || it == "libs" }) {
+                    try { syncFiles.md5Of(rel)?.let { result[rel] = it } } catch (e: Exception) {}
+                }
+            }
+            result
+        } catch (e: Exception) {
+            emptyMap()
+        }
     }
 
     private fun fetchNextPage() {
@@ -945,7 +1175,9 @@ object SyncWorker {
                 fetchNextPage()
                 return
             }
-            val codeXml = SyncChunks.join(dlCodeParts)
+            val codeXml = SyncChunks.join(
+                dlCodeParts.sortedBy { it.index }.distinctBy { it.index }
+            )
             File(dir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)
                 .writeText(codeXml, Charsets.UTF_8)
             val sid = sid ?: return
@@ -953,18 +1185,19 @@ object SyncWorker {
             val manifest = SyncEngine.manifestOf(store)
             store.saveSnapshot(FileSnapshot(codeXml, manifest))
             store.saveLastState(stid)
+            saveBoundProjectDir(sid, dir)
             lastBroadcastXml = codeXml
             lastAppliedAt = payload.at
             try {
                 progressFile(stid)?.delete()
             } catch (e: Exception) {
             }
-            transport.deleteState(session, stid)
             dlStid = null
             dlPayload = null
             dlDir = null
             dlProgress = null
             dlCodeParts.clear()
+            dlRunning.set(false)
             pendingOpen = dir
             status(appString(R.string.collab_snapshot_received))
             try {
@@ -989,15 +1222,18 @@ object SyncWorker {
         dlDir = null
         dlProgress = null
         dlCodeParts.clear()
+        dlRunning.set(false)
         try {
             progressFile(stid)?.delete()
         } catch (e: Exception) {
         }
         status(appString(R.string.collab_snapshot_interrupted))
+        if (!running) return
         transport.requestSnapshot(session, SnapshotRequest(
             sessionProvider()?.uid.orEmpty(),
             sessionProvider()?.name.orEmpty(),
-            nowProvider()
+            nowProvider(),
+            buildHaveMap(session)
         )) {}
     }
 
@@ -1005,7 +1241,13 @@ object SyncWorker {
         val session = sid ?: return
         if (!running) return
         if (payload.fromUid == sessionProvider()?.uid) return
-        if (payload.at <= lastAppliedAt && !(payload.full && !localHasProject(CollabSession.projectName))) return
+        if (payload.at in 1..<startedAt && !payload.full) return
+        val curProj = ProjectManager.getInstance().currentProject
+        val sProject = CollabSession.projectName
+        val isMatch = isCurrentProjectMatching(session, sProject)
+        val hasBaseline = files()?.loadSnapshot() != null
+        val needsSnapshot = payload.full && (!isMatch || !hasBaseline)
+        if (payload.at <= lastAppliedAt && !needsSnapshot) return
         executor.execute {
             try {
                 applyState(session, stid, payload)
@@ -1016,15 +1258,25 @@ object SyncWorker {
     }
 
     private fun applyState(session: String, stid: String, payload: SyncPayload) {
-        if (payload.full && !localHasProject(CollabSession.projectName)) {
-            materializeState(session, stid, payload)
-            return
+        if (payload.full) {
+            val isMatch = isCurrentProjectMatching(session, CollabSession.projectName)
+            val hasBaseline = files()?.loadSnapshot() != null
+            if (!isMatch || !hasBaseline) {
+                materializeState(session, stid, payload)
+                return
+            }
         }
+        if (payload.at <= lastAppliedAt) return
         val files = files() ?: return
-        saveProjectSerial(ProjectManager.getInstance().currentProject, CatroidApplication.getAppContext())
+        ProjectManager.getInstance().currentProject?.let { curProj ->
+            synchronized(curProj) {
+                saveProjectSerial(curProj, CatroidApplication.getAppContext())
+            }
+        }
+        val localName = if (isCurrentProjectMatching(session, CollabSession.projectName)) CollabSession.projectName else projectName()
         SyncFlows.guestApplyState(stid, payload, files, merger,
             { collection, id, cb -> transport.fetchChunks(session, collection, id, cb) },
-            projectName(), CollabSession.projectName) { result ->
+            localName, CollabSession.projectName) { result ->
             if (!result.applied) return@guestApplyState
             lastBroadcastXml = files.readCodeXml()
             lastAppliedAt = payload.at
@@ -1036,14 +1288,14 @@ object SyncWorker {
     private fun offerReload(summary: String) {
         try {
             if (SyncEngine.shouldAutoApply(PresenceReporter.isInsideSprite())) {
-                pendingApply = summary
+                pendingApplyRef.compareAndSet(null, summary)
                 try {
                     onReloadRequested?.invoke(summary)
                 } catch (e: Exception) {
                     Log.w(TAG, "reload request failed", e)
                 }
             } else {
-                pendingApply = summary
+                pendingApplyRef.set(summary)
                 try {
                     notifier(CatroidApplication.getAppContext().getString(R.string.collab_sync_pending, summary))
                 } catch (e: Exception) {
@@ -1058,6 +1310,7 @@ object SyncWorker {
     fun isGitPending(): Boolean = pendingGitPush
 
     fun reloadProject(activity: Activity, summary: String) {
+        if (activity.isFinishing || activity.isDestroyed) return
         try {
             val dir = ProjectManager.getInstance().currentProject?.directory ?: return
             ProjectLoader(dir, activity).setListener(object : ProjectLoader.ProjectLoadListener {
@@ -1065,6 +1318,7 @@ object SyncWorker {
                     if (!success) return
                     try {
                         activity.runOnUiThread {
+                            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
                             ToastUtil.showSuccess(activity, activity.getString(R.string.collab_sync_applied, summary))
                             activity.recreate()
                         }
@@ -1080,7 +1334,18 @@ object SyncWorker {
 }
 
 class ProjectMergerAdapter : SyncMerger {
+    companion object {
+        private const val MAX_XML_CHARS = 25 * 1024 * 1024
+    }
+
     override fun mergeXml(baseXml: String?, localXml: String, remoteXml: String): Pair<String, Int> {
+        if ((baseXml?.length ?: 0) > MAX_XML_CHARS ||
+            localXml.length > MAX_XML_CHARS ||
+            remoteXml.length > MAX_XML_CHARS
+        ) {
+            Log.e("SyncMerger", "XML payload exceeds safe limit ($MAX_XML_CHARS chars), keeping localXml")
+            return Pair(localXml, 0)
+        }
         return try {
             val base = if (baseXml == null) {
                 XStreamUtilGit.fromXML(localXml)
@@ -1094,7 +1359,8 @@ class ProjectMergerAdapter : SyncMerger {
             )
             Pair(XStreamUtilGit.toXML(result.mergedProject), result.conflicts.size)
         } catch (e: Exception) {
-            Pair(remoteXml, 0)
+            Log.e("SyncMerger", "XML merge failed — keeping localXml to preserve user's work", e)
+            Pair(localXml, 0)
         }
     }
 }

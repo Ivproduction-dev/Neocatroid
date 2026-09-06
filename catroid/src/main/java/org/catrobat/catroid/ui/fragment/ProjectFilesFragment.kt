@@ -168,6 +168,7 @@ class ProjectFilesFragment : Fragment() {
                 try {
                     if (file.createNewFile()) {
                         updateFilesList(filesDir)
+                        org.catrobat.catroid.collab.SyncWorker.markDirty()
                         Toast.makeText(requireContext(), getRandomMessage(), Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(requireContext(), R.string.project_files_new_error_exists, Toast.LENGTH_SHORT).show()
@@ -252,12 +253,20 @@ class ProjectFilesFragment : Fragment() {
     }
 
     private fun deleteFile(fileName: String) {
+        val locker = org.catrobat.catroid.collab.ScriptLockManager.projectFileLockerOf(fileName)
+        if (locker != null) {
+            org.catrobat.catroid.utils.ToastUtil.showError(
+                requireContext(),
+                getString(R.string.collab_locked_by, locker.name)
+            )
+            return
+        }
         project?.let {
             val dir = File(it.directory, "files")
             val file = File(dir.absolutePath, fileName)
             if (file.exists() && file.delete()) {
-
                 updateFilesList(dir)
+                org.catrobat.catroid.collab.SyncWorker.markDirty()
                 Toast.makeText(requireContext(), "Файл удален", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(requireContext(), "Ошибка при удалении файла", Toast.LENGTH_SHORT)
@@ -292,8 +301,28 @@ class ProjectFilesFragment : Fragment() {
         Log.d("ProjectFile", "Files: $filesList")
     }
 
+    override fun onResume() {
+        super.onResume()
+        projectManager.currentProject = project
+        hideBottomBar(requireActivity())
+        project?.let { proj ->
+            updateFilesList(File(proj.directory, "files").absoluteFile)
+        }
+        val sid = org.catrobat.catroid.collab.CollabSession.sessionId
+        if (org.catrobat.catroid.collab.CollabSession.isActive && sid != null) {
+            org.catrobat.catroid.collab.ScriptLockManager.start(sid)
+            org.catrobat.catroid.collab.ScriptLockManager.addObserver("project_files_locks") {
+                activity?.runOnUiThread { filesAdapter.notifyDataSetChanged() }
+            }
+            org.catrobat.catroid.collab.PresenceRenderer.addObserver("project_files_presence") {
+                activity?.runOnUiThread { filesAdapter.notifyDataSetChanged() }
+            }
+        }
+    }
 
     override fun onPause() {
+        org.catrobat.catroid.collab.ScriptLockManager.removeObserver("project_files_locks")
+        org.catrobat.catroid.collab.PresenceRenderer.removeObserver("project_files_presence")
         saveProject()
         super.onPause()
     }
@@ -340,6 +369,7 @@ class ProjectFilesFragment : Fragment() {
             }
 
             updateFilesList(filesDir)
+            org.catrobat.catroid.collab.SyncWorker.markDirty()
 
             Toast.makeText(requireContext(), getRandomMessage(), Toast.LENGTH_SHORT).show()
             Log.d("ProjectFile", "File saved: ${destinationFile.absolutePath}")
@@ -360,13 +390,6 @@ class ProjectFilesFragment : Fragment() {
 
         val chooser = Intent.createChooser(intent, "Выберите файл")
         startActivityForResult(chooser, ADD_FILE_REQUEST)
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        projectManager.currentProject = project
-        hideBottomBar(requireActivity())
     }
 
     private fun handleText() {

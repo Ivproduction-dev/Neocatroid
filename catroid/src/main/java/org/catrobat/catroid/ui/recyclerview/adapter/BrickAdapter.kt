@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Catroid: An on-device visual programming system for Android devices
  * Copyright (C) 2010-2022 The Catrobat Team
  * (<http://developer.catrobat.org/credits>)
@@ -273,13 +273,27 @@ class BrickAdapter(val sprite: Sprite) :
             itemView.alpha = baseAlpha
         }
 
-        if (org.catrobat.catroid.collab.CollabGuards.isLockedByOther(item)) {
-            itemView.alpha = baseAlpha * 0.72f
-        }
-
         var brickViewContainer = itemView.getChildAt(1)
         if (item is UserDefinedReceiverBrick) {
             brickViewContainer = (itemView.getChildAt(1) as ViewGroup).getChildAt(0)
+        }
+
+        val scriptId = org.catrobat.catroid.collab.CollabGuards.scriptIdOf(item)
+        val locker = if (scriptId.isNotEmpty()) org.catrobat.catroid.collab.ScriptLockManager.lockerOf(scriptId) else null
+        val density = parent.context.resources.displayMetrics.density
+
+        if (locker != null) {
+            itemView.alpha = baseAlpha * 0.72f
+            val color = org.catrobat.catroid.collab.PresenceColors.colorInt(locker.colorHue)
+            brickViewContainer.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(color), density)
+        } else if (scriptId.isNotEmpty() && org.catrobat.catroid.collab.ScriptLockManager.isHeldByMe(scriptId)) {
+            itemView.alpha = baseAlpha
+            val myColor = org.catrobat.catroid.collab.PresenceColors.colorInt(org.catrobat.catroid.collab.PresenceRenderer.myHue)
+            brickViewContainer.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(myColor), density)
+        } else {
+            if (brickViewContainer.foreground is org.catrobat.catroid.collab.PresenceBorderDrawable) {
+                brickViewContainer.foreground = null
+            }
         }
 
         val background = brickViewContainer.background

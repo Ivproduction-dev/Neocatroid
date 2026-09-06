@@ -12,13 +12,15 @@ data class ScriptLock(
     val uid: String = "",
     val name: String = "",
     val colorHue: Float = 0f,
-    val at: Long = 0L
+    val at: Long = 0L,
+    val token: String = ""
 ) {
     fun toMap(): Map<String, Any> = mapOf(
         "uid" to uid,
         "name" to name,
         "colorHue" to colorHue.toDouble(),
-        "at" to at
+        "at" to at,
+        "token" to token
     )
 
     companion object {
@@ -34,7 +36,8 @@ data class ScriptLock(
                 uid = map["uid"] as? String ?: "",
                 name = map["name"] as? String ?: "",
                 colorHue = (map["colorHue"] as? Number)?.toFloat() ?: 0f,
-                at = at
+                at = at,
+                token = map["token"] as? String ?: ""
             )
         }
     }
@@ -44,8 +47,8 @@ object ScriptLockPolicy {
     const val LOCK_TTL_MS = 30000L
 
     fun isFresh(lock: ScriptLock?, now: Long): Boolean {
-        if (lock == null || lock.uid.isEmpty()) return false
-        return now - lock.at in 0..LOCK_TTL_MS
+        if (lock == null || lock.uid.isEmpty() || lock.at <= 0L) return false
+        return (now - lock.at) in -LOCK_TTL_MS..LOCK_TTL_MS
     }
 
     fun canClaim(existing: ScriptLock?, myUid: String, now: Long): Boolean {
@@ -64,6 +67,7 @@ object ScriptLockPolicy {
 interface ScriptLockBackend {
     fun claim(sessionId: String, scriptId: String, lock: ScriptLock, now: Long, callback: (Boolean) -> Unit)
     fun release(sessionId: String, scriptId: String, myUid: String, callback: (Boolean) -> Unit = {})
+    fun releaseIfToken(sessionId: String, scriptId: String, myUid: String, token: String, callback: (Boolean) -> Unit = {})
     fun listen(sessionId: String, callback: (Map<String, ScriptLock>) -> Unit): Any?
     fun unlisten(handle: Any?)
 }
@@ -109,6 +113,29 @@ class FirestoreScriptLockBackend : ScriptLockBackend {
                 .addOnFailureListener { callback(false) }
         } catch (e: Exception) {
             Log.w(tag, "release failed", e)
+            callback(false)
+        }
+    }
+
+    override fun releaseIfToken(sessionId: String, scriptId: String, myUid: String, token: String, callback: (Boolean) -> Unit) {
+        try {
+            val collection = locks(sessionId) ?: run {
+                callback(false)
+                return
+            }
+            val doc = collection.document(scriptId)
+            collection.firestore.runTransaction { tx ->
+                val data = tx.get(doc).data
+                val docUid = data?.get("uid") as? String
+                val docToken = data?.get("token") as? String ?: ""
+                if (docUid == myUid && (docToken.isEmpty() || docToken == token)) {
+                    tx.delete(doc)
+                }
+                null
+            }.addOnSuccessListener { callback(true) }
+                .addOnFailureListener { callback(false) }
+        } catch (e: Exception) {
+            Log.w(tag, "releaseIfToken failed", e)
             callback(false)
         }
     }
@@ -170,6 +197,16 @@ class FakeScriptLockBackend(var now: Long = 0L) : ScriptLockBackend {
     override fun release(sessionId: String, scriptId: String, myUid: String, callback: (Boolean) -> Unit) {
         releases++
         if (docs[scriptId]?.uid == myUid) {
+            docs.remove(scriptId)
+            emit()
+        }
+        callback(true)
+    }
+
+    override fun releaseIfToken(sessionId: String, scriptId: String, myUid: String, token: String, callback: (Boolean) -> Unit) {
+        releases++
+        val current = docs[scriptId]
+        if (current?.uid == myUid && (current.token.isEmpty() || current.token == token)) {
             docs.remove(scriptId)
             emit()
         }
@@ -266,6 +303,8 @@ object ScriptLockManager {
     private var sessionId: String? = null
     private var listenHandle: Any? = null
     private val held = LinkedHashSet<String>()
+    private val heldTokens = LinkedHashMap<String, String>()
+    private val pendingRelease = LinkedHashMap<String, String>()
     private var known: Map<String, ScriptLock> = emptyMap()
     private val observers = LinkedHashMap<String, () -> Unit>()
 
@@ -288,16 +327,20 @@ object ScriptLockManager {
         }
     }
 
-    private fun ownLock(identity: LockIdentity): ScriptLock {
+    private fun ownLock(identity: LockIdentity, token: String): ScriptLock {
         return ScriptLock(
             uid = identity.uid,
             name = identity.name,
             colorHue = identity.hue,
-            at = nowProvider()
+            at = nowProvider(),
+            token = token
         )
     }
 
     fun start(sid: String) {
+        if (sessionId == sid && listenHandle != null) {
+            return
+        }
         stop()
         sessionId = sid
         try {
@@ -312,10 +355,21 @@ object ScriptLockManager {
             val currentSid = sessionId
             val identity = sessionProvider()
             if (currentSid != null && identity != null) {
-                val mine: List<String>
-                synchronized(lock) { mine = held.toList() }
-                for (scriptId in mine) {
-                    backend.claim(currentSid, scriptId, ownLock(identity), nowProvider(), {})
+                val toRelease: Map<String, String>
+                synchronized(lock) { toRelease = pendingRelease.toMap() }
+                for ((scriptId, token) in toRelease) {
+                    backend.releaseIfToken(currentSid, scriptId, identity.uid, token) { ok ->
+                        if (ok) synchronized(lock) { pendingRelease.remove(scriptId) }
+                    }
+                }
+                val mine: Map<String, String>
+                synchronized(lock) {
+                    mine = held.associateWith { id ->
+                        heldTokens.getOrPut(id) { java.util.UUID.randomUUID().toString() }
+                    }
+                }
+                for ((scriptId, token) in mine) {
+                    backend.claim(currentSid, scriptId, ownLock(identity, token), nowProvider(), {})
                 }
             }
         }
@@ -330,6 +384,10 @@ object ScriptLockManager {
         }
         listenHandle = null
         sessionId = null
+        synchronized(lock) {
+            pendingRelease.clear()
+            heldTokens.clear()
+        }
         heartbeatDriver.stop()
     }
 
@@ -340,10 +398,19 @@ object ScriptLockManager {
         if (scriptId.isEmpty()) return true
         val existing = synchronized(lock) { known[scriptId] }
         if (!ScriptLockPolicy.canClaim(existing, identity.uid, nowProvider())) return false
-        synchronized(lock) { held.add(scriptId) }
-        backend.claim(sid, scriptId, ownLock(identity), nowProvider()) { ok ->
+        val token = java.util.UUID.randomUUID().toString()
+        synchronized(lock) {
+            held.add(scriptId)
+            heldTokens[scriptId] = token
+            pendingRelease.remove(scriptId)
+        }
+        backend.claim(sid, scriptId, ownLock(identity, token), nowProvider()) { ok ->
             if (!ok) {
-                synchronized(lock) { held.remove(scriptId) }
+                Log.w("ScriptLockManager", "Optimistic lock rejected by server for $scriptId")
+                synchronized(lock) {
+                    held.remove(scriptId)
+                    heldTokens.remove(scriptId)
+                }
                 notifyLocked()
             }
         }
@@ -353,22 +420,31 @@ object ScriptLockManager {
     fun releaseMine(scriptId: String) {
         val sid = sessionId
         val identity = sessionProvider()
-        synchronized(lock) { held.remove(scriptId) }
+        val token: String
+        synchronized(lock) {
+            held.remove(scriptId)
+            token = heldTokens.remove(scriptId) ?: pendingRelease[scriptId] ?: ""
+            if (sid != null && identity != null) {
+                pendingRelease[scriptId] = token
+            }
+        }
         if (sid == null || identity == null) return
-        backend.release(sid, scriptId, identity.uid)
+        backend.releaseIfToken(sid, scriptId, identity.uid, token) { ok ->
+            if (ok) synchronized(lock) { pendingRelease.remove(scriptId) }
+        }
     }
 
     fun releaseAllMine() {
-        val mine: List<String>
+        val mine: Map<String, String>
         synchronized(lock) {
-            mine = held.toList()
+            mine = held.associateWith { id -> heldTokens.remove(id) ?: "" }
             held.clear()
         }
         val sid = sessionId
         val identity = sessionProvider()
         if (sid == null || identity == null) return
-        for (scriptId in mine) {
-            backend.release(sid, scriptId, identity.uid)
+        for ((scriptId, token) in mine) {
+            backend.releaseIfToken(sid, scriptId, identity.uid, token)
         }
     }
 
@@ -385,4 +461,73 @@ object ScriptLockManager {
     }
 
     fun isHeldByMe(scriptId: String): Boolean = synchronized(lock) { held.contains(scriptId) }
+
+    fun lookLockKey(spriteId: String, lookName: String): String {
+        val safeSprite = spriteId.replace("/", "_")
+        val safeLook = java.net.URLEncoder.encode(lookName, "UTF-8").replace("/", "_")
+        return "look_${safeSprite}_${safeLook}"
+    }
+
+    fun claimLook(spriteId: String, lookName: String): Boolean {
+        if (spriteId.isEmpty() || lookName.isEmpty()) return true
+        return claimMine(lookLockKey(spriteId, lookName))
+    }
+
+    fun releaseLook(spriteId: String, lookName: String) {
+        if (spriteId.isEmpty() || lookName.isEmpty()) return
+        releaseMine(lookLockKey(spriteId, lookName))
+    }
+
+    fun lookLockerOf(spriteId: String, lookName: String): ScriptLock? {
+        if (spriteId.isEmpty() || lookName.isEmpty()) return null
+        val direct = lockerOf(lookLockKey(spriteId, lookName))
+        if (direct != null) return direct
+        val myUid = CollabSession.myUid
+        val match = PresenceRenderer.snapshot().firstOrNull { p ->
+            p.spriteId == spriteId && (p.detail == "paint:$lookName" || p.detail == "hitbox:$lookName") && (myUid == null || p.uid != myUid)
+        } ?: return null
+        return ScriptLock(match.uid, match.name, match.colorHue, nowProvider())
+    }
+
+    fun canEditLook(spriteId: String, lookName: String): Boolean {
+        return lookLockerOf(spriteId, lookName) == null
+    }
+
+    fun isLookHeldByMe(spriteId: String, lookName: String): Boolean {
+        return isHeldByMe(lookLockKey(spriteId, lookName))
+    }
+
+    fun projectFileLockKey(fileName: String): String {
+        val safeName = java.net.URLEncoder.encode(fileName, "UTF-8").replace("/", "_")
+        return "pfile_${safeName}"
+    }
+
+    fun claimProjectFile(fileName: String): Boolean {
+        if (fileName.isEmpty()) return true
+        return claimMine(projectFileLockKey(fileName))
+    }
+
+    fun releaseProjectFile(fileName: String) {
+        if (fileName.isEmpty()) return
+        releaseMine(projectFileLockKey(fileName))
+    }
+
+    fun projectFileLockerOf(fileName: String): ScriptLock? {
+        if (fileName.isEmpty()) return null
+        val direct = lockerOf(projectFileLockKey(fileName))
+        if (direct != null) return direct
+        val myUid = CollabSession.myUid
+        val match = PresenceRenderer.snapshot().firstOrNull { p ->
+            p.detail == "file:$fileName" && (myUid == null || p.uid != myUid)
+        } ?: return null
+        return ScriptLock(match.uid, match.name, match.colorHue, nowProvider())
+    }
+
+    fun canEditProjectFile(fileName: String): Boolean {
+        return projectFileLockerOf(fileName) == null
+    }
+
+    fun isProjectFileHeldByMe(fileName: String): Boolean {
+        return isHeldByMe(projectFileLockKey(fileName))
+    }
 }

@@ -60,7 +60,7 @@ class AuthCallbackActivity : AppCompatActivity() {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@withContext null
                 val jsonResponse = response.body?.string()
-                return@withContext jsonResponse?.let { JSONObject(it).optString("access_token", null) }
+                return@withContext jsonResponse?.let { JSONObject(it).optString("access_token", null as String?) }
             }
         } catch (e: Exception) {
             e.printStackTrace()

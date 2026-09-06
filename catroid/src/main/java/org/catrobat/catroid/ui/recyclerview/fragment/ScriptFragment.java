@@ -463,6 +463,7 @@ public class ScriptFragment extends ListFragment implements
 	public void onDestroyView() {
 		super.onDestroyView();
 		stopAiAnalysisTimer();
+		org.catrobat.catroid.collab.ScriptLockManager.INSTANCE.stop();
 		if (scriptFinder.isOpen() && activity != null) {
 			activity.findViewById(R.id.toolbar).setVisibility(View.VISIBLE);
 		}
@@ -593,8 +594,8 @@ public class ScriptFragment extends ListFragment implements
 
 		AnalysisManager.INSTANCE.clearResults();
 		stopAiAnalysisTimer();
+		org.catrobat.catroid.collab.ScriptLockManager.INSTANCE.releaseAllMine();
 		org.catrobat.catroid.collab.ScriptLockManager.INSTANCE.removeObserver(LOCK_OBSERVER_KEY);
-		org.catrobat.catroid.collab.ScriptLockManager.INSTANCE.stop();
 	}
 
 	private void startAiAnalysisTimer() {

@@ -69,16 +69,40 @@ class FilesAdapter(
             }
         }
 
+        val density = holder.itemView.context.resources.displayMetrics.density
+        val locker = org.catrobat.catroid.collab.ScriptLockManager.projectFileLockerOf(fileName)
 
-        holder.deleteButton.setOnClickListener {
-            onDelete(fileName)
+        if (locker != null) {
+            holder.itemView.alpha = 0.72f
+            val color = org.catrobat.catroid.collab.PresenceColors.colorInt(locker.colorHue)
+            holder.itemView.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(color), density)
+        } else if (org.catrobat.catroid.collab.ScriptLockManager.isProjectFileHeldByMe(fileName)) {
+            holder.itemView.alpha = 1.0f
+            val myColor = org.catrobat.catroid.collab.PresenceColors.colorInt(org.catrobat.catroid.collab.PresenceRenderer.myHue)
+            holder.itemView.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(myColor), density)
+        } else {
+            holder.itemView.alpha = 1.0f
+            if (holder.itemView.foreground is org.catrobat.catroid.collab.PresenceBorderDrawable) {
+                holder.itemView.foreground = null
+            }
         }
 
+        holder.deleteButton.setOnClickListener {
+            val fileLocker = org.catrobat.catroid.collab.ScriptLockManager.projectFileLockerOf(fileName)
+            if (fileLocker != null) {
+                val context = holder.itemView.context
+                org.catrobat.catroid.utils.ToastUtil.showError(
+                    context,
+                    context.getString(R.string.collab_locked_by, fileLocker.name)
+                )
+                return@setOnClickListener
+            }
+            onDelete(fileName)
+        }
 
         holder.itemView.setOnClickListener {
             onOpen(fileName)
         }
-
 
         holder.itemView.setOnLongClickListener {
             onCopy(fileName)

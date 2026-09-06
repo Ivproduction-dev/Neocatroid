@@ -25,12 +25,19 @@ object IntegrityValidator {
     }
 
     fun validate(encryptedFile: File, key: ByteArray): Boolean {
+        return validate(encryptedFile, key, null)
+    }
+
+    fun validate(encryptedFile: File, key: ByteArray, tmpDir: File?): Boolean {
         return try {
             val storedHash = ProjectEncryptorV3.readIntegrityHash(encryptedFile)
 
-            val tempFile = File.createTempFile("v3_verify_", ".tmp")
-            tempFile.setReadable(true, true)
-            tempFile.setWritable(true, true)
+            val tempFile = if (tmpDir != null) {
+                tmpDir.mkdirs()
+                File.createTempFile("v3_verify_", ".tmp", tmpDir)
+            } else {
+                File.createTempFile("v3_verify_", ".tmp")
+            }
             try {
                 if (!ProjectEncryptorV3.decryptAll(encryptedFile, key, tempFile)) {
                     return false

@@ -83,16 +83,28 @@ data class SyncPayload(
     }
 }
 
-data class SnapshotRequest(val uid: String = "", val name: String = "", val at: Long = 0L) {
-    fun toMap(): Map<String, Any> = mapOf("uid" to uid, "name" to name, "at" to at)
+data class SnapshotRequest(val uid: String = "", val name: String = "", val at: Long = 0L,
+    val have: Map<String, String> = emptyMap()
+) {
+    fun toMap(): Map<String, Any> = mapOf(
+        "uid" to uid, "name" to name, "at" to at,
+        "have" to have.entries.joinToString("\n") { it.key + "|" + it.value }
+    )
 
     companion object {
         fun fromMap(map: Map<String, Any?>?): SnapshotRequest? {
             if (map == null) return null
+            val haveRaw = map["have"] as? String ?: ""
+            val have = LinkedHashMap<String, String>()
+            for (line in haveRaw.lines()) {
+                val sep = line.indexOf('|')
+                if (sep > 0) have[line.substring(0, sep)] = line.substring(sep + 1)
+            }
             return SnapshotRequest(
                 uid = map["uid"] as? String ?: "",
                 name = map["name"] as? String ?: "",
-                at = (map["at"] as? Number)?.toLong() ?: 0L
+                at = (map["at"] as? Number)?.toLong() ?: 0L,
+                have = have
             )
         }
     }

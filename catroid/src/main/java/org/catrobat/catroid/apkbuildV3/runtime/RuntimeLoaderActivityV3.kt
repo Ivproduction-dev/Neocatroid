@@ -53,22 +53,31 @@ class RuntimeLoaderActivityV3 : Activity() {
 
         Thread {
             try {
+                var detail: String? = null
                 val success = when (templateType) {
-                    TemplateType.FULL -> loadFullTemplate()
-                    TemplateType.LIGHT -> loadLightTemplate()
+                    TemplateType.FULL -> loadFullTemplate().also {
+                        if (!it) detail = fullLastError
+                    }
+                    TemplateType.LIGHT -> loadLightTemplate().also {
+                        if (!it) detail = lightLastError
+                    }
                 }
 
                 handler.post {
                     if (success) {
                         startProject()
                     } else {
-                        statusText.text = getString(R.string.v3_load_failed)
+                        statusText.text = if (detail != null) {
+                            "${getString(R.string.v3_load_failed)}: $detail"
+                        } else {
+                            getString(R.string.v3_load_failed)
+                        }
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Loading failed", e)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Loading failed", t)
                 handler.post {
-                    statusText.text = "${getString(R.string.v3_load_failed)}: ${e.message}"
+                    statusText.text = "${getString(R.string.v3_load_failed)}: ${t.javaClass.simpleName}: ${t.message}"
                 }
             }
         }.start()
@@ -83,6 +92,12 @@ class RuntimeLoaderActivityV3 : Activity() {
             return TemplateType.LIGHT
         }
     }
+
+    @Volatile
+    private var fullLastError: String? = null
+
+    @Volatile
+    private var lightLastError: String? = null
 
     private fun loadFullTemplate(): Boolean {
         val cacheDir = File(cacheDir, "v3_project_full").apply {
@@ -103,6 +118,8 @@ class RuntimeLoaderActivityV3 : Activity() {
 
         if (success) {
             projectPath = File(cacheDir, "project_extracted").absolutePath
+        } else {
+            fullLastError = strategy.lastError
         }
         return success
     }
@@ -126,6 +143,8 @@ class RuntimeLoaderActivityV3 : Activity() {
 
         if (success) {
             projectPath = File(cacheDir, "project_light").absolutePath
+        } else {
+            lightLastError = strategy.lastError
         }
         return success
     }

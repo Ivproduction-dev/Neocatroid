@@ -6768,9 +6768,15 @@ Catrobat — это визуальный язык программировани
     <string name="collab_git_init">Создать репо</string>
     <string name="collab_git_no_token">не задан</string>
     <string name="collab_git_ready">Репо готово</string>
+    <string name="collab_git_get_pat">Получить PAT на GitHub</string>
+    <string name="collab_git_login_oauth">Войти через GitHub</string>
+    <string name="collab_git_clear">Удалить токен</string>
+    <string name="collab_look_locked_by">Образ редактирует %1$s</string>
     <string name="collab_snapshot_waiting">Жду проект от ведущего…</string>
     <string name="collab_snapshot_too_big">Проект слишком большой, перекинь файлом</string>
     <string name="collab_snapshot_ready">Проект отправлен</string>
     <string name="collab_snapshot_interrupted">Загрузка прервалась, продолжу</string>
     <string name="collab_snapshot_received">Проект получен, открываю…</string>
+    <string name="collab_select_project">Выберите проект для совместной работы</string>
+    <string name="collab_active_project">Проект</string>
 </resources>

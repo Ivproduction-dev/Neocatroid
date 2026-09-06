@@ -91,6 +91,29 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
         org.catrobat.catroid.ui.BottomBar.showAddButton(activity)
         org.catrobat.catroid.ui.BottomBar.showPlayButton(activity)
         org.catrobat.catroid.collab.PresenceReporter.reportTabFresh(org.catrobat.catroid.collab.CollabTabs.LOOKS)
+
+        val sid = org.catrobat.catroid.collab.CollabSession.sessionId
+        if (org.catrobat.catroid.collab.CollabSession.isActive && sid != null) {
+            org.catrobat.catroid.collab.ScriptLockManager.start(sid)
+            org.catrobat.catroid.collab.ScriptLockManager.addObserver("look_list_locks") {
+                activity?.runOnUiThread { adapter?.notifyDataSetChanged() }
+            }
+            org.catrobat.catroid.collab.PresenceRenderer.addObserver("look_list_presence") {
+                activity?.runOnUiThread { adapter?.notifyDataSetChanged() }
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        org.catrobat.catroid.collab.ScriptLockManager.removeObserver("look_list_locks")
+        org.catrobat.catroid.collab.PresenceRenderer.removeObserver("look_list_presence")
+        val spriteId = projectManager.currentSprite?.name.orEmpty()
+        val currentLookName = currentItem?.name.orEmpty()
+        if (spriteId.isNotEmpty() && currentLookName.isNotEmpty()) {
+            org.catrobat.catroid.collab.ScriptLockManager.releaseLook(spriteId, currentLookName)
+        }
+        org.catrobat.catroid.collab.PresenceReporter.clearDetail()
     }
 
     override fun packItems(selectedItems: List<LookData?>) {
@@ -179,6 +202,18 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
             ToastUtil.showError(requireContext(), R.string.protected_project_cannot_edit)
             return
         }
+        val spriteId = projectManager.currentSprite?.name.orEmpty()
+        if (spriteId.isNotEmpty()) {
+            for (item in selectedItems) {
+                if (item != null) {
+                    val locker = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, item.name)
+                    if (locker != null) {
+                        ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, locker.name))
+                        return
+                    }
+                }
+            }
+        }
         setShowProgressBar(true)
         var deletedItemCount = 0
         val deletedLooks = selectedItems.filterNotNull().toMutableSet()
@@ -216,6 +251,17 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        val spriteId = projectManager.currentSprite?.name.orEmpty()
+        val currentLookName = currentItem?.name.orEmpty()
+        if (spriteId.isNotEmpty() && currentLookName.isNotEmpty()) {
+            org.catrobat.catroid.collab.ScriptLockManager.releaseLook(spriteId, currentLookName)
+        }
+        val hitboxName = hitboxUndoLook?.name.orEmpty()
+        if (spriteId.isNotEmpty() && hitboxName.isNotEmpty()) {
+            org.catrobat.catroid.collab.ScriptLockManager.releaseLook(spriteId, hitboxName)
+        }
+        org.catrobat.catroid.collab.PresenceReporter.clearDetail()
+
         if (requestCode == SpriteActivity.EDIT_LOOK && resultCode == Activity.RESULT_OK) {
             val activity: Activity = requireActivity()
             if (activity is SpriteActivity) {
@@ -283,6 +329,21 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
             return
         }
 
+        val spriteId = projectManager.currentSprite?.name.orEmpty()
+        val lookName = item?.name.orEmpty()
+        if (spriteId.isNotEmpty() && lookName.isNotEmpty()) {
+            val locker = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, lookName)
+            if (locker != null) {
+                ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, locker.name))
+                return
+            }
+            if (!org.catrobat.catroid.collab.ScriptLockManager.claimLook(spriteId, lookName)) {
+                val l = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, lookName)
+                ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, l?.name.orEmpty()))
+                return
+            }
+        }
+
         currentItem = item
         item?.invalidateThumbnailBitmap()
         item?.clearCollisionInformation()
@@ -328,7 +389,17 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
             when (menuItem.itemId) {
                 R.id.backpack -> packItems(itemList)
                 R.id.copy -> copyItems(itemList)
-                R.id.rename -> showRenameDialog(item)
+                R.id.rename -> {
+                    val spriteId = projectManager.currentSprite?.name.orEmpty()
+                    if (item != null && spriteId.isNotEmpty()) {
+                        val locker = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, item.name)
+                        if (locker != null) {
+                            ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, locker.name))
+                            return@setOnMenuItemClickListener true
+                        }
+                    }
+                    showRenameDialog(item)
+                }
                 R.id.delete -> showDeleteAlert(itemList)
                 HITBOX_EDITOR_MENU_ID -> launchHitboxEditor(item)
                 else -> {
@@ -345,6 +416,20 @@ class LookListFragment : RecyclerViewFragment<LookData?>() {
         val sprite = projectManager.currentSprite ?: return
         val lookIndex = sprite.lookList.indexOf(item)
         if (lookIndex < 0) return
+        val spriteId = sprite.name.orEmpty()
+        val lookName = item.name.orEmpty()
+        if (spriteId.isNotEmpty() && lookName.isNotEmpty()) {
+            val locker = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, lookName)
+            if (locker != null) {
+                ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, locker.name))
+                return
+            }
+            if (!org.catrobat.catroid.collab.ScriptLockManager.claimLook(spriteId, lookName)) {
+                val l = org.catrobat.catroid.collab.ScriptLockManager.lookLockerOf(spriteId, lookName)
+                ToastUtil.showError(requireContext(), getString(R.string.collab_look_locked_by, l?.name.orEmpty()))
+                return
+            }
+        }
         hitboxUndoLook = item
         hitboxUndoSnapshot = item.hitboxes.map { it.copy() }
         hitboxUndoMode = item.hitboxMode
