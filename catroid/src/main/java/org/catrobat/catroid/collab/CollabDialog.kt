@@ -29,6 +29,9 @@ class CollabDialog(
     private var members: Map<String, CollabMember> = emptyMap()
     private var requests: Map<String, CollabRequest> = emptyMap()
     private var meta: CollabMeta? = null
+    private var lastCode: String = ""
+    private var lastSyncStatus: String = ""
+    private var syncStatusView: TextView? = null
 
     fun show() {
         CollabSession.initOnce(activity.applicationContext)
@@ -36,9 +39,17 @@ class CollabDialog(
         dialog?.show()
         attachCallbacks()
         if (!CollabSession.isActive) {
-            CollabSession.restoreSession {
-                activity.runOnUiThread { refresh() }
+            CollabSession.restoreSession { ok ->
+                activity.runOnUiThread {
+                    if (ok) {
+                        val sid = CollabSession.sessionId
+                        if (sid != null) SyncWorker.start(sid, CollabSession.isHost)
+                    }
+                    refresh()
+                }
             }
+        } else if (!CollabSession.isHost) {
+            SyncWorker.ensureProject()
         }
         refresh()
     }
@@ -79,6 +90,7 @@ class CollabDialog(
             CollabSession.onRequestsChanged = null
             CollabSession.onMetaChanged = null
             CollabSession.onAccessRevoked = null
+            SyncWorker.onStatus = null
             PresenceRenderer.removeObserver(OBSERVER_KEY)
         }
     }
@@ -98,12 +110,22 @@ class CollabDialog(
         }
         CollabSession.onMetaChanged = { meta ->
             activity.runOnUiThread {
+                val closedChanged = this.meta?.closed != meta.closed
                 this.meta = meta
-                refreshLists()
+                if (closedChanged) refresh() else refreshLists()
             }
         }
         CollabSession.onAccessRevoked = {
-            activity.runOnUiThread { refresh() }
+            activity.runOnUiThread {
+                SyncWorker.stop()
+                refresh()
+            }
+        }
+        SyncWorker.onStatus = { text ->
+            activity.runOnUiThread {
+                lastSyncStatus = text
+                syncStatusView?.text = text
+            }
         }
         PresenceRenderer.addObserver(OBSERVER_KEY) {
             activity.runOnUiThread { refreshLists() }
@@ -144,6 +166,7 @@ class CollabDialog(
         }
         val sessionInput = EditText(activity).apply {
             hint = activity.getString(R.string.collab_session_hint)
+            setText(lastCode)
             inputType = InputType.TYPE_CLASS_TEXT
             container.addView(this)
         }
@@ -220,11 +243,112 @@ class CollabDialog(
         row.addView(Button(activity).apply {
             text = activity.getString(R.string.collab_leave)
             setOnClickListener {
+                SyncWorker.stop()
                 CollabSession.leave()
                 shownCode = null
                 refresh()
             }
         })
+        if (CollabSession.isHost) {
+            buildGitSection(container)
+        }
+        syncStatusView = TextView(activity).apply {
+            text = lastSyncStatus
+            container.addView(this)
+        }
+    }
+
+    private fun buildGitSection(container: LinearLayout) {
+        val hasToken = try {
+            !org.catrobat.catroid.utils.git.TokenManager.getToken(activity).isNullOrEmpty()
+        } catch (e: Exception) {
+            false
+        }
+        val tree = SyncWorker.workTreeDir()
+        val repoReady = tree != null && try {
+            java.io.File(tree, ".git").isDirectory
+        } catch (e: Exception) {
+            false
+        }
+        container.addView(TextView(activity).apply {
+            text = activity.getString(R.string.collab_git_token_hint) + ": " +
+                if (hasToken) "OK" else activity.getString(R.string.collab_git_no_token)
+        })
+        val tokenRow = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            container.addView(this)
+        }
+        val tokenInput = EditText(activity).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            tokenRow.addView(this)
+        }
+        tokenRow.addView(Button(activity).apply {
+            text = activity.getString(R.string.collab_git_save)
+            setOnClickListener {
+                val value = tokenInput.text.toString().trim()
+                if (value.isEmpty()) return@setOnClickListener
+                Thread {
+                    try {
+                        org.catrobat.catroid.utils.git.TokenManager.saveToken(activity, value)
+                    } catch (e: Exception) {
+                    }
+                    activity.runOnUiThread { refresh() }
+                }.start()
+            }
+        })
+        val repoRow = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            container.addView(this)
+        }
+        repoRow.addView(TextView(activity).apply {
+            text = if (repoReady) activity.getString(R.string.collab_git_ready) else activity.getString(R.string.collab_git_no_token)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        repoRow.addView(Button(activity).apply {
+            text = activity.getString(R.string.collab_git_init)
+            setOnClickListener { initRepo() }
+        })
+    }
+
+    private fun initRepo() {
+        Thread {
+            try {
+                val token = org.catrobat.catroid.utils.git.TokenManager.getToken(activity)
+                if (token.isNullOrEmpty()) {
+                    activity.runOnUiThread {
+                        ToastUtil.showError(activity, R.string.collab_git_no_token)
+                    }
+                    return@Thread
+                }
+                val project = org.catrobat.catroid.ProjectManager.getInstance().currentProject
+                val tree = SyncWorker.workTreeDir()
+                if (project?.directory == null || tree == null) {
+                    activity.runOnUiThread {
+                        ToastUtil.showError(activity, R.string.collab_no_connection)
+                    }
+                    return@Thread
+                }
+                val files = SyncWorker.files() ?: return@Thread
+                val codeXml = files.readCodeXml() ?: return@Thread
+                SyncEngine.syncWorkTree(project.directory, tree,
+                    SyncEngine.manifestOf(files), codeXml)
+                val result = org.catrobat.catroid.utils.git.GitController(tree)
+                    .initializeAndPushNewRepository(token, project.name + "-collab", true)
+                activity.runOnUiThread {
+                    if (result is org.catrobat.catroid.utils.git.GitResult.Success) {
+                        ToastUtil.showSuccess(activity, R.string.collab_git_ready)
+                    } else {
+                        ToastUtil.showError(activity, R.string.collab_no_connection)
+                    }
+                    refresh()
+                }
+            } catch (e: Exception) {
+                activity.runOnUiThread {
+                    ToastUtil.showError(activity, R.string.collab_no_connection)
+                }
+            }
+        }.start()
     }
 
     private fun startCreate(name: String) {
@@ -242,6 +366,7 @@ class CollabDialog(
                     shownCode = code
                     attachCallbacks()
                     CollabSession.startListeners()
+                    SyncWorker.start(sid, true)
                     refresh()
                 }
             }
@@ -254,6 +379,7 @@ class CollabDialog(
             ToastUtil.showError(activity, R.string.collab_bad_code)
             return
         }
+        lastCode = raw.trim().uppercase()
         CollabAuth.saveDisplayName(name)
         val hue = PresenceColors.hueFor(emptyList())
         PresenceRenderer.myHue = hue
@@ -269,11 +395,13 @@ class CollabDialog(
                 CollabSession.awaitApproval(90000L) { role ->
                     activity.runOnUiThread {
                         if (role == null) {
-                            ToastUtil.showError(activity, R.string.collab_no_connection)
+                            ToastUtil.showError(activity, R.string.collab_not_approved)
                             CollabSession.leave()
                         } else {
                             ToastUtil.showSuccess(activity, R.string.collab_joined)
                             attachCallbacks()
+                            val joinedSid = CollabSession.sessionId
+                            if (joinedSid != null) SyncWorker.start(joinedSid, false)
                         }
                         refresh()
                     }
@@ -311,14 +439,24 @@ class CollabDialog(
             })
             line.addView(Button(activity).apply {
                 text = activity.getString(R.string.collab_approve_editor)
-                setOnClickListener { CollabSession.approveRequest(uid, req, CollabRoles.EDITOR) }
+                setOnClickListener { approveWithDistinctHue(uid, req, CollabRoles.EDITOR) }
             })
             line.addView(Button(activity).apply {
                 text = activity.getString(R.string.collab_approve_viewer)
-                setOnClickListener { CollabSession.approveRequest(uid, req, CollabRoles.VIEWER) }
+                setOnClickListener { approveWithDistinctHue(uid, req, CollabRoles.VIEWER) }
+            })
+            line.addView(Button(activity).apply {
+                text = "×"
+                setOnClickListener { CollabSession.rejectRequest(uid) }
             })
             reqBox.addView(line)
         }
+    }
+
+    private fun approveWithDistinctHue(uid: String, req: CollabRequest, role: String) {
+        val taken = members.values.map { it.colorHue }
+        val hue = if (taken.isEmpty()) req.colorHue else PresenceColors.hueFor(taken)
+        CollabSession.approveRequest(uid, req.copy(colorHue = hue), role)
     }
 
     private fun memberTitle(name: String, role: String?, isSelf: Boolean): String {

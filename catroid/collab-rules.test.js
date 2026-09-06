@@ -172,4 +172,74 @@ describe("collab rules", () => {
                 .set({ ownerUid: OWNER, ownerName: "x", projectName: "p", closed: false, createdAt: 1 })
         );
     });
+
+    const PATCH = {
+        fromUid: EDITOR, fromName: "Editor", at: 1, summary: "s",
+        codeChunks: 1, media: [],
+    };
+
+    it("patches: создать может только участник от своего имени", async () => {
+        await assertSucceeds(doc(authed(EDITOR), "/patches/p1").set(PATCH));
+        await assertFails(
+            doc(authed(EDITOR), "/patches/p2").set({ ...PATCH, fromUid: OWNER })
+        );
+        await assertFails(doc(authed(OUTSIDER), "/patches/p3").set({ ...PATCH, fromUid: OUTSIDER }));
+    });
+
+    it("patches: update запрещён, delete — автор или владелец", async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/patches/p1").set(PATCH);
+        });
+        await assertFails(doc(authed(EDITOR), "/patches/p1").update({ summary: "x" }));
+        await assertFails(doc(authed(OWNER), "/patches/p1").update({ summary: "x" }));
+        await assertSucceeds(doc(authed(EDITOR), "/patches/p1").delete());
+    });
+
+    it("patches: чужой патч удаляет только владелец", async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/patches/p1").set(PATCH);
+        });
+        await assertSucceeds(doc(authed(OWNER), "/patches/p1").delete());
+    });
+
+    it("patches/chunks: чанки — только автор патча, читать — участники", async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/patches/p1").set(PATCH);
+        });
+        const chunk = { kind: "code", ref: "", index: 0, data: "abc" };
+        await assertSucceeds(doc(authed(EDITOR), "/patches/p1/chunks/code_0").set(chunk));
+        await assertFails(doc(authed(OWNER), "/patches/p1/chunks/code_1").set(chunk));
+        await assertFails(doc(authed(OUTSIDER), "/patches/p1/chunks/code_0").get());
+        await assertSucceeds(doc(authed(OWNER), "/patches/p1/chunks/code_0").get());
+    });
+
+    it("states: писать — только владелец, удалять — любой участник, читать — участники", async () => {
+        const state = { ...PATCH, fromUid: OWNER, fromName: "Host" };
+        await assertFails(doc(authed(EDITOR), "/states/s1").set(state));
+        await assertSucceeds(doc(authed(OWNER), "/states/s1").set(state));
+        await assertSucceeds(doc(authed(EDITOR), "/states/s1").get());
+        await assertFails(doc(authed(OUTSIDER), "/states/s1").get());
+        await assertSucceeds(doc(authed(EDITOR), "/states/s1").delete());
+    });
+
+    it("states/chunks: только владелец", async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/states/s1").set({ ...PATCH, fromUid: OWNER });
+        });
+        const chunk = { kind: "code", ref: "", index: 0, data: "abc" };
+        await assertFails(doc(authed(EDITOR), "/states/s1/chunks/code_0").set(chunk));
+        await assertSucceeds(doc(authed(OWNER), "/states/s1/chunks/code_0").set(chunk));
+    });
+
+    it("snapshotRequests: создать — сам участник, читать/удалять — владелец", async () => {
+        const req = { uid: EDITOR, name: "Editor", at: 1 };
+        await assertSucceeds(doc(authed(EDITOR), "/snapshotRequests/" + EDITOR).set(req));
+        await assertFails(
+            doc(authed(EDITOR), "/snapshotRequests/" + OWNER).set({ ...req, uid: OWNER })
+        );
+        await assertFails(doc(authed(EDITOR), "/snapshotRequests/" + EDITOR).get());
+        await assertFails(doc(authed(OUTSIDER), "/snapshotRequests/" + OUTSIDER).set(
+            { uid: OUTSIDER, name: "Out", at: 1 }));
+        await assertSucceeds(doc(authed(OWNER), "/snapshotRequests/" + EDITOR).delete());
+    });
 });

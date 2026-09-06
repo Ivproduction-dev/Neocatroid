@@ -5809,6 +5809,7 @@ needs read and write access to it. You can always change permissions through you
     <string name="collab_joined">Joined the room</string>
     <string name="collab_no_connection">No connection</string>
     <string name="collab_bad_code">Bad code</string>
+    <string name="collab_not_approved">Host did not approve in time</string>
     <string name="collab_session">Room</string>
     <string name="collab_code">Code</string>
     <string name="collab_role">Role</string>
@@ -5822,4 +5823,16 @@ needs read and write access to it. You can always change permissions through you
     <string name="collab_you">you</string>
     <string name="collab_project_mismatch">Warning: room project differs from open project</string>
     <string name="collab_locked_by">Edited by %1$s</string>
+    <string name="collab_sync_pending">New changes: %1$s — open the object list to apply</string>
+    <string name="collab_sync_applied">Applied: %1$s</string>
+    <string name="collab_git_token_hint">GitHub token</string>
+    <string name="collab_git_save">Save</string>
+    <string name="collab_git_init">Init repo</string>
+    <string name="collab_git_no_token">not set</string>
+    <string name="collab_git_ready">Repo ready</string>
+    <string name="collab_snapshot_waiting">Waiting for project from host…</string>
+    <string name="collab_snapshot_too_big">Project too big, send the file manually</string>
+    <string name="collab_snapshot_ready">Project sent</string>
+    <string name="collab_snapshot_interrupted">Upload interrupted, will resume</string>
+    <string name="collab_snapshot_received">Project received, opening…</string>
 </resources>

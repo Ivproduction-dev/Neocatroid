@@ -415,6 +415,7 @@ public class SpriteActivity extends BaseActivity {
 		lastProjectSaveElapsedMs = now;
 		currentProject = ProjectManager.getInstance().getCurrentProject();
 		new ProjectSaver(currentProject, getApplicationContext()).saveProjectAsync();
+		org.catrobat.catroid.collab.SyncWorker.INSTANCE.markDirty();
 	}
 
 	private Bundle visualPlacementResult = null;

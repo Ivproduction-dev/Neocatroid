@@ -63,5 +63,44 @@ service cloud.firestore {
       allow delete: if isMember(sid)
         && (resource.data.uid == request.auth.uid || isOwner(sid));
     }
+
+    // P1 gateway sync: guests upload patches, host publishes states.
+    // Chunks are written after their parent doc; parent authorship is re-checked.
+    match /collabSessions/{sid}/patches/{pid} {
+      allow read: if isMember(sid);
+      allow create: if isMember(sid)
+        && request.resource.data.fromUid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isMember(sid)
+        && (resource.data.fromUid == request.auth.uid || isOwner(sid));
+
+      match /chunks/{cid} {
+        allow read: if isMember(sid);
+        allow create: if isMember(sid)
+          && get(/databases/$(database)/documents/collabSessions/$(sid)/patches/$(pid)).data.fromUid == request.auth.uid;
+        allow update: if false;
+        allow delete: if isMember(sid);
+      }
+    }
+
+    match /collabSessions/{sid}/states/{stid} {
+      allow read: if isMember(sid);
+      allow create, update: if isOwner(sid);
+      // Members may consume states (guest deletes a fully downloaded snapshot);
+      // the host republishes on every change, so a deleted state heals itself.
+      allow delete: if isMember(sid);
+
+      match /chunks/{cid} {
+        allow read: if isMember(sid);
+        allow create, update, delete: if isOwner(sid);
+      }
+    }
+
+    // Full-project bootstrap for guests without the project.
+    match /collabSessions/{sid}/snapshotRequests/{uid} {
+      allow read, delete: if isOwner(sid);
+      allow create: if isMember(sid) && uid == request.auth.uid;
+      allow update: if false;
+    }
   }
 }

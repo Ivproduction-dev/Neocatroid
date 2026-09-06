@@ -115,7 +115,13 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
 
         SettingsFragment.setToChosenLanguage(this)
 
-        CrashReporter.sendPendingReports(this)
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                CrashReporter.sendPendingReports(applicationContext)
+            } catch (e: Exception) {
+                Log.w(TAG, "sendPendingReports failed", e)
+            }
+        }
 
         val crashFile = File(cacheDir, BaseExceptionHandler.LAST_CRASH_LOG_FILE)
         if (crashFile.exists()) {
@@ -137,19 +143,18 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
         if (!BuildConfig.FEATURE_APK_GENERATOR_ENABLED) {
             val startTime = System.currentTimeMillis()
 
-            val rootContent = FrameLayout(this)
-            setContentView(rootContent)
+            mainMenuBinding = ActivityMainMenuBinding.inflate(layoutInflater)
+            setContentView(mainMenuBinding.root)
 
             loadingBinding = ActivityLoadingBinding.inflate(layoutInflater)
-            rootContent.addView(
-                loadingBinding.root,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-            )
+            val windowContent = findViewById<android.view.ViewGroup>(android.R.id.content)
 
             val density = resources.displayMetrics.density
+            loadingBinding.root.elevation = 100f * density
+            loadingBinding.root.translationZ = 200f
+
+            windowContent.addView(loadingBinding.root)
+
             loadingBinding.loadingLogo.alpha = 0f
             loadingBinding.loadingLogo.scaleX = 0.6f
             loadingBinding.loadingLogo.scaleY = 0.6f
@@ -157,6 +162,7 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
 
             loadingBinding.loadingProgressBar.scaleX = 0f
             loadingBinding.loadingProgressBar.alpha = 0f
+            loadingBinding.loadingProgressBar.translationY = 50f * density
 
             loadingBinding.factTextView.alpha = 0f
             loadingBinding.factTextView.translationY = 40f * density
@@ -187,6 +193,7 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
             loadingBinding.loadingProgressBar.animate()
                 .alpha(1f)
                 .scaleX(1f)
+                .translationY(0f)
                 .setDuration(900)
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
@@ -216,7 +223,6 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
             }
 
             lifecycleScope.launch {
-                var initFailed = false
                 val factJob = launch { showRandomFacts() }
 
                 try {
@@ -225,13 +231,12 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "heavyInitialization failed", e)
-                    initFailed = true
                 }
 
                 factJob.cancel()
 
                 val elapsedTime = System.currentTimeMillis() - startTime
-                val remainingTime = 1200 - elapsedTime
+                val remainingTime = maxOf(1600L, 2500L - elapsedTime)
                 if (remainingTime > 0) {
                     kotlinx.coroutines.delay(remainingTime)
                 }
@@ -250,30 +255,42 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
                             .setDuration(600)
                             .setInterpolator(android.view.animation.AccelerateInterpolator())
                             .withEndAction {
-                                rootContent.removeView(loadingBinding.root)
+                                windowContent.removeView(loadingBinding.root)
                             }
                             .start()
                     }
                 }
 
-                mainMenuBinding = ActivityMainMenuBinding.inflate(layoutInflater)
-                rootContent.addView(mainMenuBinding.root, 0)
-                loadFinalContent()
-
                 if (waveView != null) {
                     waveView.flatline(350) {
-                        performExitTransition()
+                        loadFinalContent()
+
+                        lifecycleScope.launch {
+                            kotlinx.coroutines.delay(150)
+                            performExitTransition()
+                        }
                     }
                     kotlinx.coroutines.delay(1200)
-                    performExitTransition()
+                    if (!exitTransitionStarted) {
+                        loadFinalContent()
+                        performExitTransition()
+                    }
                 } else {
+                    loadFinalContent()
                     performExitTransition()
                 }
             }
         } else {
+            val splashBinding = ActivityMainMenuSplashscreenBinding.inflate(layoutInflater)
+            setContentView(splashBinding.root)
+
             lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    heavyInitialization()
+                try {
+                    withContext(Dispatchers.IO) {
+                        heavyInitialization()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "heavyInitialization failed", e)
                 }
                 loadFinalContent()
             }

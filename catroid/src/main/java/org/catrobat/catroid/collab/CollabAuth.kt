@@ -1,8 +1,8 @@
 package org.catrobat.catroid.collab
 
 import android.content.Context
+import android.util.Log
 import org.catrobat.catroid.CatroidApplication
-import org.catrobat.catroid.content.FirebaseAuthManager
 
 object CollabAuth {
     private const val PREFS = "collab_prefs"
@@ -10,21 +10,22 @@ object CollabAuth {
 
     fun ensureSignedIn(callback: (String?) -> Unit) {
         try {
-            if (FirebaseAuthManager.isSignedIn()) {
-                val uid = FirebaseAuthManager.getUserId()
-                if (uid.isNotEmpty()) {
-                    callback(uid)
-                    return
-                }
+            val auth = CollabFirebase.auth()
+            if (auth == null) {
+                callback(null)
+                return
             }
-            FirebaseAuthManager.signInAnonymously {
-                if (it) {
-                    val uid = FirebaseAuthManager.getUserId()
-                    callback(uid.ifEmpty { null })
-                } else {
+            val current = auth.currentUser?.uid.orEmpty()
+            if (current.isNotEmpty()) {
+                callback(current)
+                return
+            }
+            auth.signInAnonymously()
+                .addOnSuccessListener { callback(auth.currentUser?.uid?.takeIf { it.isNotEmpty() }) }
+                .addOnFailureListener { error ->
+                    Log.w("CollabAuth", "anonymous sign-in failed: ${error.message}")
                     callback(null)
                 }
-            }
         } catch (e: Exception) {
             callback(null)
         }

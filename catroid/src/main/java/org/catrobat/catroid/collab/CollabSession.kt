@@ -101,7 +101,7 @@ object CollabSession {
     private fun db(): FirebaseFirestore? {
         cachedDb?.let { return it }
         return try {
-            FirebaseFirestore.getInstance().also { cachedDb = it }
+            CollabFirebase.firestore()?.also { cachedDb = it }
         } catch (e: Exception) {
             Log.w(TAG, "firestore unavailable", e)
             null
@@ -393,6 +393,11 @@ object CollabSession {
 
     fun leave() {
         try {
+            SyncWorker.stop()
+        } catch (e: Exception) {
+            Log.w(TAG, "sync stop failed", e)
+        }
+        try {
             val sid = sessionId
             val uid = myUid
             if (sid != null && uid != null) {
@@ -414,7 +419,7 @@ object CollabSession {
         projectName = ""
         lastPresence = null
         clearStored()
-        PresenceRenderer.clear()
+        PresenceRenderer.ingest(emptyList())
     }
 
     fun restoreSession(callback: (Boolean) -> Unit) {

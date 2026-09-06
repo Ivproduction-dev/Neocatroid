@@ -339,6 +339,7 @@ class ProjectActivity : BaseCastActivity() {
         menu.findItem(R.id.from_library).isVisible = false
         menu.findItem(R.id.from_local).isVisible = false
         menu.findItem(R.id.edit).isVisible = false
+        menu.findItem(R.id.collab).isVisible = org.catrobat.catroid.collab.CollabUi.ENABLED
         menu.findItem(R.id.menu_ai_chat).isVisible =
             org.catrobat.catroid.ai.AiAgentManager.instance.isEnabled()
         if (SettingsFragment.isSceneEditorModeEnabled(this)) {
@@ -400,12 +401,26 @@ class ProjectActivity : BaseCastActivity() {
                 val intent = Intent(this, EditorActivity::class.java)
                 startActivity(intent)
             }
+            R.id.collab -> {
+                if (org.catrobat.catroid.collab.CollabUi.ENABLED) {
+                    val name = ProjectManager.getInstance().currentProject?.name.orEmpty()
+                    org.catrobat.catroid.collab.CollabDialog(this, name).show()
+                }
+            }
             else -> return super.onOptionsItemSelected(item)
         }
         return true
     }
 
+    override fun onResume() {
+        super.onResume()
+        org.catrobat.catroid.collab.SyncWorker.onReloadRequested =
+            { org.catrobat.catroid.collab.SyncWorker.applyPendingNow(this) }
+        org.catrobat.catroid.collab.SyncWorker.applyPendingNow(this)
+    }
+
     override fun onPause() {
+        org.catrobat.catroid.collab.SyncWorker.onReloadRequested = null
         super.onPause()
         if (workspaceLayout?.visibility == View.VISIBLE) {
             workspaceLayout?.saveLayoutState()
@@ -455,6 +470,7 @@ class ProjectActivity : BaseCastActivity() {
         }
         ProjectSaver(currentProject, applicationContext).saveProjectAsync()
         Utils.setLastUsedProjectName(applicationContext, currentProject.name)
+        org.catrobat.catroid.collab.SyncWorker.markDirty()
     }
 
     @Suppress("ComplexMethod")

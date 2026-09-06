@@ -6747,6 +6747,7 @@ Catrobat — это визуальный язык программировани
     <string name="collab_joined">Вы в комнате</string>
     <string name="collab_no_connection">Нет связи</string>
     <string name="collab_bad_code">Неверный код</string>
+    <string name="collab_not_approved">Ведущий не подтвердил вход</string>
     <string name="collab_session">Комната</string>
     <string name="collab_code">Код</string>
     <string name="collab_role">Роль</string>
@@ -6760,4 +6761,16 @@ Catrobat — это визуальный язык программировани
     <string name="collab_you">вы</string>
     <string name="collab_project_mismatch">Внимание: проект комнаты отличается от открытого</string>
     <string name="collab_locked_by">Редактирует %1$s</string>
+    <string name="collab_sync_pending">Есть правки: %1$s — выйди в список объектов, чтобы применить</string>
+    <string name="collab_sync_applied">Применено: %1$s</string>
+    <string name="collab_git_token_hint">GitHub-токен</string>
+    <string name="collab_git_save">Сохранить</string>
+    <string name="collab_git_init">Создать репо</string>
+    <string name="collab_git_no_token">не задан</string>
+    <string name="collab_git_ready">Репо готово</string>
+    <string name="collab_snapshot_waiting">Жду проект от ведущего…</string>
+    <string name="collab_snapshot_too_big">Проект слишком большой, перекинь файлом</string>
+    <string name="collab_snapshot_ready">Проект отправлен</string>
+    <string name="collab_snapshot_interrupted">Загрузка прервалась, продолжу</string>
+    <string name="collab_snapshot_received">Проект получен, открываю…</string>
 </resources>

@@ -54,6 +54,8 @@ object PresenceReporter {
         push()
     }
 
+    fun isInsideSprite(): Boolean = spriteId.isNotEmpty()
+
     private fun push() {
         try {
             if (!CollabSession.isActive) return

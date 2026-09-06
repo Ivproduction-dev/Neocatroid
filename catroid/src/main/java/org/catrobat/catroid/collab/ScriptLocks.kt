@@ -5,7 +5,6 @@ import android.os.Looper
 import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 
@@ -72,13 +71,17 @@ interface ScriptLockBackend {
 class FirestoreScriptLockBackend : ScriptLockBackend {
     private val tag = "ScriptLockBackend"
 
-    private fun locks(sessionId: String) = FirebaseFirestore.getInstance()
-        .collection(CollabSession.ROOT).document(sessionId).collection("locks")
+    private fun locks(sessionId: String) = CollabFirebase.firestore()
+        ?.collection(CollabSession.ROOT)?.document(sessionId)?.collection("locks")
 
     override fun claim(sessionId: String, scriptId: String, lock: ScriptLock, now: Long, callback: (Boolean) -> Unit) {
         try {
-            val doc = locks(sessionId).document(scriptId)
-            FirebaseFirestore.getInstance().runTransaction { tx ->
+            val collection = locks(sessionId) ?: run {
+                callback(false)
+                return
+            }
+            val doc = collection.document(scriptId)
+            collection.firestore.runTransaction { tx ->
                 val existing = ScriptLock.fromMap(tx.get(doc).data)
                 if (!ScriptLockPolicy.canClaim(existing, lock.uid, now)) {
                     throw FirebaseFirestoreException("locked", FirebaseFirestoreException.Code.ABORTED)
@@ -97,7 +100,11 @@ class FirestoreScriptLockBackend : ScriptLockBackend {
 
     override fun release(sessionId: String, scriptId: String, myUid: String, callback: (Boolean) -> Unit) {
         try {
-            locks(sessionId).document(scriptId).delete()
+            val collection = locks(sessionId) ?: run {
+                callback(false)
+                return
+            }
+            collection.document(scriptId).delete()
                 .addOnSuccessListener { callback(true) }
                 .addOnFailureListener { callback(false) }
         } catch (e: Exception) {
@@ -108,7 +115,7 @@ class FirestoreScriptLockBackend : ScriptLockBackend {
 
     override fun listen(sessionId: String, callback: (Map<String, ScriptLock>) -> Unit): Any? {
         return try {
-            locks(sessionId).addSnapshotListener { snap, error ->
+            locks(sessionId)?.addSnapshotListener { snap, error ->
                 if (error != null) {
                     if (CollabAccess.isRevoked((error as? FirebaseFirestoreException)?.code)) {
                         callback(emptyMap())

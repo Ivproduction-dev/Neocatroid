@@ -83,6 +83,7 @@ class WaveLoadingView @JvmOverloads constructor(
             interpolator = DecelerateInterpolator()
             addUpdateListener { animation ->
                 currentAmplitude = animation.animatedValue as Float
+                invalidate()
             }
         }
     }

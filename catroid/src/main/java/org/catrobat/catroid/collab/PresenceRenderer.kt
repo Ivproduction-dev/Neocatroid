@@ -55,14 +55,6 @@ object PresenceRenderer {
         }
     }
 
-    fun clear() {
-        synchronized(lock) {
-            latest = emptyList()
-            bySprite = emptyMap()
-            drawableCache.clear()
-        }
-    }
-
     fun snapshot(): List<MemberPresence> = synchronized(lock) { latest }
 
     fun borderFor(view: View, spriteId: String?) {

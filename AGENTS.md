@@ -906,14 +906,22 @@ OBB/ray-triangle пикинг; dirty-flag трансформов; кэш bbox ra
 ## Архитектура (зафиксировано; своего сервера нет)
 - **RTDB — НЕ используется** (не provisioned: в google-services.json нет firebase_url).
   Presence/heartbeat идут через Firestore (heartbeat 5с, TTL-фильтр 20с на клиенте).
-- **Firestore (default app, catroid-b0d71)** — `collabSessions/{sid}/`:
+- **Firestore (проект privacy-neocatroid, отдельный FirebaseApp "collab",
+  координаты в `collab/CollabFirebase.kt`)** — `collabSessions/{sid}/`:
   `meta/meta`, `members/{uid}`, `invites/{code}`, `requests/{uid}`,
   `presence/{uid}`, `locks/{scriptId}`. Compound-индексов не нужно
   (только get/doc-слушатели коллекций без where/orderBy).
+  Дефолтный `catroid-b0d71` из google-services.json — заглушка оригинала,
+  коллаб его не использует. Anonymous Auth должен быть включён именно
+  в privacy-neocatroid.
 - **Telemetry-Firestore (privacy-neocatroid, отдельный FirebaseApp) — не трогать**,
   коллаб туда ничего не пишет. Настройки Firestore default-инстанса не меняем
   (иначе заденем Firestore-брики).
-- **GitHub/JGit — только P1+** (синк проекта). В P0 git-кода для коллаба нет.
+- **GitHub/JGit — только P1+, модель «хост-шлюз»** (решение 2026-09):
+  Git-доступ есть ТОЛЬКО у хоста (его PAT, только на его устройстве).
+  Гости заходят по коду комнаты без GitHub: шлют патчи/медиа хосту,
+  хост применяет, коммитит с author=гость и пушит. JGit уже в зависимостях
+  (`GitController`, `ProjectMerger` — переиспользовать).
 
 ## Файлы
 ```
@@ -944,4 +952,50 @@ collab-firestore.rules — правила для консоли; collab-rules.te
   invite claim — одноразовый через транзакцию (`usedBy==''`, часы сервера);
   локи привязаны к uid (TTL advisory, проверяется клиентом).
 - Никогда: общий PAT, PAT в QR (там только `SID-CODE`), удаление репо при закрытии.
+
+## P1 — хост-шлюз синхронизация (2026-09)
+
+Гость шлёт состояние (`code.xml` + мелкая медиа inline ≤700КБ/патч, чанки
+400К символов), хост мёржит через `ProjectMerger`, коммитит с author=гость,
+пушит и публикует состояние обратно. Манифест покрывает файлы любого размера
+(streaming-md5 + mtime-кэш в `DirSyncFiles`, без чтения целиком в память);
+inline — только мелочь. Проект >64МБ целиком — только файлом вручную,
+дальше работают дельты по md5.
+
+```
+collab/
+  SyncModels.kt (SyncPayload/ManifestEntry/SyncChunk + лимиты)
+  SyncChunks.kt (split/join, base64, md5, inline-план, changedFiles)
+  SyncFiles.kt (интерфейс + DirSyncFiles + MemSyncFiles для тестов)
+  SyncDescriber.kt (дифф моделей -> строки коммитов, кап 8)
+  SyncFlows.kt (guestUpload/hostApplyPatch/guestApplyState — чистые, все зависимости параметрами)
+  SyncWorker.kt (таймер 5с idle, слушатели, workTree filesDir/collab-git, reload-политика)
+  SyncTransportFirestore.kt (patches/{id}/chunks + states/{id}/chunks, consume через delete)
+  GitOpsJGit (commitAndPush; токен только хоста через TokenManager)
+test/collab/ — 86 JVM-тестов (P0 47 + SyncChunks/Engine/Flows/Describer)
+```
+
+- Хуки: `markDirty()` в `saveProject()` обеих Activity; применение — только вне
+  редактора (`isInsideSprite`), иначе pending + тост; `ProjectActivity.onResume`
+  добирает pending; reload = `ProjectLoader` + `recreate()`.
+- `.git` живёт только в `filesDir/collab-git/{sid}` — в папку проекта не лезем
+  (иначе отравим zip-экспорт и сборщики мусора).
+- Вьювер не аплоадит (клиент) + хост игнорит его патчи (авторитетно).
+- Гость с чужим проектом не аплоадит (сверка `projectName`, mismatch-статус).
+- **Голый гость (нет проекта)**: при старте воркера шлёт `snapshotRequests/{uid}`,
+  хост публикует полный state (`full=true`, вся медиа inline до 64МБ),
+  гость материализует проект (`SyncFlows.materialize`: unique-имя как
+  `ProjectUnZipperAndImporter`, `encodeSpecialCharsForFileSystem`, traversal-guard)
+  и дальше работает как обычно. Проект >64МБ — только файлом вручную.
+- **Большие проекты (стриминг, 2026-09)**: отдача/закачка идут слайсами
+  (`SyncFiles.readMediaSlice` через RandomAccessFile, батчи чанков, страницы
+  по 100 доков в порядке zero-pad docId), память ограничена одним чанком.
+  Докачка — с границы последнего проверенного файла (прогресс в
+  `filesDir/collab/{sid}/dl_{stid}.json`), md5 проверяется потоково по мере
+  записи, `code.xml` пишется последним. После сборки — автооткрытие проекта
+  (`pendingOpen`). Дальше только дельты по md5. Лимит снапшота 2ГБ;
+  оборванный broadcast чинится перезапросом гостя (хост не удаляет full-state
+  при обычных публикациях; гость удаляет скачанное — rules разрешают
+  удаление states участникам).
+- UI-гейт: `CollabUi.ENABLED` (сейчас true); хост-секция диалога: PAT + init repo + статусы.
 
