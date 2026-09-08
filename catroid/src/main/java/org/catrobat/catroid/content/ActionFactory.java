@@ -770,10 +770,46 @@ public class ActionFactory extends Actions {
 		return action;
 	}
 
+	public Action createLight2DCreateAction(Sprite sprite, ScriptSequenceAction sequence,
+										Formula lightName, Formula posX, Formula posY,
+										Formula radius, Formula intensity, Formula color) {
+		CreateLight2DAction action = Actions.action(CreateLight2DAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setLightName(lightName);
+		action.setPosX(posX);
+		action.setPosY(posY);
+		action.setRadius(radius);
+		action.setIntensity(intensity);
+		action.setColor(color);
+		return action;
+	}
+
+	public Action createLight2DControlAction(Sprite sprite, ScriptSequenceAction sequence,
+										Formula lightName, int actionType, Formula value,
+										String attachSpriteName) {
+		ControlLight2DAction action = Actions.action(ControlLight2DAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setLightName(lightName);
+		action.setAction(actionType);
+		action.setValue(value);
+		action.setAttachSpriteName(attachSpriteName);
+		return action;
+	}
+
+	public Action createShadowCasting2DAction(Sprite sprite, ScriptSequenceAction sequence,
+										String targetSpriteName, int mode) {
+		ShadowCasting2DAction action = Actions.action(ShadowCasting2DAction.class);
+		action.setTargetSpriteName(targetSpriteName);
+		action.setMode(mode);
+		return action;
+	}
+
 	public Action createSetPointLightAction(Sprite sprite, ScriptSequenceAction sequence,
-											Formula lightId, Formula posX, Formula posY, Formula posZ,
-											Formula colorR, Formula colorG, Formula colorB,
-											Formula intensity, Formula range) {
+										Formula lightId, Formula posX, Formula posY, Formula posZ,
+										Formula colorR, Formula colorG, Formula colorB,
+										Formula intensity, Formula range) {
 		SetPointLightAction action = Actions.action(SetPointLightAction.class);
 		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
 		action.setScope(scope);

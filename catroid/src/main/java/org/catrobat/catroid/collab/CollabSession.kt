@@ -140,25 +140,29 @@ object CollabSession {
                 ownerUid = uid, ownerName = displayName, projectName = projectName,
                 createdAt = now
             ).toMap()).addOnSuccessListener {
-                val batch = database.batch()
-                batch.set(membersRef(sid)!!.document(uid), CollabMember(
-                    role = CollabRoles.HOST, colorHue = hue, name = displayName, joinedAt = now
-                ).toMap())
-                batch.set(invitesRef(sid)!!.document(code), CollabInvite(
-                    role = CollabRoles.EDITOR, expiresAt = now + INVITE_TTL_MS
-                ).toMap())
-                batch.commit()
-                    .addOnSuccessListener {
-                        enterLocalState(sid, uid, projectName)
-                        isHost = true
-                        myRole = CollabRoles.HOST
-                        startListeners()
-                        callback(sid, code)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "create failed", e)
-                        callback(null, null)
-                    }
+                var attempts = 0
+                fun commitBatch() {
+                    val batch = database.batch()
+                    batch.set(membersRef(sid)!!.document(uid), CollabMember(
+                        role = CollabRoles.HOST, colorHue = hue, name = displayName, joinedAt = now
+                    ).toMap())
+                    batch.set(invitesRef(sid)!!.document(code), CollabInvite(
+                        role = CollabRoles.EDITOR, expiresAt = now + INVITE_TTL_MS
+                    ).toMap())
+                    batch.commit()
+                        .addOnSuccessListener {
+                            enterLocalState(sid, uid, projectName)
+                            isHost = true
+                            myRole = CollabRoles.HOST
+                            startListeners()
+                            callback(sid, code)
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "create failed", e)
+                            if (++attempts < 2) commitBatch() else callback(null, null)
+                        }
+                }
+                commitBatch()
             }.addOnFailureListener { e ->
                 Log.w(TAG, "create failed", e)
                 callback(null, null)

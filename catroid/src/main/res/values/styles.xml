@@ -955,6 +955,10 @@
         <item name="android:background">@drawable/brick_categories_yellow</item>
     </style>
 
+    <style name="BrickCategory.Light2d">
+        <item name="android:background">@drawable/brick_categories_gold</item>
+    </style>
+
     <style name="BrickCategory.Libs">
         <item name="android:background">@drawable/brick_categories_pink</item>
     </style>

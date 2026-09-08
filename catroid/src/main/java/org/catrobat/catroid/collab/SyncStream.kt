@@ -29,7 +29,7 @@ object SyncStream {
             "lastDocId" to (lastDocId ?: ""),
             "codeDone" to codeDone,
             "dirPath" to dirPath,
-            "verified" to verified.entries.joinToString("\n") { it.key + "|" + it.value }
+            "verified" to verified.entries.joinToString("\n") { java.net.URLEncoder.encode(it.key, "UTF-8") + "|" + it.value }
         )
 
         companion object {
@@ -48,7 +48,10 @@ object SyncStream {
                 for (line in raw.lines()) {
                     val parts = line.split("|")
                     if (parts.size == 2 && parts[0].isNotEmpty()) {
-                        progress.verified[parts[0]] = parts[1]
+                        try {
+                            progress.verified[java.net.URLDecoder.decode(parts[0], "UTF-8")] = parts[1]
+                        } catch (e: Exception) {
+                        }
                     }
                 }
                 return progress

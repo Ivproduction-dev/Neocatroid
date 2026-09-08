@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="light2d_control_actions">
+        <item>Включить</item>
+        <item>Выключить</item>
+        <item>Удалить</item>
+        <item>Задать радиус</item>
+        <item>Задать интенсивность</item>
+        <item>Задать цвет</item>
+        <item>Задать X</item>
+        <item>Задать Y</item>
+        <item>Привязать к объекту</item>
+        <item>Отвязать от объекта</item>
+        <item>Тени вкл</item>
+        <item>Тени выкл</item>
+        <item>Задать фоновый свет</item>
+    </string-array>
+
+    <string-array name="light2d_shadow_modes">
+        <item>Отбрасывает тень</item>
+        <item>Без тени</item>
+    </string-array>
+</resources>

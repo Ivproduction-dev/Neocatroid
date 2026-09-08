@@ -119,6 +119,13 @@ describe("collab rules", () => {
         );
     });
 
+    it("roles: участник читает чужую роль, чужак — нет", async () => {
+        await assertSucceeds(doc(authed(EDITOR), "/members/" + OWNER).get());
+        await assertSucceeds(doc(authed(OWNER), "/members/" + EDITOR).get());
+        await assertFails(doc(authed(OUTSIDER), "/members/" + OWNER).get());
+        await assertFails(doc(unauthed(), "/members/" + OWNER).get());
+    });
+
     it("invites: валидный claim проходит, повторный/просроченный/подмена — нет", async () => {
         await assertSucceeds(doc(authed(OUTSIDER), "/invites/111111").update({ usedBy: OUTSIDER }));
         await assertFails(doc(authed(OUTSIDER), "/invites/333333").update({ usedBy: OUTSIDER }));
@@ -129,6 +136,17 @@ describe("collab rules", () => {
         await assertFails(
             doc(authed(OUTSIDER), "/invites/111111").update({ usedBy: EDITOR })
         );
+    });
+
+    it("invites: в закрытую комнату claim отклоняется", async () => {
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/meta/meta").update({ closed: true });
+        });
+        await assertFails(doc(authed(OUTSIDER), "/invites/111111").update({ usedBy: OUTSIDER }));
+        await env.withSecurityRulesDisabled(async (ctx) => {
+            await doc(ctx.firestore(), "/meta/meta").update({ closed: false });
+        });
+        await assertSucceeds(doc(authed(OUTSIDER), "/invites/111111").update({ usedBy: OUTSIDER }));
     });
 
     it("locks: чужой uid писать нельзя, свой можно", async () => {

@@ -461,6 +461,66 @@ public class PhysicsWorld {
 		return rayCastResults.get(rayId);
 	}
 
+	public static boolean shouldIgnoreLightRayFixture(boolean sensor, Object bodyUserData,
+			java.util.Set<String> ignoredSpriteNames) {
+		if (sensor) {
+			return true;
+		}
+		if (bodyUserData instanceof Sprite && ignoredSpriteNames != null
+				&& ignoredSpriteNames.contains(((Sprite) bodyUserData).getName())) {
+			return true;
+		}
+		return false;
+	}
+
+	private static class LightRayCallback implements RayCastCallback {
+		float closestFraction = 1f;
+		boolean hasHit;
+		final Vector2 hitPoint = new Vector2();
+		final java.util.Set<String> ignoredSpriteNames;
+
+		LightRayCallback(java.util.Set<String> ignoredSpriteNames) {
+			this.ignoredSpriteNames = ignoredSpriteNames;
+		}
+
+		@Override
+		public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
+			if (shouldIgnoreLightRayFixture(fixture.isSensor(), fixture.getBody().getUserData(),
+					ignoredSpriteNames)) {
+				return -1f;
+			}
+			if (!hasHit || fraction < closestFraction) {
+				hasHit = true;
+				closestFraction = fraction;
+				hitPoint.set(point);
+			}
+			return fraction;
+		}
+	}
+
+	public float castLightRay(float startX, float startY, float endX, float endY,
+			java.util.Set<String> ignoredSpriteNames, float[] outHitPoint) {
+		LightRayCallback callback = new LightRayCallback(ignoredSpriteNames);
+		try {
+			world.rayCast(callback,
+					PhysicsWorldConverter.convertCatroidToBox2dVector(new Vector2(startX, startY)),
+					PhysicsWorldConverter.convertCatroidToBox2dVector(new Vector2(endX, endY)));
+		} catch (Exception e) {
+			return 1f;
+		}
+		if (outHitPoint != null && outHitPoint.length >= 2) {
+			if (callback.hasHit) {
+				Vector2 normal = PhysicsWorldConverter.convertBox2dToNormalVector(callback.hitPoint);
+				outHitPoint[0] = normal.x;
+				outHitPoint[1] = normal.y;
+			} else {
+				outHitPoint[0] = endX;
+				outHitPoint[1] = endY;
+			}
+		}
+		return callback.hasHit ? Math.max(0f, Math.min(1f, callback.closestFraction)) : 1f;
+	}
+
 	public void setGravity(float x, float y) {
 		gravityTemp.set(x, y);
 		world.setGravity(gravityTemp);

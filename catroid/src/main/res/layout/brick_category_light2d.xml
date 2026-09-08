@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/BrickCategory.Light2d">
+
+    <include layout="@layout/icon_brick_category_light2d" />
+
+    <TextView
+        style="@style/BrickCategoryText"
+        android:text="@string/category_light2d">
+    </TextView>
+
+</LinearLayout>

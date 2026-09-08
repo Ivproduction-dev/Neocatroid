@@ -96,7 +96,7 @@ object SyncWorker {
     private var statesHandle: Any? = null
     private var snapshotReqHandle: Any? = null
     private val lastSnapshotReqTimes = java.util.concurrent.ConcurrentHashMap<String, Long>()
-    private val dirFilesCache = java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles>()
+    private val dirFilesCache = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles>>()
     private data class RoleRow(val role: String?, val at: Long)
     private val roleCache = java.util.concurrent.ConcurrentHashMap<String, RoleRow>()
     @Volatile private var startedAt: Long = 0L
@@ -145,7 +145,8 @@ object SyncWorker {
             val project = ProjectManager.getInstance().currentProject ?: return null
             val dir = project.directory ?: return null
             val id = sid ?: return null
-            DirSyncFiles(dir, snapshotDir(id))
+            dirFilesCache.getOrPut(id) { java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles>() }
+                .getOrPut(dir.canonicalPath) { DirSyncFiles(dir, snapshotDir(id)) }
         } catch (e: Exception) {
             null
         }
@@ -492,6 +493,7 @@ object SyncWorker {
     private fun hostCommit(session: String) {
         val identity = sessionProvider() ?: return
         val files = files() ?: return
+        if (!isCurrentProjectMatching(session, CollabSession.projectName)) return
         val current = files.readCodeXml() ?: return
         val manifest = SyncEngine.manifestOf(files)
         val snapshot = files.loadSnapshot()
@@ -678,7 +680,8 @@ object SyncWorker {
         index: Int,
         uploaded: Long,
         total: Long,
-        req: SnapshotRequest
+        req: SnapshotRequest,
+        attempt: Int = 0
     ) {
         if (index >= manifest.size) {
             transport.deleteSnapshotRequest(session, req.uid)
@@ -707,7 +710,7 @@ object SyncWorker {
             chunks.add(SyncChunk(SyncChunk.KIND_MEDIA, entry.path, chunkIndex, SyncChunks.encode(slice)))
             offset += slice.size
             chunkIndex++
-            if (chunks.size >= 50) break
+            if (chunks.size >= 12) break
         }
         if (chunks.isEmpty() && entry.size > 0) {
             uploadNextFile(session, stid, manifest, files, index + 1, uploaded, total, req)
@@ -715,7 +718,13 @@ object SyncWorker {
         }
         transport.putChunkBatch(session, "states", stid, chunks) { ok ->
             if (!ok) {
-                status(appString(R.string.collab_snapshot_interrupted))
+                if (attempt < 2) {
+                    executor.execute {
+                        uploadNextFile(session, stid, manifest, files, index, uploaded, total, req, attempt + 1)
+                    }
+                } else {
+                    status(appString(R.string.collab_snapshot_interrupted))
+                }
                 return@putChunkBatch
             }
             val done = uploaded + chunks.sumOf { (it.data.length * 3L / 4L) }
@@ -744,13 +753,14 @@ object SyncWorker {
         chunkIndex: Int,
         uploaded: Long,
         total: Long,
-        req: SnapshotRequest
+        req: SnapshotRequest,
+        attempt: Int = 0
     ) {
         val entry = manifest[index]
         val chunks = ArrayList<SyncChunk>()
         var current = offset
         var currentIndex = chunkIndex
-        while (current < entry.size && chunks.size < 50) {
+        while (current < entry.size && chunks.size < 12) {
             val slice = try {
                 (files as? DirSyncFiles)?.readMediaSlice(entry.path, current, SyncStream.RAW_BYTES)
             } catch (e: Exception) {
@@ -767,7 +777,13 @@ object SyncWorker {
         }
         transport.putChunkBatch(session, "states", stid, chunks) { ok ->
             if (!ok) {
-                status(appString(R.string.collab_snapshot_interrupted))
+                if (attempt < 2) {
+                    executor.execute {
+                        uploadFileRemainder(session, stid, manifest, files, index, offset, chunkIndex, uploaded, total, req, attempt + 1)
+                    }
+                } else {
+                    status(appString(R.string.collab_snapshot_interrupted))
+                }
                 return@putChunkBatch
             }
             val done = uploaded + chunks.sumOf { (it.data.length * 3L / 4L) }
@@ -928,7 +944,7 @@ object SyncWorker {
             dir = File(saved.dirPath)
             progress = saved
             for (entry in payload.media) {
-                val file = File(dir, entry.path)
+                val file = safeProjectFile(dir, entry.path) ?: continue
                 if (!verifiedContains(progress, entry) && file.exists()) {
                     try {
                         file.delete()
@@ -953,7 +969,7 @@ object SyncWorker {
             dir = fresh
             var alreadyHaveBytes = 0L
             for (entry in payload.media) {
-                val file = File(dir, entry.path)
+                val file = safeProjectFile(dir, entry.path) ?: continue
                 if (entry.size == 0L) {
                     try {
                         file.parentFile?.mkdirs()
@@ -972,7 +988,7 @@ object SyncWorker {
             progress = SyncStream.DownloadProgress(effectiveTotal)
             progress.dirPath = dir.absolutePath
             for (entry in payload.media) {
-                val file = File(dir, entry.path)
+                val file = safeProjectFile(dir, entry.path) ?: continue
                 if (entry.size == 0L) {
                     progress.verified[entry.path] = entry.md5
                 } else if (file.isFile && file.length() == entry.size) {
@@ -1005,6 +1021,16 @@ object SyncWorker {
         return progress.verified[entry.path] == entry.md5
     }
 
+    private fun safeProjectFile(dir: File, path: String): File? {
+        return try {
+            if (path.isEmpty() || path.startsWith("/") || path.startsWith("\\")) return null
+            val file = File(dir, path)
+            if (!file.canonicalPath.startsWith(dir.canonicalPath + File.separator)) null else file
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun computeMd5(file: File): String {
         val digest = java.security.MessageDigest.getInstance("MD5")
         file.inputStream().buffered(65536).use { input ->
@@ -1024,7 +1050,12 @@ object SyncWorker {
                 ?: ProjectManager.getInstance().currentProject?.directory
                 ?: return emptyMap()
             val base = dir.canonicalPath
-            val syncFiles = dirFilesCache.getOrPut(base) { DirSyncFiles(dir, snapshotDir(session)) }
+            val byDir: java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles> =
+                dirFilesCache.getOrPut(session) {
+                    java.util.concurrent.ConcurrentHashMap<String, DirSyncFiles>()
+                }
+            val syncFiles: DirSyncFiles =
+                byDir.getOrPut(base) { DirSyncFiles(dir, snapshotDir(session)) }
             val result = LinkedHashMap<String, String>()
             dir.walkTopDown().filter { it.isFile }.forEach { file ->
                 val rel = try {

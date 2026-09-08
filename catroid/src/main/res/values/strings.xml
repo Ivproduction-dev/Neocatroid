@@ -2745,6 +2745,7 @@
 <string formatted="false" name="category_plot">Plot</string>
 <string formatted="false" name="category_neural">Neural Networks</string>
 <string formatted="false" name="category_threed">3D</string>
+<string formatted="false" name="category_light2d">Light 2D</string>
 <string formatted="false" name="category_sound">Sound</string>
 <string formatted="false" name="category_control">Control</string>
 <string formatted="false" name="category_event">Event</string>
@@ -5106,6 +5107,21 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_http_save_file_title">HTTP save file</string>
     <string name="brick_http_save_file_id">ID</string>
     <string name="brick_http_save_file_dest">destination</string>
+    <string name="brick_create_light_2d_title">Create 2D light</string>
+    <string name="brick_create_light_2d_name">Name</string>
+    <string name="brick_create_light_2d_x">X</string>
+    <string name="brick_create_light_2d_y">Y</string>
+    <string name="brick_create_light_2d_radius">Radius</string>
+    <string name="brick_create_light_2d_intensity">Intensity</string>
+    <string name="brick_create_light_2d_color">Color</string>
+    <string name="brick_light_2d_control_title">Control 2D light</string>
+    <string name="brick_light_2d_control_name">Light</string>
+    <string name="brick_light_2d_control_action">Action</string>
+    <string name="brick_light_2d_control_value">Value</string>
+    <string name="brick_light_2d_control_sprite">Sprite</string>
+    <string name="brick_shadow_casting_2d_title">Shadow casting</string>
+    <string name="brick_shadow_casting_2d_sprite">Sprite</string>
+    <string name="brick_shadow_casting_2d_mode">Mode</string>
     <string name="brick_http_configure_light_title">Configure light</string>
     <string name="brick_http_configure_light_id">ID</string>
     <string name="brick_http_configure_light_property">property</string>

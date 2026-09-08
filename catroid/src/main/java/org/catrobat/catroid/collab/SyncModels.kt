@@ -24,7 +24,7 @@ data class ManifestEntry(val path: String, val md5: String, val size: Long) {
 }
 
 data class SyncChunk(val kind: String, val ref: String, val index: Int, val data: String) {
-    fun docId(): String = kind + "_" + ref.hashCode().toString().replace("-", "n") + "_" + index.toString().padStart(6, '0')
+    fun docId(): String = kind + "_" + refDocHash(ref) + "_" + index.toString().padStart(6, '0')
 
     fun toMap(): Map<String, Any> = mapOf(
         "kind" to kind, "ref" to ref, "index" to index, "data" to data
@@ -33,6 +33,12 @@ data class SyncChunk(val kind: String, val ref: String, val index: Int, val data
     companion object {
         const val KIND_CODE = "code"
         const val KIND_MEDIA = "media"
+
+        fun refDocHash(ref: String): String {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(ref.toByteArray(Charsets.UTF_8))
+            return digest.take(8).joinToString("") { "%02x".format(it) }
+        }
 
         fun fromMap(map: Map<String, Any?>?): SyncChunk? {
             if (map == null) return null
@@ -88,7 +94,7 @@ data class SnapshotRequest(val uid: String = "", val name: String = "", val at: 
 ) {
     fun toMap(): Map<String, Any> = mapOf(
         "uid" to uid, "name" to name, "at" to at,
-        "have" to have.entries.joinToString("\n") { it.key + "|" + it.value }
+        "have" to have.entries.joinToString("\n") { java.net.URLEncoder.encode(it.key, "UTF-8") + "|" + it.value }
     )
 
     companion object {
@@ -98,7 +104,12 @@ data class SnapshotRequest(val uid: String = "", val name: String = "", val at: 
             val have = LinkedHashMap<String, String>()
             for (line in haveRaw.lines()) {
                 val sep = line.indexOf('|')
-                if (sep > 0) have[line.substring(0, sep)] = line.substring(sep + 1)
+                if (sep > 0) {
+                    try {
+                        have[java.net.URLDecoder.decode(line.substring(0, sep), "UTF-8")] = line.substring(sep + 1)
+                    } catch (e: Exception) {
+                    }
+                }
             }
             return SnapshotRequest(
                 uid = map["uid"] as? String ?: "",

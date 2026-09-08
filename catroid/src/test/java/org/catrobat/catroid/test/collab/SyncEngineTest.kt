@@ -83,11 +83,11 @@ class SyncEngineTest {
     @Test
     fun mergeOrTakeFastPaths() {
         val merger = FakeMerger()
-        assertEquals(Pair("remote", 0), SyncEngine.mergeOrTake(merger, null, "local", "remote"))
+        assertEquals(Pair("merged-xml", 0), SyncEngine.mergeOrTake(merger, null, "local", "remote"))
         assertEquals(Pair("remote", 0), SyncEngine.mergeOrTake(merger, "local", "local", "remote"))
-        assertEquals(0, merger.calls)
-        assertEquals(Pair("merged-xml", 0), SyncEngine.mergeOrTake(merger, "base", "local", "remote"))
         assertEquals(1, merger.calls)
+        assertEquals(Pair("merged-xml", 0), SyncEngine.mergeOrTake(merger, "base", "local", "remote"))
+        assertEquals(2, merger.calls)
     }
 
     @Test

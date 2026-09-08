@@ -102,6 +102,8 @@ import org.catrobat.catroid.content.eventids.MouseButtonEventId;
 import org.catrobat.catroid.embroidery.DSTPatternManager;
 import org.catrobat.catroid.embroidery.EmbroideryPatternManager;
 import org.catrobat.catroid.fast2d.FastTwoDManager;
+import org.catrobat.catroid.twodlight.LightManager2D;
+import org.catrobat.catroid.twodlight.LightmapRenderer;
 import org.catrobat.catroid.audio.AudioServiceHolder;
 import org.catrobat.catroid.audio.MidiServiceHolder;
 import org.catrobat.catroid.content.PathfindingManager;
@@ -245,6 +247,26 @@ public class StageListener implements ApplicationListener {
     public FastTwoDManager fastTwoDManager;
     public PathfindingManager pathfindingManager;
     public TransitionManager transitionManager;
+    public LightManager2D lightManager2D;
+    private LightmapRenderer lightmapRenderer;
+    private final LightManager2D.SpritePositionProvider lightSpritePositions =
+            new LightManager2D.SpritePositionProvider() {
+                @Override
+                public float[] getSpritePosition(String spriteName) {
+                    if (spriteName == null || sprites == null) {
+                        return null;
+                    }
+                    for (Sprite sprite : sprites) {
+                        if (sprite != null && spriteName.equals(sprite.getName())
+                                && sprite.look != null) {
+                            return new float[] {
+                                    sprite.look.getXInUserInterfaceDimensionUnit(),
+                                    sprite.look.getYInUserInterfaceDimensionUnit()};
+                        }
+                    }
+                    return null;
+                }
+            };
     public boolean isBackgroundModeEnabled = false;
 
     private final List<ScriptSequenceAction> beforeUpdateActions = new ArrayList<>();
@@ -464,6 +486,9 @@ public class StageListener implements ApplicationListener {
 		font = getLabelFont(project);
 
 		physicsWorld = scene.resetPhysicsWorld();
+		if (lightManager2D != null) {
+			lightManager2D.clear();
+		}
 		sprites = new CopyOnWriteArrayList<>(scene.getSpriteList());
 		loadGlobalSprites();
 
@@ -1773,6 +1798,35 @@ public class StageListener implements ApplicationListener {
 		}
 	}
 
+	private void render2DLights() {
+		if (lightManager2D == null || camera == null) {
+			return;
+		}
+		try {
+			if (Gdx.app != null
+					&& Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+				lightManager2D.setMaxActiveLights(LightManager2D.DESKTOP_MAX_ACTIVE_LIGHTS);
+				lightManager2D.setMaxShadowLights(LightManager2D.DESKTOP_MAX_SHADOW_LIGHTS);
+			}
+		} catch (Exception ignored) {
+		}
+		try {
+			float halfW = camera.viewportWidth / 2f;
+			float halfH = camera.viewportHeight / 2f;
+			lightManager2D.update(camera.position.x, camera.position.y, halfW, halfH,
+					lightSpritePositions);
+			if (!lightManager2D.hasLights() || lightManager2D.getActiveLights().isEmpty()) {
+				return;
+			}
+			if (lightmapRenderer == null) {
+				lightmapRenderer = new LightmapRenderer();
+			}
+			lightmapRenderer.render(lightManager2D, camera, physicsWorld);
+		} catch (Throwable throwable) {
+			Log.e("Light2D", "2D light pass failed", throwable);
+		}
+	}
+
 	public void resizeVmMonitor(float width, float height) {
 		if (vmMonitorActor != null) {
 			float oldCenterX = vmMonitorActor.getX() + vmMonitorActor.getWidth() / 2;
@@ -1876,6 +1930,9 @@ public class StageListener implements ApplicationListener {
 				TilemapRuntimeManager.disposeAll(physicsWorld);
 
 				physicsWorld = scene.resetPhysicsWorld();
+				if (lightManager2D != null) {
+					lightManager2D.clear();
+				}
 
 				initActors(sprites);
 
@@ -2070,6 +2127,7 @@ public class StageListener implements ApplicationListener {
                     }
 
                     stage.draw();
+                    render2DLights();
                     if (transitionManager != null) {
                         transitionManager.renderOverlay((SpriteBatch) batch);
                     }
@@ -2525,6 +2583,15 @@ public class StageListener implements ApplicationListener {
 		if (postProcessBatch != null) {
 			postProcessBatch.dispose();
 		}
+		if (lightmapRenderer != null) {
+			try {
+				lightmapRenderer.dispose();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			lightmapRenderer = null;
+		}
+		lightManager2D = null;
 		if (vmTexture != null) {
 			vmTexture.dispose();
 			vmTexture = null;

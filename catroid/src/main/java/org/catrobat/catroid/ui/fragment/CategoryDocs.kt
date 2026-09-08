@@ -244,6 +244,26 @@ object CategoryDocs {
                         "• Assign Scripts — assign a .neoscript to an object"
             )
 
+            context.getString(R.string.category_light2d) -> Doc(
+                title = if (isRu) "Свет (2D)" else "Light (2D)",
+                description = if (isRu)
+                    "Категория «Свет (2D)» добавляет динамическое освещение в 2D-игру: " +
+                        "точечные источники с радиусом, цветом и тенями от физических объектов. " +
+                        "Работает через LightManager2D."
+                else
+                    "The Light (2D) category adds dynamic lighting to 2D games: " +
+                        "point lights with radius, color and shadows from physics objects. " +
+                        "Powered by LightManager2D.",
+                examples = if (isRu)
+                    "• Создать 2D свет — создать источник с именем\n" +
+                        "• Управлять 2D светом — вкл/выкл, радиус, цвет, привязка\n" +
+                        "• Отбрасывание тени — вкл/выкл тени объекта"
+                else
+                    "• Create 2D light — create a named light source\n" +
+                        "• Control 2D light — on/off, radius, color, attach\n" +
+                        "• Shadow casting — sprite shadow on/off"
+            )
+
             context.getString(R.string.category_threed) -> Doc(
                 title = if (isRu) "3D" else "3D",
                 description = if (isRu)

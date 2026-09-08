@@ -647,6 +647,27 @@
         <item>Proxy port</item>
     </string-array>
 
+    <string-array name="light2d_control_actions">
+        <item>Turn on</item>
+        <item>Turn off</item>
+        <item>Delete</item>
+        <item>Set radius</item>
+        <item>Set intensity</item>
+        <item>Set color</item>
+        <item>Set X</item>
+        <item>Set Y</item>
+        <item>Attach to sprite</item>
+        <item>Detach from sprite</item>
+        <item>Shadows on</item>
+        <item>Shadows off</item>
+        <item>Set ambient light</item>
+    </string-array>
+
+    <string-array name="light2d_shadow_modes">
+        <item>Cast shadow</item>
+        <item>No shadow</item>
+    </string-array>
+
     <string-array name="brick_http_configure_light_types">
         <item>Intensity</item>
         <item>Range</item>

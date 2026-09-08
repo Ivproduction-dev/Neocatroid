@@ -104,6 +104,7 @@ class BrickCategoryListBuilder(private val activity: FragmentActivity) {
         categories.add(inflater.inflate(R.layout.brick_category_sound, null))
         categories.add(inflater.inflate(R.layout.brick_category_looks, null))
         categories.add(inflater.inflate(R.layout.brick_category_shaders, null))
+        categories.add(inflater.inflate(R.layout.brick_category_light2d, null))
         categories.add(inflater.inflate(R.layout.brick_category_transitions, null))
 
         if (!onlyBeginnerBricks()) {

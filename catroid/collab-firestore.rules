@@ -21,7 +21,7 @@ service cloud.firestore {
     }
 
     match /collabSessions/{sid}/members/{uid} {
-      allow get: if isSignedIn() && uid == request.auth.uid;
+      allow get: if isMember(sid);
       allow list: if isMember(sid);
       allow create, update: if isOwner(sid)
         && request.resource.data.role in ['host', 'editor', 'viewer'];
@@ -37,7 +37,8 @@ service cloud.firestore {
         && request.resource.data.usedBy == request.auth.uid
         && request.resource.data.expiresAt == resource.data.expiresAt
         && request.resource.data.role == resource.data.role
-        && resource.data.expiresAt > request.time.toMillis();
+        && resource.data.expiresAt > request.time.toMillis()
+        && get(/databases/$(database)/documents/collabSessions/$(sid)/meta/meta).data.closed == false;
       allow delete: if isOwner(sid);
     }
 

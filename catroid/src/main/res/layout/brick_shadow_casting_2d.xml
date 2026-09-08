@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <CheckBox
+        android:id="@+id/brick_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <org.catrobat.catroid.ui.BrickLayout
+        android:id="@+id/brick_shadow_casting_2d_layout"
+        style="@style/BrickContainer.Look.Medium">
+
+        <include layout="@layout/icon_brick_category_light2d" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_shadow_casting_2d_title" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_shadow_casting_2d_sprite"
+            app:layout_newLine="true" />
+        <Spinner
+            android:id="@+id/brick_shadow_casting_2d_sprite_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_shadow_casting_2d_mode"
+            app:layout_newLine="true" />
+        <Spinner
+            android:id="@+id/brick_shadow_casting_2d_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale" />
+
+    </org.catrobat.catroid.ui.BrickLayout>
+</LinearLayout>

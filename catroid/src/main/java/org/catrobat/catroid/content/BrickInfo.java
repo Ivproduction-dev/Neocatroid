@@ -352,6 +352,9 @@ public final class BrickInfo {
         add(PlayAnimationBrick.class, "Воспроизводит анимацию для обьекта ВАЖНО: только для GLB и GLTF моделей");
         add(SetAnisotropicFilterBrick.class, "Задает уровень анизотропной фильтрации");
         add(SetPointLightBrick.class, "Создает точечный свет (лампочка)");
+        add(CreateLight2DBrick.class, "Создает 2D источник света с именем, позицией, радиусом, интенсивностью и цветом");
+        add(Light2DControlBrick.class, "Управляет 2D светом: вкл/выкл, удаление, радиус, цвет, привязка к объекту, тени");
+        add(ShadowCasting2DBrick.class, "Включает или выключает отбрасывание тени объектом для 2D света");
         add(SetSpotLightBrick.class, "Создает направленный свет (прожектор)");
         add(SetDirectionalLightBrick.class, "Задает глобальный свет (отбрасывает тени)");
         add(LoadSceneBrick.class, "Загружает сцену из .rscene файла, созданную в редакторе. ВАЖНО: НЕОБХОДИМО ВКЛЮЧИТЬ РЕНДЕР 2.0! полностью заменяет текущую.");
@@ -1372,6 +1375,9 @@ public final class BrickInfo {
         addEn(PlayAnimationBrick.class, "Plays an animation for an object. IMPORTANT: only for GLB and GLTF models");
         addEn(SetAnisotropicFilterBrick.class, "Sets the level of anisotropic filtering");
         addEn(SetPointLightBrick.class, "Creates a point light (bulb)");
+        addEn(CreateLight2DBrick.class, "Creates a 2D light source with name, position, radius, intensity and color");
+        addEn(Light2DControlBrick.class, "Controls a 2D light: on/off, delete, radius, color, sprite attach, shadows");
+        addEn(ShadowCasting2DBrick.class, "Enables or disables shadow casting for a sprite in 2D light");
         addEn(SetSpotLightBrick.class, "Creates a directional light (spotlight)");
         addEn(SetDirectionalLightBrick.class, "Sets a global light (casts shadows)");
         addEn(LoadSceneBrick.class, "Loads a scene from a .rscene file created in the editor. IMPORTANT: RENDERER 2.0 MUST BE ENABLED! completely replaces the current one.");

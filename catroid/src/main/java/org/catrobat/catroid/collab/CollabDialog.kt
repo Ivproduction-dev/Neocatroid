@@ -30,6 +30,7 @@ class CollabDialog(
     private var statusView: TextView? = null
     private var shownCode: String? = null
 
+    private var joining = false
     private var members: Map<String, CollabMember> = emptyMap()
     private var requests: Map<String, CollabRequest> = emptyMap()
     private var meta: CollabMeta? = null
@@ -442,43 +443,50 @@ class CollabDialog(
         }
         projectName = targetProject
 
-        val root = org.catrobat.catroid.common.FlavoredConstants.DEFAULT_ROOT_DIRECTORY
-        val curProj = org.catrobat.catroid.ProjectManager.getInstance().currentProject
-        if (curProj == null || curProj.name != targetProject) {
-            val encoded = org.catrobat.catroid.utils.FileMetaDataExtractor.encodeSpecialCharsForFileSystem(targetProject)
-            var dir = File(root, encoded)
-            if (!dir.isDirectory) {
-                dir = root.listFiles()?.firstOrNull { f ->
-                    f.isDirectory && try {
-                        val meta = org.catrobat.catroid.content.backwardcompatibility.ProjectMetaDataParser(File(f, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)).projectMetaData
-                        meta.name == targetProject
-                    } catch (e: Exception) { false }
-                } ?: dir
-            }
-            if (dir.isDirectory) {
-                org.catrobat.catroid.io.asynctask.loadProject(dir, activity)
-            }
-        }
-
         CollabAuth.saveDisplayName(name)
         val hue = PresenceColors.hueFor(emptyList())
         PresenceRenderer.myHue = hue
         PresenceRenderer.myName = name
         statusView?.text = activity.getString(R.string.collab_connecting)
-        CollabSession.createSession(projectName, name, hue) { sid, code ->
-            activity.runOnUiThread {
-                if (sid == null) {
-                    ToastUtil.showError(activity, R.string.collab_no_connection)
-                    refresh()
-                } else {
-                    shownCode = code
-                    attachCallbacks()
-                    CollabSession.startListeners()
-                    SyncWorker.start(sid, true)
-                    refresh()
+        Thread {
+            val root = org.catrobat.catroid.common.FlavoredConstants.DEFAULT_ROOT_DIRECTORY
+            val curProj = org.catrobat.catroid.ProjectManager.getInstance().currentProject
+            if (curProj == null || curProj.name != targetProject) {
+                val encoded = org.catrobat.catroid.utils.FileMetaDataExtractor.encodeSpecialCharsForFileSystem(targetProject)
+                var dir = File(root, encoded)
+                if (!dir.isDirectory) {
+                    dir = root.listFiles()?.firstOrNull { f ->
+                        f.isDirectory && try {
+                            val meta = org.catrobat.catroid.content.backwardcompatibility.ProjectMetaDataParser(File(f, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)).projectMetaData
+                            meta.name == targetProject
+                        } catch (e: Exception) { false }
+                    } ?: dir
+                }
+                if (!dir.isDirectory || !org.catrobat.catroid.io.asynctask.loadProject(dir, activity)) {
+                    activity.runOnUiThread {
+                        ToastUtil.showError(activity, R.string.collab_project_mismatch)
+                        refresh()
+                    }
+                    return@Thread
                 }
             }
-        }
+            activity.runOnUiThread {
+                CollabSession.createSession(projectName, name, hue) { sid, code ->
+                    activity.runOnUiThread {
+                        if (sid == null) {
+                            ToastUtil.showError(activity, R.string.collab_no_connection)
+                            refresh()
+                        } else {
+                            shownCode = code
+                            attachCallbacks()
+                            CollabSession.startListeners()
+                            SyncWorker.start(sid, true)
+                            refresh()
+                        }
+                    }
+                }
+            }
+        }.start()
     }
 
     private fun startJoin(name: String, raw: String) {
@@ -487,6 +495,8 @@ class CollabDialog(
             ToastUtil.showError(activity, R.string.collab_bad_code)
             return
         }
+        if (joining) return
+        joining = true
         lastCode = raw.trim().uppercase()
         CollabAuth.saveDisplayName(name)
         val hue = PresenceColors.hueFor(emptyList())
@@ -496,12 +506,14 @@ class CollabDialog(
         CollabSession.claimInvite(parts[0], parts[1], name, hue) { ok ->
             activity.runOnUiThread {
                 if (!ok) {
+                    joining = false
                     ToastUtil.showError(activity, R.string.collab_bad_code)
                     refresh()
                     return@runOnUiThread
                 }
                 CollabSession.awaitApproval(90000L) { role ->
                     activity.runOnUiThread {
+                        joining = false
                         if (role == null) {
                             ToastUtil.showError(activity, R.string.collab_not_approved)
                             CollabSession.leave()
@@ -564,7 +576,13 @@ class CollabDialog(
     private fun approveWithDistinctHue(uid: String, req: CollabRequest, role: String) {
         val taken = members.values.map { it.colorHue }
         val hue = if (taken.isEmpty()) req.colorHue else PresenceColors.hueFor(taken)
-        CollabSession.approveRequest(uid, req.copy(colorHue = hue), role)
+        CollabSession.approveRequest(uid, req.copy(colorHue = hue), role) { ok ->
+            if (!ok) {
+                activity.runOnUiThread {
+                    ToastUtil.showError(activity, R.string.collab_no_connection)
+                }
+            }
+        }
     }
 
     private fun memberTitle(name: String, role: String?, isSelf: Boolean): String {

@@ -121,7 +121,10 @@ object SyncEngine {
         localXml: String,
         remoteXml: String
     ): Pair<String, Int> {
-        if (snapshotXml == null || localXml == snapshotXml) {
+        if (snapshotXml == null) {
+            return merger.mergeXml(localXml, localXml, remoteXml)
+        }
+        if (localXml == snapshotXml) {
             return Pair(remoteXml, 0)
         }
         return merger.mergeXml(snapshotXml, localXml, remoteXml)

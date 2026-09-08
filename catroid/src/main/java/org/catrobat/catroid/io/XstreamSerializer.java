@@ -317,6 +317,9 @@ public final class XstreamSerializer {
         xstream.alias("brick", CameraTrackingBrick.class);
 		xstream.alias("brick", SetActiveBrick.class);
 		xstream.alias("brick", SetSpotLightBrick.class);
+		xstream.alias("brick", CreateLight2DBrick.class);
+		xstream.alias("brick", Light2DControlBrick.class);
+		xstream.alias("brick", ShadowCasting2DBrick.class);
 		xstream.alias("brick", RemovePbrLightBrick.class);
 		xstream.alias("brick", SetDirectionalLight2Brick.class);
 		xstream.alias("brick", EnablePbrRenderBrick.class);

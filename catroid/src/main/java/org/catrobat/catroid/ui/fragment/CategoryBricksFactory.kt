@@ -601,7 +601,10 @@ import org.catrobat.catroid.content.bricks.SetPenColorBrick
 import org.catrobat.catroid.content.bricks.SetPenSizeBrick
 import org.catrobat.catroid.content.bricks.SetPhysicsObjectTypeBrick
 import org.catrobat.catroid.content.bricks.SetPhysicsStateBrick
+import org.catrobat.catroid.content.bricks.CreateLight2DBrick
+import org.catrobat.catroid.content.bricks.Light2DControlBrick
 import org.catrobat.catroid.content.bricks.SetPointLightBrick
+import org.catrobat.catroid.content.bricks.ShadowCasting2DBrick
 import org.catrobat.catroid.content.bricks.SetPositiveBrick
 import org.catrobat.catroid.content.bricks.SetPostProcessingBrick
 import org.catrobat.catroid.content.bricks.SetPostProcessingNewBrick
@@ -1005,6 +1008,7 @@ open class CategoryBricksFactory {
             context.getString(R.string.category_neoscript) -> setupNeoScriptCategoryList(context)
             context.getString(R.string.category_transitions) -> setupTransitionsCategoryList(context)
             context.getString(R.string.category_threed) -> setupThreedCategoryList(context)
+            context.getString(R.string.category_light2d) -> setupLight2DCategoryList(context)
             context.getString(R.string.category_preload) -> setupPreloadCategoryList(context)
             context.getString(R.string.category_internet) -> setupInternetCategoryList(context)
             context.getString(R.string.category_admob) -> setupAdmobCategoryList(context)
@@ -3216,6 +3220,14 @@ private fun setupJsonCategoryList(context: Context): List<Brick> {
         transitionsBrickList.add(InstantTransitionBrick(""))
         transitionsBrickList.add(CrossFadeSoundBrick(2.0))
         return transitionsBrickList
+    }
+
+    private fun setupLight2DCategoryList(context: Context): List<Brick> {
+        val light2DBrickList: MutableList<Brick> = ArrayList()
+        light2DBrickList.add(CreateLight2DBrick("torch", 0.0, 0.0, 400.0, 1.0, 0xFFE0B0))
+        light2DBrickList.add(Light2DControlBrick("torch", 0, "1.0", ""))
+        light2DBrickList.add(ShadowCasting2DBrick("", 0))
+        return light2DBrickList
     }
 
     private fun setupThreedCategoryList(context: Context): List<Brick> {

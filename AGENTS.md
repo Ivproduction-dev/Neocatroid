@@ -999,3 +999,88 @@ test/collab/ — 86 JVM-тестов (P0 47 + SyncChunks/Engine/Flows/Describer)
   удаление states участникам).
 - UI-гейт: `CollabUi.ENABLED` (сейчас true); хост-секция диалога: PAT + init repo + статусы.
 
+# Свет 2D — категория «Свет (2D)» (Point Light, 2026-09)
+
+Overlay-освещение классической 2D-сцены через lightmap 1/4 + один multiply-проход.
+Без новых зависимостей (box2dlights НЕ используется), тени — raycast существующего
+Box2D-мира, отдельного реестра препятствий нет.
+
+## Файлы
+
+```
+twodlight/
+  Light2D.java            — модель (id, x/y, radius, intensity, color 0xRRGGBB,
+                            enabled, shadows, followSpriteName, static-трекинг)
+  LightManager2D.java     — реестр, скоринг, static/dynamic, grid, кэш активного
+                            набора, ambient, noShadow-имена. Чистая Java
+                            (без gdx/android) + forActiveStage() для actions
+  LightRaycaster.java     — интерфейс трассировки (координаты normal units)
+  ShadowCaster.java       — веер shadow-fan (64 луча), full-circle при world==null
+  LightmapRenderer.java   — FBO 1/4 + ShapeRenderer-веера + multiply-батч
+                            (DST_COLOR/ZERO, alpha=1 в шейдере)
+content/actions/
+  CreateLight2DAction.java   — создание (сбрасывает follow, включает)
+  ControlLight2DAction.java  — 13 действий (константы ACTION_*; порядок = порядок
+                               R.array.light2d_control_actions)
+  ShadowCasting2DAction.java — тень вкл/выкл для спрайта по имени
+content/bricks/
+  CreateLight2DBrick.java    — VisualPlacementBrick (имя, X, Y, радиус,
+                               интенсивность, цвет int)
+  Light2DControlBrick.java   — спиннер действия + имя + значение + спиннер спрайта
+                               (для привязки)
+  ShadowCasting2DBrick.java  — спиннер спрайта + спиннер режима, без формул
+physics/PhysicsWorld.java  — castLightRay() (публичный) + shouldIgnoreLightRayFixture()
+                               (публичный static): скип сенсоров и noShadow-имён
+stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2DLights()
+                               после stage.draw() (до transition overlay и uiStage),
+                               clear() при смене сцены, dispose()
+```
+
+## Отбор активных (вместо sort-all-каждый-кадр)
+
+- Culling: `dist > radius + viewRadius` — мимо.
+- Скоринг: `intensity*radius^2/(1+d^2)` (вклад, не дистанция).
+- Static определяется автоматически (позиция стабильна 30 кадров, без follow);
+  динамики — follow-лайты и недавно двигавшиеся.
+- Grid (cell 256, порог 64 света) только для статиков; динамики — линейно.
+- Пересчёт НЕ каждый кадр: dirty-флаг, сдвиг камеры > 5% вьюпорта, fallback
+  каждые 15 кадров; обновление окружения только по diff (кэш активного набора).
+- Капы одновременно активных: Android 8/тени 2, Desktop 16/4
+  (`setMaxActiveLights`/`setMaxShadowLights` — no-op при том же значении).
+- Теневые веера пересчитываются каждый кадр, но только для топ-K по скору.
+
+## Рендер
+
+- Без светов (`lightManager2D == null` или пуст) проходов нет — старые проекты
+  не меняются.
+- Тени только от существующих Box2D-тел (сенсоры и `noShadowSprites` скипаются);
+  у спрайтов без физики тел нет — они не затеняют (v1-ограничение).
+- Цвет — packed int `0xRRGGBB` (альфа маскируется), совместим с color picker.
+- `twodlight.**` добавлен в `proguard-runtime.pro`; после правок лоадера/света
+  перегенерировать `template_runtime.apk`.
+
+## Регистрация
+
+- `CategoryBricksFactory.setupLight2DCategoryList` + ветка `category_light2d`
+  (без grouping-pref — `getPreferenceKeyForCategory` возвращает null → пропуск).
+- `BrickCategoryListBuilder` (безусловный inflate), `CategoryDocs`,
+  `XstreamSerializer` (3 алиаса), `BrickInfo` ru/en.
+- `RecentBrickListManager` НЕ тронут — брики доступны и фону.
+- Поиск (`BrickSearchFragment`) не покрывает и 3D-категорию — пропущен так же.
+- Desktop-движка в репозитории нет; actions null-safe (как 3D).
+
+## Тесты
+
+- `test/twodlight/LightManager2DTest.java` (12): CRUD, вкл/выкл, culling,
+  вклад большого дальнего против малого ближнего, кэш, static/dynamic,
+  grid-путь (300 светов), кап теней, noShadow, проперти, clear.
+- `test/twodlight/ShadowCasterTest.java` (5): full-circle, стена, zero-radius,
+  падающий raycaster, покрытие лучей — fake `LightRaycaster`, без нативок.
+- `test/twodlight/LightRayFilterTest.java` (3): сенсоры/noShadow через
+  `PhysicsWorld.shouldIgnoreLightRayFixture`.
+- `CreateLight2DBrickTest` (3) + `Light2DControlBrickTest` (2) +
+  `ShadowCasting2DBrickTest` (2): wiring через ActionFactory.
+- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*twodlight*" --tests "*Light2DBrick*" --tests "*ShadowCasting2D*" (27 тестов).
+- На устройстве остались: реальный веер теней от тел, привязка к спрайту,
+  multiply со скриншотами, перфоманс на слабом GPU.
+
