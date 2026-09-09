@@ -544,7 +544,11 @@ public class PhysicsWorld {
 		return physicsObjects.computeIfAbsent(sprite, this::createPhysicsObject);
 	}
 
-	World getWorld() {
+	public boolean hasPhysicsObject(Sprite sprite) {
+		return sprite != null && physicsObjects.containsKey(sprite);
+	}
+
+	public World getWorld() {
 		return world;
 	}
 

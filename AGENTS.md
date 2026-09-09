@@ -1053,8 +1053,17 @@ stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2
 
 - Без светов (`lightManager2D == null` или пуст) проходов нет — старые проекты
   не меняются.
-- Тени только от существующих Box2D-тел (сенсоры и `noShadowSprites` скипаются);
-  у спрайтов без физики тел нет — они не затеняют (v1-ограничение).
+- Тени от Box2D-тел + shadow-proxy (2026-09): тела есть только у физических
+  спрайтов (`Sprite.resetSprite`: `PHYSICS` в ресурсах → `PhysicsLook`), поэтому
+  `ShadowProxyBodies` держит в СУЩЕСТВУЮЩЕМ мире static-тела без коллизий
+  (`categoryBits=0/maskBits=0`, `userData=Sprite`) для видимых спрайтов без
+  реальных тел. Без отдельного реестра препятствий. Фон, невидимые,
+  нулевого размера и спрайты с реальными телами скипаются; stale удаляются,
+  на смене сцены — `dropProxies()`, в `dispose()` — `destroyAll()`.
+  Позиция/поворот телепортируются каждый кадр (только если есть теневые света).
+  `noShadow`-имена работают и для proxy (userData=Sprite).
+- `PhysicsWorld.hasPhysicsObject()` (публичный, без создания) + `getWorld()`
+  публичный для proxy; raycast идёт через `castLightRay()`.
 - Цвет — packed int `0xRRGGBB` (альфа маскируется), совместим с color picker.
 - `twodlight.**` добавлен в `proguard-runtime.pro`; после правок лоадера/света
   перегенерировать `template_runtime.apk`.
@@ -1076,11 +1085,37 @@ stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2
   grid-путь (300 светов), кап теней, noShadow, проперти, clear.
 - `test/twodlight/ShadowCasterTest.java` (5): full-circle, стена, zero-radius,
   падающий raycaster, покрытие лучей — fake `LightRaycaster`, без нативок.
+- `test/twodlight/ShadowProxyBodiesTest.java` (5): создание/скипы/телепорт/
+  удаление, maskBits=0 + userData=Sprite, луч упирается в proxy — реальный
+  `new World()` (нативки есть в тестах).
 - `test/twodlight/LightRayFilterTest.java` (3): сенсоры/noShadow через
   `PhysicsWorld.shouldIgnoreLightRayFixture`.
 - `CreateLight2DBrickTest` (3) + `Light2DControlBrickTest` (2) +
   `ShadowCasting2DBrickTest` (2): wiring через ActionFactory.
-- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*twodlight*" --tests "*Light2DBrick*" --tests "*ShadowCasting2D*" (27 тестов).
+- `test/twodlight/Light2DActionsTest.java` (6): end-to-end действие→менеджер
+  (create/control/shadow + ambient + no-op без стейджа) через реальный
+  `LightManager2D` и мок `StageActivity.activeStageActivity`; закрывает
+  непокрытый раньше слой `forActiveStage()`.
+- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*twodlight*" --tests "*Light2DBrick*" --tests "*ShadowCasting2D*" (38 тестов).
 - На устройстве остались: реальный веер теней от тел, привязка к спрайту,
   multiply со скриншотами, перфоманс на слабом GPU.
+
+## Свет 2D — диагностика «нет визуального эффекта» (2026-09)
+
+Цепочка палитра→brick→ActionFactory→action→`LightManager2D`→culling
+доказана тестами (`Light2DActionsTest`, все зелёные). Если на устройстве
+эффекта нет, причина ниже по пайплайну — смотреть logcat-теги `Light2D`:
+- нет `pass active` (`StageListener.render2DLights`, one-time) → свет не дошёл
+  до менеджера (скрипт не выполнился / пустое имя света);
+- есть `pass active`, нет `multiply pass` (`LightmapRenderer`, one-time) →
+  `update()` вернул пустой active (свет вне камеры) или исключение;
+- `multiply pass ... shader=false` или `Light render failed` → GL-причина,
+  стектрейс и есть первопричина.
+- `LightmapRenderer` после любого исключения сносит GL-ресурсы
+  (`recoverGlResources()`: FBO/shapes/batch/shader в null + дефолтный blend),
+  следующий кадр пересоздаёт их чисто — разовый сбой больше не убивает проход
+  навсегда через залипшие begin/end. `ShaderProgram.pedantic` сохраняется/
+  восстанавливается вокруг компиляции multiply-шейдера.
+- Убран per-execution `Log.i` из `CreateLight2DAction` (в цикле спамил каждый
+  кадр); разовая диагностика осталась в `StageListener`/`LightmapRenderer`.
 

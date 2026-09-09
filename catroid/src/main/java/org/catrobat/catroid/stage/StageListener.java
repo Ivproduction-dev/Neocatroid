@@ -249,6 +249,10 @@ public class StageListener implements ApplicationListener {
     public TransitionManager transitionManager;
     public LightManager2D lightManager2D;
     private LightmapRenderer lightmapRenderer;
+
+    public java.util.List<Sprite> getSpritesForLightProxies() {
+        return sprites;
+    }
     private final LightManager2D.SpritePositionProvider lightSpritePositions =
             new LightManager2D.SpritePositionProvider() {
                 @Override
@@ -488,6 +492,9 @@ public class StageListener implements ApplicationListener {
 		physicsWorld = scene.resetPhysicsWorld();
 		if (lightManager2D != null) {
 			lightManager2D.clear();
+		}
+		if (lightmapRenderer != null) {
+			lightmapRenderer.dropProxies();
 		}
 		sprites = new CopyOnWriteArrayList<>(scene.getSpriteList());
 		loadGlobalSprites();
@@ -1798,9 +1805,16 @@ public class StageListener implements ApplicationListener {
 		}
 	}
 
+	private static boolean light2DDiagLogged;
+
 	private void render2DLights() {
 		if (lightManager2D == null || camera == null) {
 			return;
+		}
+		if (!light2DDiagLogged && lightManager2D.getLightCount() > 0) {
+			light2DDiagLogged = true;
+			Log.i("Light2D", "pass active: lights=" + lightManager2D.getLightCount()
+					+ " ambient=" + lightManager2D.getAmbient());
 		}
 		try {
 			if (Gdx.app != null
@@ -1932,6 +1946,9 @@ public class StageListener implements ApplicationListener {
 				physicsWorld = scene.resetPhysicsWorld();
 				if (lightManager2D != null) {
 					lightManager2D.clear();
+				}
+				if (lightmapRenderer != null) {
+					lightmapRenderer.dropProxies();
 				}
 
 				initActors(sprites);

@@ -10,8 +10,11 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+import org.catrobat.catroid.content.Look;
+import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.physics.PhysicsWorld;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LightmapRenderer {
@@ -47,11 +50,13 @@ public class LightmapRenderer {
     private ShaderProgram multiplyShader;
     private final OrthographicCamera lightCam = new OrthographicCamera();
     private final ShadowCaster shadowCaster = new ShadowCaster();
+    private final ShadowProxyBodies shadowProxies = new ShadowProxyBodies();
     private final Color centerColor = new Color();
     private final Color edgeColor = new Color();
     private int fboWidth;
     private int fboHeight;
     private boolean shaderLogged;
+    private boolean diagLogged;
 
     public void render(LightManager2D manager, OrthographicCamera camera, PhysicsWorld physicsWorld) {
         if (manager == null || camera == null) {
@@ -61,6 +66,9 @@ public class LightmapRenderer {
         if (active.isEmpty()) {
             return;
         }
+        if (!manager.getShadowLights().isEmpty() && physicsWorld != null) {
+            syncProxies(physicsWorld);
+        }
         try {
             ensureResources(camera);
             if (lightFbo == null) {
@@ -68,8 +76,45 @@ public class LightmapRenderer {
             }
             renderLightmap(manager, active, camera, physicsWorld);
             multiplyOntoScene(camera);
+            if (!diagLogged) {
+                diagLogged = true;
+                Gdx.app.log(TAG, "multiply pass: fbo=" + fboWidth + "x" + fboHeight
+                        + " shader=" + (multiplyShader != null && multiplyShader.isCompiled())
+                        + " active=" + active.size());
+            }
         } catch (Throwable throwable) {
             Gdx.app.error(TAG, "Light render failed, skipping pass", throwable);
+            recoverGlResources();
+        }
+    }
+
+    private void recoverGlResources() {
+        disposeFbo();
+        if (shapes != null) {
+            try {
+                shapes.dispose();
+            } catch (Exception ignored) {
+            }
+            shapes = null;
+        }
+        if (multiplyBatch != null) {
+            try {
+                multiplyBatch.dispose();
+            } catch (Exception ignored) {
+            }
+            multiplyBatch = null;
+        }
+        if (multiplyShader != null) {
+            try {
+                multiplyShader.dispose();
+            } catch (Exception ignored) {
+            }
+            multiplyShader = null;
+            shaderLogged = false;
+        }
+        try {
+            restoreDefaultBlend();
+        } catch (Throwable ignored) {
         }
     }
 
@@ -96,8 +141,13 @@ public class LightmapRenderer {
             shapes.setAutoShapeType(true);
         }
         if (multiplyShader == null) {
+            boolean oldPedantic = ShaderProgram.pedantic;
             ShaderProgram.pedantic = false;
-            multiplyShader = new ShaderProgram(MULTIPLY_VERTEX, MULTIPLY_FRAGMENT);
+            try {
+                multiplyShader = new ShaderProgram(MULTIPLY_VERTEX, MULTIPLY_FRAGMENT);
+            } finally {
+                ShaderProgram.pedantic = oldPedantic;
+            }
             if (!multiplyShader.isCompiled() && !shaderLogged) {
                 shaderLogged = true;
                 Gdx.app.error(TAG, "Multiply shader failed: " + multiplyShader.getLog());
@@ -113,34 +163,49 @@ public class LightmapRenderer {
             OrthographicCamera camera, PhysicsWorld physicsWorld) {
         float ambient = manager.getAmbient();
         lightFbo.begin();
-        ScreenUtils.clear(ambient, ambient, ambient, 1f);
-        final PhysicsWorld world = physicsWorld;
-        LightRaycaster raycaster = null;
-        if (world != null) {
-            raycaster = new LightRaycaster() {
-                @Override
-                public float castRay(float startX, float startY, float endX, float endY,
-                        java.util.Set<String> ignoredSpriteNames, float[] outHitPoint) {
-                    return world.castLightRay(startX, startY, endX, endY, ignoredSpriteNames,
-                            outHitPoint);
-                }
-            };
-        }
+        try {
+            ScreenUtils.clear(ambient, ambient, ambient, 1f);
+            final PhysicsWorld world = physicsWorld;
+            LightRaycaster raycaster = null;
+            if (world != null) {
+                raycaster = new LightRaycaster() {
+                    @Override
+                    public float castRay(float startX, float startY, float endX, float endY,
+                            java.util.Set<String> ignoredSpriteNames, float[] outHitPoint) {
+                        return world.castLightRay(startX, startY, endX, endY, ignoredSpriteNames,
+                                outHitPoint);
+                    }
+                };
+            }
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        shapes.setProjectionMatrix(lightCam.combined);
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        for (Light2D light : active) {
-            LightRaycaster lightRays = (light.isShadowsEnabled() && raycaster != null)
-                    ? raycaster : null;
-            ShadowCaster.ShadowFan fan = shadowCaster.computeFan(light.getX(), light.getY(),
-                    light.getRadius(), lightRays, manager.getNoShadowSprites(),
-                    ShadowCaster.DEFAULT_RAY_COUNT);
-            drawFan(light, fan);
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            shapes.setProjectionMatrix(lightCam.combined);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            try {
+                for (Light2D light : active) {
+                    LightRaycaster lightRays = (light.isShadowsEnabled() && raycaster != null)
+                            ? raycaster : null;
+                    ShadowCaster.ShadowFan fan = shadowCaster.computeFan(light.getX(), light.getY(),
+                            light.getRadius(), lightRays, manager.getNoShadowSprites(),
+                            ShadowCaster.DEFAULT_RAY_COUNT);
+                    drawFan(light, fan);
+                }
+            } finally {
+                try {
+                    shapes.end();
+                } catch (Throwable ignored) {
+                }
+            }
+        } finally {
+            try {
+                lightFbo.end();
+            } catch (Throwable ignored) {
+            }
+            try {
+                restoreDefaultBlend();
+            } catch (Throwable ignored) {
+            }
         }
-        shapes.end();
-        lightFbo.end();
-        restoreDefaultBlend();
     }
 
     private void drawFan(Light2D light, ShadowCaster.ShadowFan fan) {
@@ -171,14 +236,146 @@ public class LightmapRenderer {
         multiplyBatch.setShader(multiplyShader);
         multiplyBatch.setBlendFunction(GL20.GL_DST_COLOR, GL20.GL_ZERO);
         multiplyBatch.begin();
-        multiplyBatch.draw(lightRegion, left, bottom, camera.viewportWidth, camera.viewportHeight);
-        multiplyBatch.end();
-        multiplyBatch.setShader(null);
-        restoreDefaultBlend();
+        try {
+            multiplyBatch.draw(lightRegion, left, bottom, camera.viewportWidth,
+                    camera.viewportHeight);
+        } finally {
+            try {
+                multiplyBatch.end();
+            } catch (Throwable ignored) {
+            }
+            try {
+                multiplyBatch.setShader(null);
+            } catch (Throwable ignored) {
+            }
+            try {
+                restoreDefaultBlend();
+            } catch (Throwable ignored) {
+            }
+        }
     }
 
     private void restoreDefaultBlend() {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    void syncProxies(PhysicsWorld physicsWorld, List<Sprite> sprites, Sprite backgroundSprite) {
+        if (physicsWorld == null || sprites == null) {
+            return;
+        }
+        com.badlogic.gdx.physics.box2d.World world;
+        try {
+            world = physicsWorld.getWorld();
+        } catch (Exception e) {
+            return;
+        }
+        if (world == null) {
+            return;
+        }
+        List<ShadowProxyBodies.SpriteInfo> infos = new ArrayList<>(sprites.size());
+        for (Sprite sprite : sprites) {
+            if (sprite == null || sprite.look == null || sprite == backgroundSprite) {
+                continue;
+            }
+            final Sprite current = sprite;
+            final Look look = sprite.look;
+            final boolean hasBody;
+            try {
+                hasBody = physicsWorld.hasPhysicsObject(current);
+            } catch (Exception e) {
+                continue;
+            }
+            infos.add(new ShadowProxyBodies.SpriteInfo() {
+                @Override
+                public Sprite sprite() {
+                    return current;
+                }
+
+                @Override
+                public String name() {
+                    return current.getName();
+                }
+
+                @Override
+                public float centerX() {
+                    return look.getX() + look.getWidth() / 2f;
+                }
+
+                @Override
+                public float centerY() {
+                    return look.getY() + look.getHeight() / 2f;
+                }
+
+                @Override
+                public float halfWidth() {
+                    return look.getWidth() / 2f;
+                }
+
+                @Override
+                public float halfHeight() {
+                    return look.getHeight() / 2f;
+                }
+
+                @Override
+                public float angleDegrees() {
+                    return look.getRotation();
+                }
+
+                @Override
+                public boolean isVisible() {
+                    return look.isVisible();
+                }
+
+                @Override
+                public boolean isBackground() {
+                    return false;
+                }
+
+                @Override
+                public boolean hasRealBody() {
+                    return hasBody;
+                }
+            });
+        }
+        try {
+            shadowProxies.sync(world, infos);
+        } catch (Throwable throwable) {
+            Gdx.app.error(TAG, "Shadow proxy sync failed", throwable);
+        }
+    }
+
+    private void syncProxies(PhysicsWorld physicsWorld) {
+        try {
+            org.catrobat.catroid.stage.StageActivity stageActivity =
+                    org.catrobat.catroid.stage.StageActivity.activeStageActivity != null
+                            ? org.catrobat.catroid.stage.StageActivity.activeStageActivity.get()
+                            : null;
+            if (stageActivity == null || stageActivity.stageListener == null) {
+                return;
+            }
+            List<Sprite> stageSprites = stageActivity.stageListener.getSpritesForLightProxies();
+            Sprite background = null;
+            try {
+                org.catrobat.catroid.content.Scene scene = org.catrobat.catroid.ProjectManager
+                        .getInstance().getCurrentlyPlayingScene();
+                if (scene != null) {
+                    background = scene.getBackgroundSprite();
+                }
+            } catch (Exception e) {
+                background = null;
+            }
+            syncProxies(physicsWorld, stageSprites, background);
+        } catch (Throwable throwable) {
+            Gdx.app.error(TAG, "Shadow proxy lookup failed", throwable);
+        }
+    }
+
+    public void dropProxies() {
+        try {
+            shadowProxies.dropAll();
+        } catch (Exception e) {
+            Gdx.app.error(TAG, "Shadow proxy drop failed", e);
+        }
     }
 
     private void disposeFbo() {
@@ -197,6 +394,11 @@ public class LightmapRenderer {
 
     public void dispose() {
         disposeFbo();
+        try {
+            shadowProxies.destroyAll();
+        } catch (Exception e) {
+            Gdx.app.error(TAG, "Shadow proxy dispose failed", e);
+        }
         if (multiplyBatch != null) {
             try {
                 multiplyBatch.dispose();

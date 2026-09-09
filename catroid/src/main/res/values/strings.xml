@@ -60,6 +60,12 @@
     <string name="debug_menu_copied">Copied to clipboard</string>
     <string name="debug_menu_save">Save</string>
     <string name="debug_menu_cancel">Cancel</string>
+    <string name="debug_menu_tab_vars">Vars</string>
+    <string name="debug_menu_tab_log">Log</string>
+    <string name="debug_menu_log_refresh">Refresh</string>
+    <string name="debug_menu_log_clear">Clear</string>
+    <string name="debug_menu_log_empty">No app errors — log is clean.</string>
+    <string name="debug_menu_log_unavailable">Log unavailable: %1$s</string>
 
     <string name="brick_run_as_sprite_title">Run on behalf</string>
 

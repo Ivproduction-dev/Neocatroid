@@ -72,6 +72,12 @@
     <string name="debug_menu_copied">Скопировано в буфер обмена</string>
     <string name="debug_menu_save">Сохранить</string>
     <string name="debug_menu_cancel">Отмена</string>
+    <string name="debug_menu_tab_vars">Перем.</string>
+    <string name="debug_menu_tab_log">Лог</string>
+    <string name="debug_menu_log_refresh">Обновить</string>
+    <string name="debug_menu_log_clear">Очистить</string>
+    <string name="debug_menu_log_empty">Ошибок приложения нет — лог чист.</string>
+    <string name="debug_menu_log_unavailable">Лог недоступен: %1$s</string>
 
     <string name="brick_run_as_sprite_title">Выполнить от имени</string>
 

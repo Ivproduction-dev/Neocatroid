@@ -51,6 +51,29 @@ public class DebugMenuView extends FrameLayout {
     private static final int MAX_TEXT_DISPLAY_LENGTH = 60;
     private static final int MAX_LIST_ITEMS_DISPLAY = 50;
 
+    private static final int LOG_DUMP_LINES = 1000;
+    private static final int LOG_DISPLAY_LINES = 300;
+    private static final int LOG_REFRESH_INTERVAL_MS = 2000;
+    private static final int COLOR_TAB_INACTIVE = Color.parseColor("#607D8B");
+
+    private boolean logMode = false;
+    private View variablesScroll;
+    private LinearLayout logLayout;
+    private ScrollView logScroll;
+    private TextView logText;
+    private TextView varsTab;
+    private TextView logTab;
+    private int logSkipLines = 0;
+    private int lastDumpSize = 0;
+    private final Runnable logRefreshTask = new Runnable() {
+        @Override
+        public void run() {
+            if (logMode) {
+                refreshLogs();
+            }
+        }
+    };
+
     private static final int COLOR_ACCENT = Color.parseColor("#A8DFF4");
     private static final int COLOR_TEXT_PRIMARY = Color.parseColor("#FFFFFF");
     private static final int COLOR_TEXT_SECONDARY = Color.parseColor("#B0BEC5");
@@ -80,10 +103,20 @@ public class DebugMenuView extends FrameLayout {
         setupWindowControls();
         setupResizer();
         buildInitialLayout();
+        setupTabsAndLogPanel();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        removeCallbacks(logRefreshTask);
     }
 
     @SuppressLint("DefaultLocale")
     public void update() {
+        if (logMode) {
+            return;
+        }
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastUpdateTime < UPDATE_INTERVAL_MS) {
             return;
@@ -180,6 +213,141 @@ public class DebugMenuView extends FrameLayout {
                 }
             }
         }
+    }
+
+    private void setupTabsAndLogPanel() {
+        ViewGroup dialogRoot = (ViewGroup) getChildAt(0);
+        variablesScroll = (View) variablesContainer.getParent();
+
+        LinearLayout tabRow = new LinearLayout(getContext());
+        tabRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        varsTab = createTab(getContext().getString(R.string.debug_menu_tab_vars), true);
+        varsTab.setOnClickListener(v -> setLogMode(false));
+        logTab = createTab(getContext().getString(R.string.debug_menu_tab_log), false);
+        logTab.setOnClickListener(v -> setLogMode(true));
+
+        tabRow.addView(varsTab);
+        tabRow.addView(logTab);
+        dialogRoot.addView(tabRow, 1);
+
+        logLayout = new LinearLayout(getContext());
+        logLayout.setOrientation(LinearLayout.VERTICAL);
+        logLayout.setVisibility(View.GONE);
+
+        LinearLayout logToolbar = new LinearLayout(getContext());
+        logToolbar.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView refreshBtn = createLogAction(getContext().getString(R.string.debug_menu_log_refresh));
+        refreshBtn.setOnClickListener(v -> refreshLogs());
+        TextView copyBtn = createLogAction(getContext().getString(R.string.debug_menu_copy_full));
+        copyBtn.setOnClickListener(v -> copyToClipboard("applog", logText.getText().toString()));
+        TextView clearBtn = createLogAction(getContext().getString(R.string.debug_menu_log_clear));
+        clearBtn.setOnClickListener(v -> clearLogs());
+
+        logToolbar.addView(refreshBtn);
+        logToolbar.addView(copyBtn);
+        logToolbar.addView(clearBtn);
+        logLayout.addView(logToolbar);
+
+        float density = getResources().getDisplayMetrics().density;
+        logScroll = new ScrollView(getContext());
+        logScroll.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, (int) (300 * density)));
+
+        logText = new TextView(getContext());
+        logText.setTypeface(Typeface.MONOSPACE);
+        logText.setTextSize(11);
+        logText.setTextColor(COLOR_TEXT_PRIMARY);
+        logText.setPadding(8, 8, 8, 8);
+        logText.setTextIsSelectable(true);
+        logScroll.addView(logText);
+        logLayout.addView(logScroll);
+
+        dialogRoot.addView(logLayout);
+    }
+
+    private TextView createTab(String text, boolean active) {
+        TextView tab = new TextView(getContext());
+        tab.setText(text);
+        tab.setGravity(Gravity.CENTER);
+        tab.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        tab.setTextSize(13);
+        float density = getResources().getDisplayMetrics().density;
+        tab.setPadding(8, (int) (8 * density), 8, (int) (8 * density));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        tab.setLayoutParams(lp);
+        setTabActive(tab, active);
+        return tab;
+    }
+
+    private void setTabActive(TextView tab, boolean active) {
+        tab.setTextColor(active ? COLOR_ACCENT : COLOR_TAB_INACTIVE);
+    }
+
+    private TextView createLogAction(String text) {
+        TextView action = new TextView(getContext());
+        action.setText(text);
+        action.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        action.setTextSize(12);
+        action.setTextColor(COLOR_ACCENT);
+        float density = getResources().getDisplayMetrics().density;
+        action.setPadding((int) (12 * density), (int) (6 * density),
+                (int) (12 * density), (int) (6 * density));
+        return action;
+    }
+
+    private void setLogMode(boolean enabled) {
+        logMode = enabled;
+        setTabActive(varsTab, !enabled);
+        setTabActive(logTab, enabled);
+        variablesScroll.setVisibility(enabled ? View.GONE : View.VISIBLE);
+        logLayout.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        removeCallbacks(logRefreshTask);
+        if (enabled) {
+            logSkipLines = 0;
+            refreshLogs();
+        }
+    }
+
+    private void refreshLogs() {
+        new Thread(() -> {
+            final AppLogReader.LogResult result = AppLogReader.readAppErrors(LOG_DUMP_LINES);
+            post(() -> applyLogResult(result));
+        }).start();
+    }
+
+    private void applyLogResult(AppLogReader.LogResult result) {
+        if (!logMode) {
+            return;
+        }
+        if (!result.isOk()) {
+            logText.setText(String.format(getContext().getString(R.string.debug_menu_log_unavailable),
+                    result.error));
+        } else {
+            lastDumpSize = result.lines.size();
+            int from = Math.min(logSkipLines, result.lines.size());
+            List<String> fresh = result.lines.subList(from, result.lines.size());
+            int displayFrom = Math.max(0, fresh.size() - LOG_DISPLAY_LINES);
+            if (fresh.isEmpty()) {
+                logText.setText(getContext().getString(R.string.debug_menu_log_empty));
+            } else {
+                StringBuilder sb = new StringBuilder();
+                for (int i = displayFrom; i < fresh.size(); i++) {
+                    sb.append(fresh.get(i)).append('\n');
+                }
+                logText.setText(sb.toString());
+            }
+            logScroll.post(() -> logScroll.fullScroll(View.FOCUS_DOWN));
+        }
+        removeCallbacks(logRefreshTask);
+        postDelayed(logRefreshTask, LOG_REFRESH_INTERVAL_MS);
+    }
+
+    private void clearLogs() {
+        logSkipLines = lastDumpSize;
+        logText.setText(getContext().getString(R.string.debug_menu_log_empty));
     }
 
     private void addHeader(ViewGroup container, String text) {
