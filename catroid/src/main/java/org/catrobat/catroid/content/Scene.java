@@ -25,6 +25,7 @@ package org.catrobat.catroid.content;
 import com.danvexteam.lunoscript_annotations.LunoClass;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
+import org.catrobat.catroid.neo3d.Neo3DPersistedObject;
 
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.common.Nameable;
@@ -63,7 +64,8 @@ import androidx.annotation.NonNull;
 		"startTransitionDuration",
 		"exitTransitionType",
 		"exitTransitionDuration",
-		"sceneVariables"
+		"sceneVariables",
+		"neo3DObjects"
 	})
 @LunoClass
 public class Scene implements Nameable, Serializable {
@@ -79,6 +81,9 @@ public class Scene implements Nameable, Serializable {
 
 	@XStreamAlias("sceneVariables")
 	private List<UserVariable> sceneVariables = new ArrayList<>();
+
+	@XStreamAlias("neo3DObjects")
+	private List<Neo3DPersistedObject> neo3DObjects = new ArrayList<>();
 
 	@XStreamAlias("transitionType")
 	private int transitionType = 0;
@@ -252,6 +257,13 @@ public class Scene implements Nameable, Serializable {
 		for (UserVariable userVariable : getSceneVariables()) {
 			userVariable.reset();
 		}
+	}
+
+	public List<Neo3DPersistedObject> getNeo3DObjects() {
+		if (neo3DObjects == null) {
+			neo3DObjects = new ArrayList<>();
+		}
+		return neo3DObjects;
 	}
 
 	public Sprite getSpriteAll(String spriteName) {

@@ -23,7 +23,6 @@
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action" />
 
-        <!-- Notification ID -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_notification_id"
@@ -32,7 +31,6 @@
             android:id="@+id/brick_notification_action_edit_id"
             style="@style/BrickEditText" />
 
-        <!-- Action ID -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_id"
@@ -41,7 +39,6 @@
             android:id="@+id/brick_notification_action_edit_action_id"
             style="@style/BrickEditText" />
 
-        <!-- Button text -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_text"
@@ -50,7 +47,6 @@
             android:id="@+id/brick_notification_action_edit_text"
             style="@style/BrickEditText" />
 
-        <!-- Icon -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_icon"
@@ -59,7 +55,6 @@
             android:id="@+id/brick_notification_action_edit_icon"
             style="@style/BrickEditText" />
 
-        <!-- Reply hint -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_hint"
@@ -68,7 +63,6 @@
             android:id="@+id/brick_notification_action_edit_hint"
             style="@style/BrickEditText" />
 
-        <!-- Behavior spinner -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_notification_action_behavior"
@@ -79,7 +73,6 @@
             android:layout_height="wrap_content"
             android:textDirection="locale" />
 
-        <!-- Has input checkbox -->
         <CheckBox
             android:id="@+id/brick_notification_action_input_checkbox"
             android:layout_width="wrap_content"

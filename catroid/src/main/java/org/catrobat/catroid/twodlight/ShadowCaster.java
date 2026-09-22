@@ -23,20 +23,35 @@ public class ShadowCaster {
 
     private final float[] outHit = new float[2];
 
-    public ShadowFan computeFan(float centerX, float centerY, float radius,
-            LightRaycaster raycaster, Set<String> noShadowSprites, int rayCount) {
+    public ShadowFan computeFan(Light2D light, LightRaycaster raycaster, Set<String> noShadowSprites,
+            int rayCount) {
+        if (light == null) {
+            return new ShadowFan(new float[1], new float[1], 0, false);
+        }
         if (rayCount <= 0) {
             rayCount = DEFAULT_RAY_COUNT;
         }
+        float centerX = light.getX();
+        float centerY = light.getY();
+        float radius = light.getRadius();
+        int type = light.getLightType();
+
+        float startAngle = 0f;
+        float sweepAngle = (float) (2.0 * Math.PI);
+        if (type == Light2D.TYPE_SPOTLIGHT) {
+            startAngle = (float) (-Math.PI / 4.0); // -45 deg
+            sweepAngle = (float) (Math.PI / 2.0);  // 90 deg cone
+        }
+
         float[] ringX = new float[rayCount + 1];
         float[] ringY = new float[rayCount + 1];
         boolean anyHit = false;
         if (raycaster == null || radius <= 0f) {
-            fillCircle(centerX, centerY, radius, ringX, ringY, rayCount);
+            fillSector(centerX, centerY, radius, startAngle, sweepAngle, ringX, ringY, rayCount);
             return new ShadowFan(ringX, ringY, rayCount, false);
         }
         for (int i = 0; i <= rayCount; i++) {
-            float angle = (float) (i * 2.0 * Math.PI / rayCount);
+            float angle = startAngle + (float) (i * sweepAngle / rayCount);
             float dirX = (float) Math.cos(angle);
             float dirY = (float) Math.sin(angle);
             float endX = centerX + dirX * radius;
@@ -61,14 +76,20 @@ public class ShadowCaster {
     }
 
     public ShadowFan computeFan(float centerX, float centerY, float radius,
+            LightRaycaster raycaster, Set<String> noShadowSprites, int rayCount) {
+        Light2D temp = new Light2D("", centerX, centerY, radius, 1f, 0xFFFFFF);
+        return computeFan(temp, raycaster, noShadowSprites, rayCount);
+    }
+
+    public ShadowFan computeFan(float centerX, float centerY, float radius,
             LightRaycaster raycaster, Set<String> noShadowSprites) {
         return computeFan(centerX, centerY, radius, raycaster, noShadowSprites, DEFAULT_RAY_COUNT);
     }
 
-    private void fillCircle(float centerX, float centerY, float radius, float[] ringX, float[] ringY,
-            int rayCount) {
+    private void fillSector(float centerX, float centerY, float radius, float startAngle, float sweepAngle,
+            float[] ringX, float[] ringY, int rayCount) {
         for (int i = 0; i <= rayCount; i++) {
-            float angle = (float) (i * 2.0 * Math.PI / rayCount);
+            float angle = startAngle + (float) (i * sweepAngle / rayCount);
             ringX[i] = centerX + (float) Math.cos(angle) * radius;
             ringY[i] = centerY + (float) Math.sin(angle) * radius;
         }

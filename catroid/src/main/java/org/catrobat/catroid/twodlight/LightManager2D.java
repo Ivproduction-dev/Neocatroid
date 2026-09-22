@@ -99,6 +99,16 @@ public class LightManager2D {
         return true;
     }
 
+    public boolean toggleLight(String id) {
+        Light2D light = lights.get(id);
+        if (light == null) {
+            return false;
+        }
+        light.setEnabled(!light.isEnabled());
+        markDirty();
+        return true;
+    }
+
     public boolean setShadowsEnabled(String id, boolean shadowsEnabled) {
         Light2D light = lights.get(id);
         if (light == null) {

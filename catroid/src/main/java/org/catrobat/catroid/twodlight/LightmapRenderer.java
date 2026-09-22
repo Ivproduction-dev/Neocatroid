@@ -22,21 +22,31 @@ public class LightmapRenderer {
     private static final float LIGHTMAP_SCALE = 0.25f;
     private static final String TAG = "Lightmap2D";
 
+    private static final String PRECISION_PREAMBLE =
+            "#ifdef GL_ES\n"
+                    + "precision mediump float;\n"
+                    + "#define VPRECISION mediump\n"
+                    + "#else\n"
+                    + "#define VPRECISION\n"
+                    + "#endif\n";
+
     private static final String MULTIPLY_VERTEX =
-            "attribute vec4 a_position;\n"
+            PRECISION_PREAMBLE
+                    + "attribute vec4 a_position;\n"
                     + "attribute vec4 a_color;\n"
                     + "attribute vec2 a_texCoord0;\n"
                     + "uniform mat4 u_projTrans;\n"
-                    + "varying vec4 v_color;\n"
-                    + "varying vec2 v_texCoords;\n"
+                    + "varying VPRECISION vec4 v_color;\n"
+                    + "varying VPRECISION vec2 v_texCoords;\n"
                     + "void main() {\n"
                     + "   v_color = a_color;\n"
                     + "   v_texCoords = a_texCoord0;\n"
                     + "   gl_Position = u_projTrans * a_position;\n"
                     + "}\n";
     private static final String MULTIPLY_FRAGMENT =
-            "varying vec4 v_color;\n"
-                    + "varying vec2 v_texCoords;\n"
+            PRECISION_PREAMBLE
+                    + "varying VPRECISION vec4 v_color;\n"
+                    + "varying VPRECISION vec2 v_texCoords;\n"
                     + "uniform sampler2D u_texture;\n"
                     + "void main() {\n"
                     + "   vec3 light = texture2D(u_texture, v_texCoords).rgb;\n"
@@ -179,15 +189,15 @@ public class LightmapRenderer {
             }
 
             Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapes.setProjectionMatrix(lightCam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
             try {
                 for (Light2D light : active) {
                     LightRaycaster lightRays = (light.isShadowsEnabled() && raycaster != null)
                             ? raycaster : null;
-                    ShadowCaster.ShadowFan fan = shadowCaster.computeFan(light.getX(), light.getY(),
-                            light.getRadius(), lightRays, manager.getNoShadowSprites(),
-                            ShadowCaster.DEFAULT_RAY_COUNT);
+                    ShadowCaster.ShadowFan fan = shadowCaster.computeFan(light, lightRays,
+                            manager.getNoShadowSprites(), ShadowCaster.DEFAULT_RAY_COUNT);
                     drawFan(light, fan);
                 }
             } finally {
@@ -210,7 +220,8 @@ public class LightmapRenderer {
 
     private void drawFan(Light2D light, ShadowCaster.ShadowFan fan) {
         float clamped = Math.max(0f, Math.min(1f, light.getIntensity()));
-        float gain = Math.min(1f, clamped * 1.5f);
+        float multiplier = light.getLightType() == Light2D.TYPE_ASTRA ? 2.5f : 1.5f;
+        float gain = Math.min(1f, clamped * multiplier);
         float r = Math.min(1f, light.getRed() * gain);
         float g = Math.min(1f, light.getGreen() * gain);
         float b = Math.min(1f, light.getBlue() * gain);
@@ -396,13 +407,13 @@ public class LightmapRenderer {
         disposeFbo();
         try {
             shadowProxies.destroyAll();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Gdx.app.error(TAG, "Shadow proxy dispose failed", e);
         }
         if (multiplyBatch != null) {
             try {
                 multiplyBatch.dispose();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Gdx.app.error(TAG, "Batch dispose failed", e);
             }
             multiplyBatch = null;
@@ -410,7 +421,7 @@ public class LightmapRenderer {
         if (shapes != null) {
             try {
                 shapes.dispose();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Gdx.app.error(TAG, "Shapes dispose failed", e);
             }
             shapes = null;
@@ -418,7 +429,7 @@ public class LightmapRenderer {
         if (multiplyShader != null) {
             try {
                 multiplyShader.dispose();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Gdx.app.error(TAG, "Shader dispose failed", e);
             }
             multiplyShader = null;

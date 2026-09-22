@@ -155,6 +155,12 @@
         android:title="@string/preference_title_enable_threed_bricks" />
 
     <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="setting_neo3d_bricks"
+        android:summary="@string/preference_description_neo3d"
+        android:title="@string/preference_title_enable_neo3d_bricks" />
+
+    <CheckBoxPreference
         android:defaultValue="@string/FEATURE_EMBROIDERY_PREFERENCES_ENABLED"
         android:key="setting_internet_bricks"
         android:summary="@string/preference_description_internet_bricks"

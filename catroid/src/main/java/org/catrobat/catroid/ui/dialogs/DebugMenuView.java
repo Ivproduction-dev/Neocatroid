@@ -57,6 +57,7 @@ public class DebugMenuView extends FrameLayout {
     private static final int COLOR_TAB_INACTIVE = Color.parseColor("#607D8B");
 
     private boolean logMode = false;
+    private boolean logShowWarnings = false;
     private View variablesScroll;
     private LinearLayout logLayout;
     private ScrollView logScroll;
@@ -238,6 +239,21 @@ public class DebugMenuView extends FrameLayout {
         LinearLayout logToolbar = new LinearLayout(getContext());
         logToolbar.setOrientation(LinearLayout.HORIZONTAL);
 
+        TextView errorsBtn = createLogAction("E");
+        TextView warningsBtn = createLogAction("W");
+        errorsBtn.setOnClickListener(v -> {
+            logShowWarnings = false;
+            setLogLevelActive(errorsBtn, warningsBtn);
+            logSkipLines = 0;
+            refreshLogs();
+        });
+        warningsBtn.setOnClickListener(v -> {
+            logShowWarnings = true;
+            setLogLevelActive(warningsBtn, errorsBtn);
+            logSkipLines = 0;
+            refreshLogs();
+        });
+        setLogLevelActive(errorsBtn, warningsBtn);
         TextView refreshBtn = createLogAction(getContext().getString(R.string.debug_menu_log_refresh));
         refreshBtn.setOnClickListener(v -> refreshLogs());
         TextView copyBtn = createLogAction(getContext().getString(R.string.debug_menu_copy_full));
@@ -245,6 +261,8 @@ public class DebugMenuView extends FrameLayout {
         TextView clearBtn = createLogAction(getContext().getString(R.string.debug_menu_log_clear));
         clearBtn.setOnClickListener(v -> clearLogs());
 
+        logToolbar.addView(errorsBtn);
+        logToolbar.addView(warningsBtn);
         logToolbar.addView(refreshBtn);
         logToolbar.addView(copyBtn);
         logToolbar.addView(clearBtn);
@@ -298,6 +316,11 @@ public class DebugMenuView extends FrameLayout {
         return action;
     }
 
+    private void setLogLevelActive(TextView active, TextView inactive) {
+        active.setTextColor(COLOR_ACCENT);
+        inactive.setTextColor(COLOR_TAB_INACTIVE);
+    }
+
     private void setLogMode(boolean enabled) {
         logMode = enabled;
         setTabActive(varsTab, !enabled);
@@ -312,8 +335,11 @@ public class DebugMenuView extends FrameLayout {
     }
 
     private void refreshLogs() {
+        final boolean warnings = logShowWarnings;
         new Thread(() -> {
-            final AppLogReader.LogResult result = AppLogReader.readAppErrors(LOG_DUMP_LINES);
+            final AppLogReader.LogResult result = warnings
+                    ? AppLogReader.readAppWarnings(LOG_DUMP_LINES)
+                    : AppLogReader.readAppErrors(LOG_DUMP_LINES);
             post(() -> applyLogResult(result));
         }).start();
     }

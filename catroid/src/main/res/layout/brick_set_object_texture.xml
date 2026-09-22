@@ -16,7 +16,7 @@
         android:id="@+id/brick_set_object_texture_layout"
         style="@style/BrickContainer.Threed.Medium">
 
-        <include layout="@layout/icon_brick_category_threed" /> <!-- Иконка вашей 3D категории -->
+        <include layout="@layout/icon_brick_category_threed" />
 
         <TextView
             style="@style/BrickText.SingleLine"

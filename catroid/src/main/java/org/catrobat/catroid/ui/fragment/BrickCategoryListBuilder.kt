@@ -70,6 +70,9 @@ class BrickCategoryListBuilder(private val activity: FragmentActivity) {
         if (SettingsFragment.isThreedSharedPreferenceEnabled(activity)) {
             categories.add(inflater.inflate(R.layout.brick_category_threed, null))
         }
+        if (SettingsFragment.isNeo3dSharedPreferenceEnabled(activity)) {
+            categories.add(inflater.inflate(R.layout.brick_category_neo3d, null))
+        }
         if (SettingsFragment.isInternetSharedPreferenceEnabled(activity)) {
             categories.add(inflater.inflate(R.layout.brick_category_internet, null))
         }

@@ -105,6 +105,7 @@ public class SettingsFragment extends PreferenceFragment {
     public static final String SETTINGS_SHOW_PATHFINDER_BRICKS = "setting_pathfinder_bricks";
 	public static final String SETTINGS_OLD_DRAG = "setting_old_drag";
 	public static final String SETTINGS_SHOW_THREED_BRICKS = "setting_threed_bricks";
+	public static final String SETTINGS_SHOW_NEO3D_BRICKS = "setting_neo3d_bricks";
 	public static final String SETTINGS_SHOW_INTERNET_BRICKS = "setting_internet_bricks";
 
 	public static final String SETTINGS_SHOW_NFC_BRICKS = "setting_nfc_bricks";
@@ -577,6 +578,9 @@ public class SettingsFragment extends PreferenceFragment {
 	}
 	public static boolean isThreedSharedPreferenceEnabled(Context context) {
 		return getBooleanSharedPreference(false, SETTINGS_SHOW_THREED_BRICKS, context);
+	}
+	public static boolean isNeo3dSharedPreferenceEnabled(Context context) {
+		return getBooleanSharedPreference(true, SETTINGS_SHOW_NEO3D_BRICKS, context);
 	}
 	public static boolean isInternetSharedPreferenceEnabled(Context context) {
 		return getBooleanSharedPreference(false, SETTINGS_SHOW_INTERNET_BRICKS, context);

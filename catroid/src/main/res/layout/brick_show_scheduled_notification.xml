@@ -23,7 +23,6 @@
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_show_scheduled_notification" />
 
-        <!-- ID -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_id"
@@ -32,7 +31,6 @@
             android:id="@+id/brick_show_scheduled_notification_edit_id"
             style="@style/BrickEditText" />
 
-        <!-- Duration -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_show_scheduled_notification_duration"

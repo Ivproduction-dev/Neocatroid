@@ -2,6 +2,10 @@ package org.catrobat.catroid.twodlight;
 
 public class Light2D {
 
+    public static final int TYPE_POINT = 0;
+    public static final int TYPE_ASTRA = 1;
+    public static final int TYPE_SPOTLIGHT = 2;
+
     static final int STATIC_STABLE_FRAMES = 30;
     private static final float MOVE_EPSILON_SQ = 0.25f;
 
@@ -11,6 +15,7 @@ public class Light2D {
     private float radius;
     private float intensity;
     private int color;
+    private int lightType = TYPE_POINT;
     private boolean enabled = true;
     private boolean shadowsEnabled;
     private String followSpriteName;
@@ -130,6 +135,14 @@ public class Light2D {
         }
         lastX = x;
         lastY = y;
+    }
+
+    public int getLightType() {
+        return lightType;
+    }
+
+    public void setLightType(int lightType) {
+        this.lightType = lightType;
     }
 
     float contributionScore(float dx, float dy) {

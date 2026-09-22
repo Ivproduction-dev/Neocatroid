@@ -13,20 +13,17 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical" />
 
-    <!-- Используем стиль "Libraries", который можно создать в styles.xml -->
     <org.catrobat.catroid.ui.BrickLayout
         android:id="@+id/brick_custom_layout"
-        style="@style/BrickContainer.Libs.Big"> <!-- Или свой стиль -->
+        style="@style/BrickContainer.Libs.Big">
 
-        <include layout="@layout/icon_brick_category_libs" /> <!-- Иконка для категории -->
+        <include layout="@layout/icon_brick_category_libs" />
 
-        <!-- Текстовая часть №1 (до первого параметра) -->
         <TextView
             android:id="@+id/custom_brick_header_part_1"
             style="@style/BrickText.SingleLine"
             android:text=""/>
 
-        <!-- Параметр №1 (может быть Formula или Spinner) -->
         <TextView
             android:id="@+id/custom_brick_formula_1"
             style="@style/BrickEditText"
@@ -37,14 +34,12 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <!-- Текстовая часть №2 (между параметрами) -->
         <TextView
             android:id="@+id/custom_brick_header_part_2"
             style="@style/BrickText.SingleLine"
             android:text=""
-            app:layout_newLine="true"/> <!-- Перенос строки для наглядности -->
+            app:layout_newLine="true"/>
 
-        <!-- Параметр №2 (может быть Formula или Spinner) -->
         <TextView
             android:id="@+id/custom_brick_formula_2"
             style="@style/BrickEditText"
@@ -55,7 +50,6 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <!-- Текстовая часть №3 (после всех параметров) -->
         <TextView
             android:id="@+id/custom_brick_header_part_3"
             style="@style/BrickText.SingleLine"

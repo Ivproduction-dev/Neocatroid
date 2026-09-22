@@ -147,7 +147,6 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 					View nextView = view.findViewById(nextId);
 					if (nextView != null) {
 						nextView.setVisibility(View.VISIBLE);
-						// init spinner for newly visible slot
 						BrickSpinner<UserVariable> spinner = new BrickSpinner<>(nextId, view, items);
 						spinner.setOnItemSelectedListener(ListenTcpServerBrick.this);
 						spinner.setSelection(getVariable(visibleVariables - 1));

@@ -20,4 +20,10 @@
         <item>Отбрасывает тень</item>
         <item>Без тени</item>
     </string-array>
+
+    <string-array name="light2d_types">
+        <item>Точечный свет (Point Light)</item>
+        <item>Астральный свет (Astra Light)</item>
+        <item>Прожектор (Spotlight)</item>
+    </string-array>
 </resources>

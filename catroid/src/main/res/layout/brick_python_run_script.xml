@@ -12,7 +12,6 @@
         android:layout_height="wrap_content"
         android:visibility="gone" />
 
-    <!-- ИЗМЕНЕНИЕ: Стиль изменен на Big, так как полей стало больше -->
     <org.catrobat.catroid.ui.BrickLayout
         android:id="@+id/brick_python_run_script_layout"
         style="@style/BrickContainer.Device.Medium">
@@ -32,7 +31,6 @@
             android:id="@+id/brick_python_script_text"
             style="@style/BrickEditText" />
 
-        <!-- ДОБАВЛЕНО: Новые поля для имени переменной -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/python_save_log_to"

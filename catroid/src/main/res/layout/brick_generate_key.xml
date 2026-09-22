@@ -48,7 +48,6 @@
             android:id="@+id/brick_gen_key_edit_alias"
             style="@style/BrickEditText" />
 
-        <!-- 4. Имя владельца -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_gen_key_name"

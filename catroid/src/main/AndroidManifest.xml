@@ -136,6 +136,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".neo3d.demo.Neo3DDemoActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".ui.dialogs.RuntimeConsoleActivity"
             android:theme="@style/Catroid" />
 

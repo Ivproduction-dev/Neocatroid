@@ -12,7 +12,6 @@
         android:layout_height="wrap_content"
         android:visibility="gone" />
 
-    <!-- Я использовал категорию Control, вы можете поменять на более подходящую -->
     <org.catrobat.catroid.ui.BrickLayout
         android:id="@+id/brick_upload_file_layout"
         style="@style/BrickContainer.Internet.Big">

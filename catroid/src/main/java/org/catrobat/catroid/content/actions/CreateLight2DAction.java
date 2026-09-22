@@ -3,6 +3,7 @@ package org.catrobat.catroid.content.actions;
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import org.catrobat.catroid.content.Scope;
 import org.catrobat.catroid.formulaeditor.Formula;
+import org.catrobat.catroid.twodlight.Light2D;
 import org.catrobat.catroid.twodlight.LightManager2D;
 
 public class CreateLight2DAction extends TemporalAction {
@@ -11,8 +12,9 @@ public class CreateLight2DAction extends TemporalAction {
     private Formula lightName;
     private Formula posX;
     private Formula posY;
-    private Formula radius;
+    private int lightType;
     private Formula intensity;
+    private Formula radius;
     private Formula color;
 
     public void setScope(Scope scope) {
@@ -29,6 +31,10 @@ public class CreateLight2DAction extends TemporalAction {
 
     public void setPosY(Formula posY) {
         this.posY = posY;
+    }
+
+    public void setLightType(int lightType) {
+        this.lightType = lightType;
     }
 
     public void setRadius(Formula radius) {
@@ -59,12 +65,17 @@ public class CreateLight2DAction extends TemporalAction {
             }
             float x = posX == null ? 0f : posX.interpretFloat(scope);
             float y = posY == null ? 0f : posY.interpretFloat(scope);
-            float lightRadius = radius == null ? 300f : radius.interpretFloat(scope);
+            float lightRadius = radius == null ? 400f : radius.interpretFloat(scope);
             float lightIntensity = intensity == null ? 1f : intensity.interpretFloat(scope);
-            int lightColor = color == null ? 0xFFFFFF : color.interpretInteger(scope);
-            manager.createOrUpdateLight(id, x, y, lightRadius, lightIntensity, lightColor);
+            int lightColor = color == null ? 0xFFE0B0 : color.interpretInteger(scope);
+
+            Light2D light = manager.createOrUpdateLight(id, x, y, lightRadius, lightIntensity, lightColor);
+            if (light != null) {
+                light.setLightType(lightType);
+            }
             manager.detachFromSprite(id);
             manager.setEnabled(id, true);
+            manager.setShadowsEnabled(id, true);
         } catch (Exception e) {
             e.printStackTrace();
         }

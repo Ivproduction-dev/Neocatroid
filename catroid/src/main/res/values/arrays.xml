@@ -663,9 +663,23 @@
         <item>Set ambient light</item>
     </string-array>
 
+    <string-array name="light2d_modify_properties">
+        <item>Position X/Y</item>
+        <item>Radius</item>
+        <item>Intensity</item>
+        <item>Color</item>
+        <item>Ambient brightness</item>
+    </string-array>
+
     <string-array name="light2d_shadow_modes">
         <item>Cast shadow</item>
         <item>No shadow</item>
+    </string-array>
+
+    <string-array name="light2d_types">
+        <item>Point Light</item>
+        <item>Astra Light</item>
+        <item>Spotlight</item>
     </string-array>
 
     <string-array name="brick_http_configure_light_types">

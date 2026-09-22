@@ -119,6 +119,9 @@ import org.catrobat.catroid.devices.raspberrypi.RaspberryPiService;
 import org.catrobat.catroid.exceptions.ProjectException;
 import org.catrobat.catroid.formulaeditor.UserVariable;
 import org.catrobat.catroid.io.StageAudioFocus;
+import org.catrobat.catroid.neo3d.Neo3DEngine;
+import org.catrobat.catroid.neo3d.Neo3DFacade;
+import org.catrobat.catroid.neo3d.backend.Neo3DFilamentBackend;
 import org.catrobat.catroid.nfc.NfcHandler;
 import org.catrobat.catroid.stage.event.EventManager;
 import org.catrobat.catroid.ui.MarketingActivity;
@@ -234,6 +237,14 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	private Map<String, View> dynamicViews = new HashMap<>();
 
 	private FrameLayout cameraContainer;
+
+	private Neo3DEngine neo3DEngine;
+	private SurfaceView neo3dSurfaceView;
+	private boolean neo3dSurfaceShown;
+
+	public Neo3DEngine getNeo3DEngine() {
+		return neo3DEngine;
+	}
 
 	private Map<String, WebViewCallback> webViewCallbacks = new HashMap<>();
 
@@ -401,6 +412,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 			((ViewGroup) gameView.getParent()).removeView(gameView);
 		}
 		rootLayout.addView(gameView);
+		setupNeo3DSurface(rootLayout, gameView);
 		rootLayout.addView(foregroundLayout);
 
 		if (shouldShowPrecompileOverlay()) {
@@ -1565,10 +1577,77 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 		return this;
 	}
 
+	private void setupNeo3DSurface(FrameLayout root, View gameView) {
+		try {
+			neo3dSurfaceView = new SurfaceView(this);
+			neo3dSurfaceView.setZOrderMediaOverlay(false);
+			neo3dSurfaceView.setClickable(false);
+			neo3dSurfaceView.setFocusable(false);
+			FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT);
+			int gameIndex = root.indexOfChild(gameView);
+			root.addView(neo3dSurfaceView, Math.max(0, gameIndex), params);
+			neo3dSurfaceView.setVisibility(View.GONE);
+			neo3dSurfaceShown = false;
+			neo3DEngine = Neo3DEngine.create(this, Neo3DEngine.BackendType.AUTO);
+			Neo3DFacade.install(neo3DEngine);
+			if (neo3DEngine.getBackend() instanceof Neo3DFilamentBackend) {
+				neo3DEngine.attachSurfaceView(neo3dSurfaceView);
+			}
+		} catch (Throwable t) {
+			Log.e(TAG, "neo3D setup failed", t);
+			neo3DEngine = null;
+			neo3dSurfaceView = null;
+		}
+	}
+
+	public void updateNeo3DSurfaceVisibility() {
+		if (neo3dSurfaceView == null) {
+			return;
+		}
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				if (neo3dSurfaceView == null) {
+					return;
+				}
+				boolean shouldShow = neo3DEngine != null
+						&& neo3DEngine.getBackend() instanceof Neo3DFilamentBackend
+						&& neo3DEngine.getLoadedModelCount() > 0;
+				if (shouldShow == neo3dSurfaceShown) {
+					return;
+				}
+				neo3dSurfaceShown = shouldShow;
+				neo3dSurfaceView.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+			}
+		});
+	}
+
+	private void teardownNeo3DEngine() {
+		if (neo3DEngine != null) {
+			try {
+				neo3DEngine.dispose();
+			} catch (Throwable t) {
+				Log.e(TAG, "neo3D dispose failed", t);
+			}
+			neo3DEngine = null;
+		}
+		neo3dSurfaceView = null;
+		Neo3DFacade.uninstall();
+	}
+
 	@Override
 	public void onPause() {
 		StageLifeCycleController.stagePause(this);
 		broadcastEventToAllSprites(new EventId(EventId.APP_MINIMIZED));
+		if (neo3DEngine != null) {
+			try {
+				neo3DEngine.onPause();
+			} catch (Throwable t) {
+				Log.e(TAG, "neo3D pause failed", t);
+			}
+		}
 		super.onPause();
 		VolumeButtonState.reset();
 		stopVolumeHoldChecker();
@@ -1612,6 +1691,14 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	public void onResume() {
 		StageLifeCycleController.stageResume(this);
 		broadcastEventToAllSprites(new EventId(EventId.APP_RESTORED));
+		if (neo3DEngine != null) {
+			try {
+				Neo3DFacade.install(neo3DEngine);
+				neo3DEngine.onResume();
+			} catch (Throwable t) {
+				Log.e(TAG, "neo3D resume failed", t);
+			}
+		}
 		super.onResume();
 		activeStageActivity = new WeakReference<>(this);
 
@@ -1638,6 +1725,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 			VolumeButtonState.reset();
 			RunJSAction.Companion.destroyWebView();
 			AdMobManager.INSTANCE.reset();
+			teardownNeo3DEngine();
 			messageHandler = null;
 			MyActivityManager.Companion.clearActivity(this);
 		} catch (Throwable t) {

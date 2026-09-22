@@ -83,6 +83,8 @@ import org.catrobat.catroid.common.ScreenModes;
 import org.catrobat.catroid.common.ScreenValues;
 import org.catrobat.catroid.common.ThreadScheduler;
 import org.catrobat.catroid.common.TilemapLookData;
+import org.catrobat.catroid.neo3d.Neo3DFacade;
+import org.catrobat.catroid.neo3d.Neo3DPersistence;
 import org.catrobat.catroid.content.EventWrapper;
 import org.catrobat.catroid.content.ExitProjectScript;
 import org.catrobat.catroid.content.GlobalManager;
@@ -422,6 +424,8 @@ public class StageListener implements ApplicationListener {
 
 	private ThreeDManager threeDManager;
 
+	private String neo3DSceneId;
+
 	public SceneManager sceneManager;
 
 
@@ -472,6 +476,8 @@ public class StageListener implements ApplicationListener {
 		threeDManager.init();
 
 		sceneManager = new SceneManager(threeDManager);
+
+		setupNeo3DEngine();
 
 		if (stage == null) {
 			createNewStage();
@@ -1005,6 +1011,30 @@ public class StageListener implements ApplicationListener {
 
 		inputMultiplexer = new InputMultiplexer();
 
+        com.badlogic.gdx.InputProcessor neo3DPickProcessor = new com.badlogic.gdx.InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (pointer != 0 || !org.catrobat.catroid.neo3d.Neo3DFacade.isReady()
+                        || neo3DSceneId == null) {
+                    return false;
+                }
+                try {
+                    float viewportHeight = com.badlogic.gdx.Gdx.graphics.getHeight();
+                    String pickedId = org.catrobat.catroid.neo3d.Neo3DFacade
+                            .facadePickObject(neo3DSceneId, screenX, viewportHeight - screenY);
+                    if (pickedId != null) {
+                        String pickedName = org.catrobat.catroid.neo3d.Neo3DFacade
+                                .facadeGetObjectName(neo3DSceneId, pickedId);
+                        com.badlogic.gdx.Gdx.app.log("Neo3DPick",
+                                "picked id=" + pickedId + " name=" + pickedName);
+                    }
+                } catch (Throwable t) {
+                    android.util.Log.e("StageListener", "neo3D pick failed", t);
+                }
+                return false;
+            }
+        };
+        inputMultiplexer.addProcessor(neo3DPickProcessor);
         inputMultiplexer.addProcessor(cameraInputProcessor);
 		inputMultiplexer.addProcessor(uiStage);
 		inputMultiplexer.addProcessor(stage);
@@ -1674,6 +1704,52 @@ public class StageListener implements ApplicationListener {
 		resume();
 	}
 
+	private void setupNeo3DEngine() {
+		try {
+			if (neo3DSceneId != null && Neo3DFacade.isReady()) {
+				Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
+				if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
+					Neo3DPersistence.saveToScene(catroidScene,
+							Neo3DFacade.getEngineForTest(), neo3DSceneId);
+				}
+				Neo3DFacade.facadeDeleteScene(neo3DSceneId);
+			}
+		} catch (Throwable t) {
+			Log.e("StageListener", "neo3D delete scene failed", t);
+		}
+		neo3DSceneId = null;
+		try {
+			if (!Neo3DFacade.isReady()) {
+				return;
+			}
+			neo3DSceneId = Neo3DFacade.facadeCreateScene("Scene");
+			Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
+			if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
+				Neo3DPersistence.restoreToEngine(catroidScene,
+						Neo3DFacade.getEngineForTest(), neo3DSceneId);
+			}
+		} catch (Throwable t) {
+			Log.e("StageListener", "neo3D init failed", t);
+			neo3DSceneId = null;
+		}
+	}
+
+	private void teardownNeo3DEngine() {
+		try {
+			if (neo3DSceneId != null && Neo3DFacade.isReady()) {
+				Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
+				if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
+					Neo3DPersistence.saveToScene(catroidScene,
+							Neo3DFacade.getEngineForTest(), neo3DSceneId);
+				}
+				Neo3DFacade.facadeDeleteScene(neo3DSceneId);
+			}
+		} catch (Throwable t) {
+			Log.e("StageListener", "neo3D dispose failed", t);
+		}
+		neo3DSceneId = null;
+	}
+
 	private void resetLeavingSceneVariables() {
 		if (scene != null) {
 			scene.resetSceneVariables();
@@ -1919,14 +1995,15 @@ public class StageListener implements ApplicationListener {
 					threeDManager.dispose();
 				}
 
-				try {
-					RenderManager.INSTANCE.initialize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-					threeDManager = new ThreeDManager();
-					threeDManager.init();
-				} catch (Exception e) {
-					Log.e("StageListener", "INITIALIZE ERROR: " + e);
-				}
-				sceneManager = new SceneManager(threeDManager);
+			try {
+				RenderManager.INSTANCE.initialize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				threeDManager = new ThreeDManager();
+				threeDManager.init();
+			} catch (Exception e) {
+				Log.e("StageListener", "INITIALIZE ERROR: " + e);
+			}
+			sceneManager = new SceneManager(threeDManager);
+			setupNeo3DEngine();
 
 				stage.clear();
 				if (penActor != null) {
@@ -2113,6 +2190,21 @@ public class StageListener implements ApplicationListener {
 						}
                     } catch (Exception e) {
 						Log.e("3DRENDER", "ERROR: " + e);
+                    }
+                    if (neo3DSceneId != null && !paused && Neo3DFacade.isReady()) {
+                        try {
+                            Neo3DFacade.facadeUpdate(neo3DSceneId, deltaTime, System.nanoTime());
+                        } catch (Throwable t) {
+                            Log.e("StageListener", "neo3D update failed", t);
+                        }
+                    }
+                    StageActivity activeActivity = StageActivity.activeStageActivity.get();
+                    if (activeActivity != null) {
+                        try {
+                            activeActivity.updateNeo3DSurfaceVisibility();
+                        } catch (Throwable t) {
+                            Log.e("StageListener", "neo3D visibility failed", t);
+                        }
                     }
 
                     if (fastTwoDManager != null && !paused && !fastTwoDManager.isEmpty()) {
@@ -2354,6 +2446,14 @@ public class StageListener implements ApplicationListener {
         }
 
         if (threeDManager != null) threeDManager.resize(width, height);
+        StageActivity stageActivity = StageActivity.activeStageActivity.get();
+        if (stageActivity != null && stageActivity.getNeo3DEngine() != null) {
+            try {
+                stageActivity.getNeo3DEngine().resize(width, height);
+            } catch (Throwable t) {
+                Log.e("StageListener", "neo3D resize failed", t);
+            }
+        }
         if (fastTwoDManager != null) fastTwoDManager.resize(width, height);
         if (pathfindingManager != null) pathfindingManager.resize(width, height);
         if (transitionManager != null) transitionManager.resize(width, height);
@@ -2538,6 +2638,7 @@ public class StageListener implements ApplicationListener {
 		if (threeDManager != null) {
 			threeDManager.dispose();
 		}
+		teardownNeo3DEngine();
 
 		if (postProcessShader != null) {
 			postProcessShader.dispose();
@@ -2602,8 +2703,13 @@ public class StageListener implements ApplicationListener {
 		}
 		if (lightmapRenderer != null) {
 			try {
-				lightmapRenderer.dispose();
-			} catch (Exception e) {
+				if (com.badlogic.gdx.Gdx.app != null
+						&& com.badlogic.gdx.Gdx.graphics != null) {
+					lightmapRenderer.dispose();
+				} else {
+					lightmapRenderer.dropProxies();
+				}
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 			lightmapRenderer = null;

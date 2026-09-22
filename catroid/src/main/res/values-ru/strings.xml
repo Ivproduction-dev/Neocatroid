@@ -131,6 +131,15 @@
 
     <string formatted="false" name="brick_attach_to_camera">Привязать объект к камере</string>
     <string formatted="false" name="brick_attach_camera_offset">Привязать к камере со смещением</string>
+    <string formatted="false" name="brick_neo_create_object">Создать 3D-объект</string>
+    <string formatted="false" name="brick_neo_create_cube">Создать 3D-куб</string>
+    <string formatted="false" name="brick_neo_create_sphere">Создать 3D-шар</string>
+    <string formatted="false" name="brick_neo_create_cylinder">Создать 3D-цилиндр</string>
+    <string formatted="false" name="brick_neo_delete_object">Удалить 3D-объект</string>
+    <string formatted="false" name="brick_neo_set_camera_position">Задать позицию 3D-камеры</string>
+    <string formatted="false" name="brick_neo_set_object_position">Задать позицию 3D-объекта</string>
+    <string formatted="false" name="brick_neo_load_model">Загрузить 3D-модель</string>
+    <string formatted="false" name="brick_neo_model_path">Файл:</string>
     <string formatted="false" name="brick_detach_from_camera">Отвязать объект от камеры</string>
     <string formatted="false" name="brick_set_max_point_lights">Максимум точечных светов</string>
     <string formatted="false" name="brick_3d_object_name">ID объекта</string>
@@ -2505,7 +2514,8 @@
     <string formatted="false" name="brick_ping3">сохранить результат в</string>
     <string formatted="false" name="category_plot">Чертежи</string>
     <string formatted="false" name="category_neural">Нейросети</string>
-    <string formatted="false" name="category_threed">3D</string>
+    <string formatted="false" name="category_threed">3D Legacy</string>
+    <string formatted="false" name="category_neo3d">3D</string>
     <string formatted="false" name="category_light2d">Свет (2D)</string>
     <string formatted="false" name="category_internet">Сеть</string>
     <string formatted="false" name="category_preload">Предзагрузка</string>
@@ -2526,6 +2536,8 @@
     <string formatted="false" name="preference_description_plot_bricks">Включает блоки для работы
         с .svg</string>
     <string formatted="false" name="preference_title_enable_threed_bricks">Расширение 3D</string>
+    <string formatted="false" name="preference_title_enable_neo3d_bricks">Расширение 3D V2</string>
+    <string formatted="false" name="preference_description_neo3d">Позволяет создавать 3D-сцены и проекты нового поколения</string>
     <string formatted="false" name="preference_description_neural_bricks">Позволяет использовать модели Gemini и создавать свои нейросети</string>
     <string formatted="false" name="preference_description_threed">Позволяет создавать 3D сцены и проекты</string>
     <string formatted="false" name="preference_description_internet_bricks">Расширяет возможности взаимодействия с интернетом и позволяет создавать локальные сервера</string>
@@ -5767,10 +5779,16 @@
     <string name="brick_create_light_2d_name">Имя</string>
     <string name="brick_create_light_2d_x">X</string>
     <string name="brick_create_light_2d_y">Y</string>
+    <string name="brick_create_light_2d_type">Тип</string>
     <string name="brick_create_light_2d_radius">Радиус</string>
     <string name="brick_create_light_2d_intensity">Интенсивность</string>
     <string name="brick_create_light_2d_color">Цвет</string>
+    <string name="brick_toggle_light_2d_label">Включить/выключить свет под именем</string>
     <string name="brick_light_2d_control_title">Управлять 2D светом</string>
+    <string name="brick_light_2d_modify_title">Изменить свойство 2D света</string>
+    <string name="brick_light_2d_modify_property">Свойство</string>
+    <string name="brick_light_2d_modify_light">Свет</string>
+    <string name="brick_light_2d_modify_object">Объект</string>
     <string name="brick_light_2d_control_name">Свет</string>
     <string name="brick_light_2d_control_action">Действие</string>
     <string name="brick_light_2d_control_value">Значение</string>

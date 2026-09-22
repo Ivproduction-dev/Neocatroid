@@ -118,6 +118,15 @@
 
     <string formatted="false" name="brick_attach_to_camera">Attach object to camera</string>
     <string formatted="false" name="brick_attach_camera_offset">Attach to camera with offset</string>
+    <string formatted="false" name="brick_neo_create_object">Create 3D object</string>
+    <string formatted="false" name="brick_neo_create_cube">Create 3D cube</string>
+    <string formatted="false" name="brick_neo_create_sphere">Create 3D sphere</string>
+    <string formatted="false" name="brick_neo_create_cylinder">Create 3D cylinder</string>
+    <string formatted="false" name="brick_neo_delete_object">Delete 3D object</string>
+    <string formatted="false" name="brick_neo_set_camera_position">Set 3D camera position</string>
+    <string formatted="false" name="brick_neo_set_object_position">Set 3D object position</string>
+    <string formatted="false" name="brick_neo_load_model">Load 3D model</string>
+    <string formatted="false" name="brick_neo_model_path">File:</string>
     <string formatted="false" name="brick_detach_from_camera">Detach object from camera</string>
     <string formatted="false" name="brick_set_max_point_lights">Set max active point lights</string>
     <string formatted="false" name="brick_3d_object_name">Object ID</string>
@@ -2301,6 +2310,8 @@
 <string formatted="false" name="preference_title_enable_internet_bricks">Internet Extension</string>
 <string formatted="false" name="preference_description_neural_bricks">allows you to use Gemini models and create yur own neural networks</string>
 <string formatted="false" name="preference_title_enable_threed_bricks">3D Extension</string>
+<string formatted="false" name="preference_title_enable_neo3d_bricks">3D V2 Extension</string>
+<string formatted="false" name="preference_description_neo3d">Allows to create new generation 3D scenes and projects</string>
 <string formatted="false" name="preference_description_threed">Allows to create 3D scenes and projects</string>
 <string formatted="false" name="preference_title_enable_nfc_bricks">Near Field Communication extension</string>
 <string formatted="false" name="preference_description_nfc_bricks">Allow the app to use NFC tags in projects</string>
@@ -2750,7 +2761,8 @@
 <string formatted="false" name="category_pen">Pen</string>
 <string formatted="false" name="category_plot">Plot</string>
 <string formatted="false" name="category_neural">Neural Networks</string>
-<string formatted="false" name="category_threed">3D</string>
+<string formatted="false" name="category_threed">3D Legacy</string>
+<string formatted="false" name="category_neo3d">3D</string>
 <string formatted="false" name="category_light2d">Light 2D</string>
 <string formatted="false" name="category_sound">Sound</string>
 <string formatted="false" name="category_control">Control</string>
@@ -5117,10 +5129,16 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_create_light_2d_name">Name</string>
     <string name="brick_create_light_2d_x">X</string>
     <string name="brick_create_light_2d_y">Y</string>
+    <string name="brick_create_light_2d_type">Type</string>
     <string name="brick_create_light_2d_radius">Radius</string>
     <string name="brick_create_light_2d_intensity">Intensity</string>
     <string name="brick_create_light_2d_color">Color</string>
+    <string name="brick_toggle_light_2d_label">Toggle light with name</string>
     <string name="brick_light_2d_control_title">Control 2D light</string>
+    <string name="brick_light_2d_modify_title">Change 2D light property</string>
+    <string name="brick_light_2d_modify_property">Property</string>
+    <string name="brick_light_2d_modify_light">Light</string>
+    <string name="brick_light_2d_modify_object">Object</string>
     <string name="brick_light_2d_control_name">Light</string>
     <string name="brick_light_2d_control_action">Action</string>
     <string name="brick_light_2d_control_value">Value</string>

@@ -265,7 +265,7 @@ object CategoryDocs {
             )
 
             context.getString(R.string.category_threed) -> Doc(
-                title = if (isRu) "3D" else "3D",
+                title = if (isRu) "3D Legacy" else "3D Legacy",
                 description = if (isRu)
                     "Категория 3D управляет трёхмерными объектами: позиция, вращение, " +
                         "масштаб, материалы, освещение и камера. Работает с 3D-сценой " +
@@ -282,6 +282,22 @@ object CategoryDocs {
                     "• Set 3D Position — set position X, Y, Z\n" +
                         "• Set 3D Rotation — rotate object on axes\n" +
                         "• Set 3D Scale — scale the object"
+            )
+
+            context.getString(R.string.category_neo3d) -> Doc(
+                title = if (isRu) "3D" else "3D",
+                description = if (isRu)
+                    "Категория 3D нового поколения: создание объектов Neo3D-движка " +
+                        "и управление их позицией. Работает через Neo3DFacade."
+                else
+                    "Next-generation 3D category: create Neo3D engine objects " +
+                        "and control their position. Powered by Neo3DFacade.",
+                examples = if (isRu)
+                    "• Создать 3D-объект — создать объект в 3D-сцене\n" +
+                        "• Задать позицию 3D-объекта — установить позицию X, Y, Z"
+                else
+                    "• Create 3D object — create an object in the 3D scene\n" +
+                        "• Set 3D object position — set position X, Y, Z"
             )
 
             context.getString(R.string.category_internet) -> Doc(

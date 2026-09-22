@@ -15,6 +15,9 @@
 # Keep 2D lighting runtime (manager + renderer + actions)
 -keep class org.catrobat.catroid.twodlight.** { *; }
 
+-keep class org.catrobat.catroid.neo3d.** { *; }
+-dontwarn com.google.android.filament.**
+
 # Keep all action/brick classes used by baked runtime
 -keep class org.catrobat.catroid.CatroidApplication { *; }
 -keep class org.catrobat.catroid.content.** { *; }

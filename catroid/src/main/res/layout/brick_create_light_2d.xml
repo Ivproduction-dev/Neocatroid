@@ -47,25 +47,27 @@
 
         <TextView
             style="@style/BrickText.SingleLine"
-            android:text="@string/brick_create_light_2d_radius"
+            android:text="@string/brick_create_light_2d_type"
             app:layout_newLine="true" />
-        <TextView
-            android:id="@+id/brick_create_light_2d_radius"
-            style="@style/BrickEditText" />
+        <Spinner
+            android:id="@+id/brick_create_light_2d_type_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale" />
 
         <TextView
             style="@style/BrickText.SingleLine"
-            android:text="@string/brick_create_light_2d_intensity" />
+            android:text="@string/brick_create_light_2d_intensity"
+            app:layout_newLine="true" />
         <TextView
             android:id="@+id/brick_create_light_2d_intensity"
             style="@style/BrickEditText" />
 
         <TextView
             style="@style/BrickText.SingleLine"
-            android:text="@string/brick_create_light_2d_color"
-            app:layout_newLine="true" />
+            android:text="@string/brick_create_light_2d_radius" />
         <TextView
-            android:id="@+id/brick_create_light_2d_color"
+            android:id="@+id/brick_create_light_2d_radius"
             style="@style/BrickEditText" />
 
     </org.catrobat.catroid.ui.BrickLayout>

@@ -657,6 +657,11 @@ dependencies {
     implementation 'com.crashinvaders.vfx:gdx-vfx-core:0.5.4'
     implementation 'com.crashinvaders.vfx:gdx-vfx-effects:0.5.4'
 
+    def filamentVersion = "1.69.5"
+    implementation "com.google.android.filament:filament-android:$filamentVersion"
+    implementation "com.google.android.filament:gltfio-android:$filamentVersion"
+    implementation "com.google.android.filament:filament-utils-android:$filamentVersion"
+
     implementation('com.github.QuadFlask:colorpicker:0.0.13') {
         exclude group: 'com.android.support'
     }
@@ -962,6 +967,9 @@ configurations.all {
         force 'com.github.mgsx-dev.gdx-gltf:scene3d:2.2.1'
         force 'com.crashinvaders.vfx:gdx-vfx-effects:0.5.4'
         force 'com.crashinvaders.vfx:gdx-vfx-core:0.5.4'
+        force 'com.google.android.filament:filament-android:1.69.5'
+        force 'com.google.android.filament:gltfio-android:1.69.5'
+        force 'com.google.android.filament:filament-utils-android:1.69.5'
     }
 }
 

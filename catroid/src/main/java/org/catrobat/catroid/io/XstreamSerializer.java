@@ -318,6 +318,7 @@ public final class XstreamSerializer {
 		xstream.alias("brick", SetActiveBrick.class);
 		xstream.alias("brick", SetSpotLightBrick.class);
 		xstream.alias("brick", CreateLight2DBrick.class);
+		xstream.alias("brick", ToggleLight2DBrick.class);
 		xstream.alias("brick", Light2DControlBrick.class);
 		xstream.alias("brick", ShadowCasting2DBrick.class);
 		xstream.alias("brick", RemovePbrLightBrick.class);
@@ -912,6 +913,15 @@ public final class XstreamSerializer {
 
         xstream.alias("brick", org.catrobat.catroid.content.bricks.UnknownBrick.class);
         xstream.alias("brick", AttachToCameraWithOffsetBrick.class);
+        xstream.alias("brick", NeoCreateObjectBrick.class);
+        xstream.alias("brick", NeoSetObjectPositionBrick.class);
+        xstream.alias("brick", NeoLoadModelBrick.class);
+        xstream.alias("brick", NeoCreateCubeBrick.class);
+        xstream.alias("brick", NeoCreateSphereBrick.class);
+        xstream.alias("brick", NeoCreateCylinderBrick.class);
+        xstream.alias("brick", NeoDeleteObjectBrick.class);
+        xstream.alias("brick", NeoSetCameraPositionBrick.class);
+        xstream.alias("brick", ModifyLight2DPropertyBrick.class);
         xstream.alias("brick", CopyProjectFileToFolderBrick.class);
         xstream.alias("brick", CopyProjectFileToPathBrick.class);
         xstream.alias("brick", CreateFolderBrick.class);

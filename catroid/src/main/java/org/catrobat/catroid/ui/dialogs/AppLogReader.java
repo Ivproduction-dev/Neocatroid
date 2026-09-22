@@ -29,13 +29,21 @@ public final class AppLogReader {
     }
 
     public static LogResult readAppErrors(int maxLines) {
+        return readAppLogs("*:E", maxLines);
+    }
+
+    public static LogResult readAppWarnings(int maxLines) {
+        return readAppLogs("*:W", maxLines);
+    }
+
+    public static LogResult readAppLogs(String minLevel, int maxLines) {
         int pid = android.os.Process.myPid();
         try {
-            List<String> lines = exec("logcat", "-d", "-v", "threadtime", "--pid=" + pid, "*:E");
+            List<String> lines = exec("logcat", "-d", "-v", "threadtime", "--pid=" + pid, minLevel);
             return new LogResult(takeLast(lines, maxLines), null);
         } catch (Exception pidFailed) {
             try {
-                List<String> lines = exec("logcat", "-d", "-v", "threadtime", "*:E");
+                List<String> lines = exec("logcat", "-d", "-v", "threadtime", minLevel);
                 return new LogResult(filterThreadtimeLinesForPid(lines, pid, maxLines), null);
             } catch (Exception fallbackFailed) {
                 return new LogResult(new ArrayList<String>(), String.valueOf(fallbackFailed.getMessage()));

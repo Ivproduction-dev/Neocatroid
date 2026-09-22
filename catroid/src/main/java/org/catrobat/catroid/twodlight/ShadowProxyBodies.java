@@ -98,8 +98,10 @@ public class ShadowProxyBodies {
             Proxy proxy = proxies.remove(sprite);
             if (proxy != null && proxy.body != null) {
                 try {
-                    world.destroyBody(proxy.body);
-                } catch (Exception e) {
+                    if (!world.isLocked()) {
+                        world.destroyBody(proxy.body);
+                    }
+                } catch (Throwable e) {
                     // already gone with an old world, drop the reference
                 }
             }
@@ -119,8 +121,10 @@ public class ShadowProxyBodies {
         for (Proxy proxy : proxies.values()) {
             if (proxy != null && proxy.body != null) {
                 try {
-                    lastWorld.destroyBody(proxy.body);
-                } catch (Exception e) {
+                    if (!lastWorld.isLocked()) {
+                        lastWorld.destroyBody(proxy.body);
+                    }
+                } catch (Throwable e) {
                     // already gone, drop the reference
                 }
             }
@@ -169,8 +173,8 @@ public class ShadowProxyBodies {
             shape.setAsBox(info.halfWidth() / ratio, info.halfHeight() / ratio);
             Fixture fixture = body.createFixture(shape, 0f);
             Filter filter = fixture.getFilterData();
-            filter.categoryBits = 0x0000;
-            filter.maskBits = 0x0000;
+            filter.categoryBits = 0x0002;
+            filter.maskBits = 0x0002;
             fixture.setFilterData(filter);
         } finally {
             shape.dispose();

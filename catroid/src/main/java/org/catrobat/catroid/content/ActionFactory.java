@@ -772,6 +772,21 @@ public class ActionFactory extends Actions {
 
 	public Action createLight2DCreateAction(Sprite sprite, ScriptSequenceAction sequence,
 										Formula lightName, Formula posX, Formula posY,
+										int lightType, Formula intensity, Formula radius) {
+		CreateLight2DAction action = Actions.action(CreateLight2DAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setLightName(lightName);
+		action.setPosX(posX);
+		action.setPosY(posY);
+		action.setLightType(lightType);
+		action.setIntensity(intensity);
+		action.setRadius(radius);
+		return action;
+	}
+
+	public Action createLight2DCreateAction(Sprite sprite, ScriptSequenceAction sequence,
+										Formula lightName, Formula posX, Formula posY,
 										Formula radius, Formula intensity, Formula color) {
 		CreateLight2DAction action = Actions.action(CreateLight2DAction.class);
 		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
@@ -782,6 +797,15 @@ public class ActionFactory extends Actions {
 		action.setRadius(radius);
 		action.setIntensity(intensity);
 		action.setColor(color);
+		return action;
+	}
+
+	public Action createToggleLight2DAction(Sprite sprite, ScriptSequenceAction sequence,
+										Formula lightName) {
+		ToggleLight2DAction action = Actions.action(ToggleLight2DAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setLightName(lightName);
 		return action;
 	}
 
@@ -5876,6 +5900,74 @@ public Action createVarAction(Sprite sprite, SequenceAction sequence,
         action.setOffsetX(offsetX);
         action.setOffsetY(offsetY);
         action.setOffsetZ(offsetZ);
+        return action;
+    }
+
+    public Action createNeoCreateObjectAction(Sprite sprite, SequenceAction sequence, Formula objectName) {
+        NeoCreateObjectAction action = action(NeoCreateObjectAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        return action;
+    }
+
+    public Action createNeoSetObjectPositionAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula posX, Formula posY, Formula posZ) {
+        NeoSetObjectPositionAction action = action(NeoSetObjectPositionAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setPosX(posX);
+        action.setPosY(posY);
+        action.setPosZ(posZ);
+        return action;
+    }
+
+    public Action createNeoLoadModelAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula filePath) {
+        NeoLoadModelAction action = action(NeoLoadModelAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setFilePath(filePath);
+        return action;
+    }
+
+    public Action createNeoCreatePrimitiveAction(Sprite sprite, SequenceAction sequence, Formula objectName, int primitiveKind) {
+        NeoCreatePrimitiveAction action = action(NeoCreatePrimitiveAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setPrimitiveKind(primitiveKind);
+        return action;
+    }
+
+    public Action createNeoDeleteObjectAction(Sprite sprite, SequenceAction sequence, Formula objectName) {
+        NeoDeleteObjectAction action = action(NeoDeleteObjectAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        return action;
+    }
+
+    public Action createNeoSetCameraPositionAction(Sprite sprite, SequenceAction sequence, Formula posX, Formula posY, Formula posZ) {
+        NeoSetCameraPositionAction action = action(NeoSetCameraPositionAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setPosX(posX);
+        action.setPosY(posY);
+        action.setPosZ(posZ);
+        return action;
+    }
+
+    public Action createModifyLight2DPropertyAction(Sprite sprite, SequenceAction sequence, Formula lightName, Formula objectName, int property, Formula valueX, Formula valueY, Formula value) {
+        org.catrobat.catroid.content.actions.ModifyLight2DPropertyAction action = action(org.catrobat.catroid.content.actions.ModifyLight2DPropertyAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setLightName(lightName);
+        action.setObjectName(objectName);
+        action.setProperty(property);
+        action.setValueX(valueX);
+        action.setValueY(valueY);
+        action.setValue(value);
         return action;
     }
 

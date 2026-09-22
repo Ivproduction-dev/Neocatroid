@@ -359,6 +359,14 @@ import org.catrobat.catroid.content.bricks.TintShaderBrick
 import org.catrobat.catroid.content.bricks.WaveShaderBrick
 import org.catrobat.catroid.content.bricks.NativeLayerBrick
 import org.catrobat.catroid.content.bricks.NextLookBrick
+import org.catrobat.catroid.content.bricks.NeoCreateObjectBrick
+import org.catrobat.catroid.content.bricks.NeoCreateCubeBrick
+import org.catrobat.catroid.content.bricks.NeoCreateSphereBrick
+import org.catrobat.catroid.content.bricks.NeoCreateCylinderBrick
+import org.catrobat.catroid.content.bricks.NeoDeleteObjectBrick
+import org.catrobat.catroid.content.bricks.NeoSetCameraPositionBrick
+import org.catrobat.catroid.content.bricks.NeoLoadModelBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectPositionBrick
 import org.catrobat.catroid.content.bricks.NormalizeImgBrick
 import org.catrobat.catroid.content.bricks.NoteBrick
 import org.catrobat.catroid.content.bricks.ObjectLookAtBrick
@@ -602,6 +610,8 @@ import org.catrobat.catroid.content.bricks.SetPenSizeBrick
 import org.catrobat.catroid.content.bricks.SetPhysicsObjectTypeBrick
 import org.catrobat.catroid.content.bricks.SetPhysicsStateBrick
 import org.catrobat.catroid.content.bricks.CreateLight2DBrick
+import org.catrobat.catroid.content.bricks.ToggleLight2DBrick
+import org.catrobat.catroid.content.bricks.ModifyLight2DPropertyBrick
 import org.catrobat.catroid.content.bricks.Light2DControlBrick
 import org.catrobat.catroid.content.bricks.SetPointLightBrick
 import org.catrobat.catroid.content.bricks.ShadowCasting2DBrick
@@ -1008,6 +1018,7 @@ open class CategoryBricksFactory {
             context.getString(R.string.category_neoscript) -> setupNeoScriptCategoryList(context)
             context.getString(R.string.category_transitions) -> setupTransitionsCategoryList(context)
             context.getString(R.string.category_threed) -> setupThreedCategoryList(context)
+            context.getString(R.string.category_neo3d) -> setupNeo3dCategoryList()
             context.getString(R.string.category_light2d) -> setupLight2DCategoryList(context)
             context.getString(R.string.category_preload) -> setupPreloadCategoryList(context)
             context.getString(R.string.category_internet) -> setupInternetCategoryList(context)
@@ -3224,10 +3235,25 @@ private fun setupJsonCategoryList(context: Context): List<Brick> {
 
     private fun setupLight2DCategoryList(context: Context): List<Brick> {
         val light2DBrickList: MutableList<Brick> = ArrayList()
-        light2DBrickList.add(CreateLight2DBrick("torch", 0.0, 0.0, 400.0, 1.0, 0xFFE0B0))
-        light2DBrickList.add(Light2DControlBrick("torch", 0, "1.0", ""))
+        light2DBrickList.add(CreateLight2DBrick("light1", 0.0, 0.0, 0, 1.0, 400.0))
+        light2DBrickList.add(ModifyLight2DPropertyBrick("light1", 0, "", "0", "0", "1.0"))
+        light2DBrickList.add(Light2DControlBrick("light1", 0, "1.0", ""))
         light2DBrickList.add(ShadowCasting2DBrick("", 0))
+        light2DBrickList.add(ToggleLight2DBrick("light1"))
         return light2DBrickList
+    }
+
+    private fun setupNeo3dCategoryList(): List<Brick> {
+        val neo3dBrickList: MutableList<Brick> = ArrayList()
+        neo3dBrickList.add(NeoCreateObjectBrick("myObject"))
+        neo3dBrickList.add(NeoCreateCubeBrick("myCube"))
+        neo3dBrickList.add(NeoCreateSphereBrick("mySphere"))
+        neo3dBrickList.add(NeoCreateCylinderBrick("myCylinder"))
+        neo3dBrickList.add(NeoLoadModelBrick("myObject", "model.glb"))
+        neo3dBrickList.add(NeoSetObjectPositionBrick("myObject", 0f, 0f, 0f))
+        neo3dBrickList.add(NeoSetCameraPositionBrick(4.5f, 3.2f, 6.5f))
+        neo3dBrickList.add(NeoDeleteObjectBrick("myObject"))
+        return neo3dBrickList
     }
 
     private fun setupThreedCategoryList(context: Context): List<Brick> {
@@ -3728,6 +3754,7 @@ void main() {
         all.addAll(setupFast2dCategoryList(context))
         all.addAll(setupFileCategoryList(context))
         all.addAll(setupThreedCategoryList(context))
+        all.addAll(setupNeo3dCategoryList())
         all.addAll(setupInternetCategoryList(context))
         all.addAll(setupAssertionsCategoryList(context))
         all.addAll(setupAdmobCategoryList(context))

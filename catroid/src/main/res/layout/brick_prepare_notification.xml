@@ -23,7 +23,6 @@
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification" />
 
-        <!-- ID -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_id"
@@ -32,7 +31,6 @@
             android:id="@+id/brick_prepare_notification_edit_id"
             style="@style/BrickEditText" />
 
-        <!-- Channel name -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_channel"
@@ -41,7 +39,6 @@
             android:id="@+id/brick_prepare_notification_edit_channel"
             style="@style/BrickEditText" />
 
-        <!-- Title -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_title"
@@ -50,7 +47,6 @@
             android:id="@+id/brick_prepare_notification_edit_title"
             style="@style/BrickEditText" />
 
-        <!-- Text -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_text"
@@ -59,7 +55,6 @@
             android:id="@+id/brick_prepare_notification_edit_text"
             style="@style/BrickEditText" />
 
-        <!-- Icon (file path) -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_icon"
@@ -68,7 +63,6 @@
             android:id="@+id/brick_prepare_notification_edit_icon"
             style="@style/BrickEditText" />
 
-        <!-- Importance spinner -->
         <TextView
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_prepare_notification_importance"
@@ -79,7 +73,6 @@
             android:layout_height="wrap_content"
             android:textDirection="locale" />
 
-        <!-- Pinned checkbox -->
         <CheckBox
             android:id="@+id/brick_prepare_notification_pinned"
             android:layout_width="wrap_content"

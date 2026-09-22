@@ -33,6 +33,7 @@ public class Light2DActionsTest {
 
     private LightManager2D manager;
     private Sprite sprite;
+    private StageActivity mockActivity;
 
     @Before
     public void setUp() throws Exception {
@@ -47,7 +48,7 @@ public class Light2DActionsTest {
         manager = new LightManager2D();
         StageListener mockListener = Mockito.mock(StageListener.class);
         mockListener.lightManager2D = manager;
-        StageActivity mockActivity = Mockito.mock(StageActivity.class);
+        mockActivity = Mockito.mock(StageActivity.class);
         mockActivity.stageListener = mockListener;
         StageActivity.activeStageActivity = new WeakReference<>(mockActivity);
     }
@@ -124,6 +125,31 @@ public class Light2DActionsTest {
                 new Formula(123.0), "").act(1f);
 
         assertEquals(123f, manager.getLight("torch").getRadius(), 0.001f);
+    }
+
+    @Test
+    public void createLightWithTypeAndToggleLight() {
+        sprite.getActionFactory().createLight2DCreateAction(sprite, newSequence(),
+                new Formula("spot"),
+                new Formula(10.0), new Formula(20.0),
+                Light2D.TYPE_SPOTLIGHT, new Formula(1.5), new Formula(500.0)).act(1f);
+
+        Light2D light = manager.getLight("spot");
+        assertNotNull(light);
+        assertEquals(Light2D.TYPE_SPOTLIGHT, light.getLightType());
+        assertEquals(1.5f, light.getIntensity(), 0.001f);
+        assertEquals(500f, light.getRadius(), 0.001f);
+        assertTrue(light.isEnabled());
+
+        // Toggle: turn off
+        sprite.getActionFactory().createToggleLight2DAction(sprite, newSequence(),
+                new Formula("spot")).act(1f);
+        assertFalse(light.isEnabled());
+
+        // Toggle: turn back on
+        sprite.getActionFactory().createToggleLight2DAction(sprite, newSequence(),
+                new Formula("spot")).act(1f);
+        assertTrue(light.isEnabled());
     }
 
     @Test
