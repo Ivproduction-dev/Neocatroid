@@ -26,6 +26,7 @@ package org.catrobat.catroid.stage
 import androidx.appcompat.app.AlertDialog
 import android.app.Dialog
 import android.content.DialogInterface
+import android.graphics.drawable.ColorDrawable
 import android.text.method.LinkMovementMethod
 import android.view.ContextThemeWrapper
 import android.view.KeyEvent
@@ -35,6 +36,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.HtmlCompat
 import com.badlogic.gdx.scenes.scene2d.Action
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.catrobat.catroid.BuildConfig
 import org.catrobat.catroid.R
 import org.catrobat.catroid.TrustedDomainManager
@@ -99,7 +101,7 @@ class BrickDialogManager(val stageActivity: StageActivity) :
     ): Dialog {
         val editText = EditText(stageActivity)
         editText.setText(baseText)
-        val askDialog = AlertDialog.Builder(
+        val askDialog = MaterialAlertDialogBuilder(
             ContextThemeWrapper(stageActivity, R.style.Theme_NeoCatroid_Dialog)
         )
             .setView(editText)
@@ -123,7 +125,7 @@ class BrickDialogManager(val stageActivity: StageActivity) :
 
     private fun createAskDialog(askAction: AskAction, question: String): Dialog {
         val editText = EditText(stageActivity)
-        val askDialog = AlertDialog.Builder(
+        val askDialog = MaterialAlertDialogBuilder(
             ContextThemeWrapper(stageActivity, R.style.Theme_NeoCatroid_Dialog)
         )
             .setView(editText)
@@ -137,9 +139,29 @@ class BrickDialogManager(val stageActivity: StageActivity) :
             }
             .create()
 
+        applyAskDialogColors(askDialog, askAction.askBackgroundColor, askAction.askButtonColor)
         editText.requestFocus()
         askDialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         return askDialog
+    }
+
+    private fun applyAskDialogColors(dialog: AlertDialog, backgroundColor: Int?, buttonColor: Int?) {
+        if (backgroundColor == null && buttonColor == null) {
+            return
+        }
+        dialog.setOnShowListener {
+            try {
+                if (backgroundColor != null) {
+                    dialog.window?.setBackgroundDrawable(ColorDrawable(backgroundColor))
+                }
+                if (buttonColor != null) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(buttonColor)
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(buttonColor)
+                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(buttonColor)
+                }
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private fun createWebAccessDialog(webAction: WebAction, url: String): Dialog {
@@ -154,7 +176,7 @@ class BrickDialogManager(val stageActivity: StageActivity) :
             movementMethod = LinkMovementMethod.getInstance()
         }
 
-        return AlertDialog.Builder(
+        return MaterialAlertDialogBuilder(
             ContextThemeWrapper(stageActivity, R.style.Theme_NeoCatroid_Dialog)
         )
             .setTitle(stageActivity.getString(R.string.web_request_warning_title))

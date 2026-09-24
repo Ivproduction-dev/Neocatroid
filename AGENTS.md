@@ -1119,3 +1119,57 @@ stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2
 - Убран per-execution `Log.i` из `CreateLight2DAction` (в цикле спамил каждый
   кадр); разовая диагностика осталась в `StageListener`/`LightmapRenderer`.
 
+# Jolt Physics из исходников — нативный бэкенд Neo3D (2026-09)
+
+AAR `com.github.stephengold:jolt-jni-Android:6.1.1` требует minSdk 33 и тянет
+готовые `libjoltjni.so` — не подошёл (цель: minSdk 31, контроль над сборкой).
+Вместо него Jolt v5.2.0 собран из исходников (`git clone --depth 1 --branch v5.2.0`,
+лежит в `catroid/src/main/cpp/jolt/`) как часть существующего CMake-проекта.
+
+## Файлы
+
+```
+catroid/src/main/cpp/CMakeLists.txt   — PHYSICS_REPO_ROOT=jolt, CROSS_PLATFORM_DETERMINISTIC=ON,
+                                        BUILD_SHARED_LIBS=OFF, include(Jolt/Jolt.cmake),
+                                        add_library(neo3d_jolt SHARED neo3d_jolt.cpp) → Jolt
+catroid/src/main/cpp/neo3d_jolt.cpp   — компактный JNI-мост: World на сцену
+                                        (PhysicsSystem 5000 тел, 2 object-слоя, TempAllocatorMalloc,
+                                        общий JobSystemThreadPool ≤3 потоков), Box/Sphere/Capsule/Cylinder,
+                                        fixed-step 60 Гц ×5, epsilon поз 1e-5, возврат changed-поз
+                                        плоским float-массивом (index + pos + quat)
+neo3d/physics/JoltNativeBridge.java   — package-private native-сигнатуры (nCreateWorld/…/nUpdate)
+neo3d/physics/JoltPhysicsBackend.java — INeo3DPhysicsBackend поверх моста (миры по sceneId,
+                                        signature пересоздания тела, кинематика через target,
+                                        System.loadLibrary("neo3d_jolt"))
+neo3d/physics/INeo3DPhysicsBackend.java / Neo3DNullPhysicsBackend.java — интерфейс и Null (без изменений API)
+```
+
+## Проводка в движке
+
+- `Neo3DEngine`: `syncPhysicsObject()` (создание/удаление тел по signature),
+  `syncObject()` дополнительно делает `setObjectTransform` (телепорт скриптовых
+  сдвигов в тело); `update()` степает `physicsBackend.update()` и раскладывает позы
+  в `Neo3DTransform` (position + quaternion) + досинхронизация рендера;
+  `removeObject`/`dispose` чистят тела/миры.
+- `Neo3DFacade`: `facadeSetPhysicsBody` (copy), `facadeSetLinearVelocity`,
+  `facadeAddImpulse`, `facadeSetGravity`, `facadeGetPhysicsBodyCount`.
+- `Neo3DPersistence`: save/restore полей `physics*` из `Neo3DPersistedObject`
+  (motionType -1 = без тела); restore ставит тело до `engine.syncObject`.
+- MotionType.ordinal идёт в натив как 1=STATIC/2=KINEMATIC/3=DYNAMIC (0=NONE =
+  тела нет); ShapeType как 1=BOX/2=SPHERE/3=CAPSULE/4=CYLINDER.
+
+## Нюансы сборки
+
+- `BoxShape` в v5.2.0 конструируется от `Vec3(halfExtent)` (не 3 float);
+  второй аргумент `MapObjectToBroadPhaseLayer` — явный `BroadPhaseLayer(0)`.
+- В Java нет `Math.max(a,b,c)` — только вложенные двухаргументные.
+- `BUILD_SHARED_LIBS=OFF` делает libJolt статикой, линкуемой в `libneo3d_jolt.so`
+  (~30 МБ); ex. `build/intermediates/cxx/Debug/*/obj/<abi>/libneo3d_jolt.so`.
+- abiFilters: armeabi-v7a + arm64-v8a + x86_64 — Jolt собирается на всех трёх,
+  проверять каждым `:catroid:buildCMakeDebug[<abi>]`.
+- Известный шум: протухший инкрементальный kapt (`cannot find symbol` на ровном
+  месте) лечится `./gradlew --stop` + удалить `catroid/build/tmp/kapt3`.
+- ProGuard: stale-keep `com.github.stephengold.joltjni.**` удалён;
+  `neo3d.**` и `native <methods>` уже покрывают мост.
+
+

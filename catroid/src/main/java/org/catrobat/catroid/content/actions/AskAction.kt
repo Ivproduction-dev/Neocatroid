@@ -34,8 +34,12 @@ import org.catrobat.catroid.stage.StageActivity
 class AskAction : Action() {
     var scope: Scope? = null
     var questionFormula: Formula? = null
+    var backgroundColorFormula: Formula? = null
+    var buttonColorFormula: Formula? = null
     var answerVariable: UserVariable? = null
     var questionAsked = false
+    var askBackgroundColor: Int? = null
+    var askButtonColor: Int? = null
     private var answerReceived = false
     private fun askQuestion() {
         StageActivity.messageHandler ?: return
@@ -48,10 +52,28 @@ class AskAction : Action() {
                 "formula interpretation in ask brick failed"
             )
         }
+        askBackgroundColor = parseColorOrNull(backgroundColorFormula)
+        askButtonColor = parseColorOrNull(buttonColorFormula)
 
         val params = arrayListOf(BrickDialogManager.DialogType.ASK_DIALOG, this, question, "", "", "", "")
         StageActivity.messageHandler.obtainMessage(StageActivity.SHOW_DIALOG, params).sendToTarget()
         questionAsked = true
+    }
+
+    private fun parseColorOrNull(formula: Formula?): Int? {
+        if (formula == null) {
+            return null
+        }
+        return try {
+            val text = formula.interpretString(scope)?.trim().orEmpty()
+            if (text.isEmpty()) {
+                null
+            } else {
+                android.graphics.Color.parseColor(text)
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun setAnswerText(answer: String) {

@@ -98,9 +98,7 @@ public class ShadowProxyBodies {
             Proxy proxy = proxies.remove(sprite);
             if (proxy != null && proxy.body != null) {
                 try {
-                    if (!world.isLocked()) {
-                        world.destroyBody(proxy.body);
-                    }
+                    world.destroyBody(proxy.body);
                 } catch (Throwable e) {
                     // already gone with an old world, drop the reference
                 }
@@ -114,21 +112,6 @@ public class ShadowProxyBodies {
     }
 
     public void destroyAll() {
-        if (lastWorld == null) {
-            proxies.clear();
-            return;
-        }
-        for (Proxy proxy : proxies.values()) {
-            if (proxy != null && proxy.body != null) {
-                try {
-                    if (!lastWorld.isLocked()) {
-                        lastWorld.destroyBody(proxy.body);
-                    }
-                } catch (Throwable e) {
-                    // already gone, drop the reference
-                }
-            }
-        }
         proxies.clear();
         lastWorld = null;
     }

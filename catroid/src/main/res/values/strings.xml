@@ -544,6 +544,7 @@
     <string name="subcategory_sound_music">Music &amp; Instruments</string>
 
     <string name="subcategory_looks_costumes">Looks &amp; Backgrounds</string>
+    <string name="subcategory_looks_particles">Particles</string>
     <string name="subcategory_looks_visibility">Visibility &amp; Size</string>
     <string name="subcategory_looks_effects">Graphic Effects</string>
     <string name="subcategory_looks_dialogs">Text &amp; Dialogs</string>
@@ -1841,7 +1842,9 @@
 <string formatted="false" name="save_to_variable">store to variable</string>
 <string formatted="false" name="brick_create_textfield">Create TextField</string>
 <string formatted="false" name="project_file">project file</string>
-<string name="video_layer">layer (2=above all, 1=middle, 0=behind)</string>
+<string name="video_layer">layer (0/1=below 3D+2D, 2=above 3D below 2D, 3=above 2D, 4=above all)</string>
+<string name="video_key_color">chroma key color (0xRRGGBB)</string>
+<string name="video_key_tolerance">chroma key tolerance (0=off)</string>
 <string formatted="false" name="control_enabled">show controls</string>
 <string formatted="false" name="loop_enabled">loop video</string>
 <string formatted="false" name="position">position (x, y)</string>
@@ -2827,7 +2830,8 @@
 <string formatted="false" name="brick_tween_position">Tween to x:</string>
 <string formatted="false" name="brick_tween_position_duration">in seconds:</string>
 <string formatted="false" name="brick_tween_position_easing">easing (0-24):</string>
-<string formatted="false" name="brick_create_particle_system">Create particle system</string>
+    <string name="brick_create_particle" formatted="false">Create particles from file:</string>
+    <string formatted="false" name="brick_create_particle_system">Create particle system</string>
 <string formatted="false" name="brick_create_particle_system_count">max count:</string>
 <string formatted="false" name="brick_create_particle_system_lifetime">lifetime (sec):</string>
 <string formatted="false" name="brick_create_particle_system_speed">speed:</string>
@@ -2907,6 +2911,8 @@
 <string formatted="false" name="brick_flash_off">off</string>
 <string formatted="false" name="brick_vibration">Vibrate for</string>
 <string formatted="false" name="brick_ask_label">Ask</string>
+<string formatted="false" name="brick_ask_background">Background color (empty = default)</string>
+<string formatted="false" name="brick_ask_buttons">Buttons color (empty = default)</string>
 <string formatted="false" name="brick_ask_label2">Set clue</string>
 <string formatted="false" name="brick_ask_label3">Set text "Оk"</string>
 <string formatted="false" name="brick_ask_label4">Set text "Canel"</string>
@@ -5881,4 +5887,130 @@ needs read and write access to it. You can always change permissions through you
     <string name="collab_snapshot_ready">Project sent</string>
     <string name="collab_snapshot_interrupted">Upload interrupted, will resume</string>
     <string name="collab_snapshot_received">Project received, opening…</string>
+<string-array name="brick_shader_presets">
+        <item>Shockwave</item>
+        <item>Glitch</item>
+        <item>Bulge / Lens</item>
+        <item>Bloom</item>
+        <item>2D Fog</item>
+        <item>Pixelate</item>
+        <item>Color / Sepia</item>
+    </string-array>
+<string-array name="particle_buffer_modes">
+        <item>Screen and Buffer</item>
+        <item>Buffer Only</item>
+        <item>Screen Only</item>
+    </string-array>
+<string-array name="particle_properties_array">
+        <item>Emission Rate</item>
+        <item>Speed</item>
+        <item>Angle</item>
+        <item>Gravity X</item>
+        <item>Gravity Y</item>
+        <item>Radial Accel</item>
+        <item>Tangential Accel</item>
+        <item>Friction</item>
+        <item>Alpha</item>
+        <item>Color R</item>
+        <item>Color G</item>
+        <item>Color B</item>
+        <item>Layer (Z-index)</item>
+        <item>Particle width (Scale X)</item>
+        <item>Particle height (Scale Y)</item>
+    </string-array>
+<string-array name="particle_stop_modes">
+        <item>Smoothly</item>
+        <item>Immediately</item>
+    </string-array>
+<string formatted="false" name="brick_apply_shader_id">Effect ID</string>
+<string formatted="false" name="brick_apply_shader_preset">Preset</string>
+<string formatted="false" name="brick_apply_shader_target">Target</string>
+<string formatted="false" name="brick_apply_shader_strength">Strength</string>
+<string formatted="false" name="brick_update_screen">Update screen</string>
+<string name="brick_spawn_particle_effect" formatted="false">Spawn particles from file:</string>
+<string name="brick_spawn_particle_instance" formatted="false">instance:</string>
+<string name="brick_set_particle_transform" formatted="false">Transform particles:</string>
+<string name="brick_set_particle_property" formatted="false">Set particle property:</string>
+<string name="brick_emit_particle_burst" formatted="false">Emit particle burst:</string>
+<string name="brick_stop_particle_instance" formatted="false">Stop particles:</string>
+<string name="brick_edit_particles" formatted="false">Particle Editor</string>
+<string name="brick_particle_buffer_for" formatted="false">Particles instance:</string>
+<string name="brick_particle_buffer_target" formatted="false">render to buffer:</string>
+<string name="brick_particle_buffer_mode" formatted="false">mode:</string>
+<string name="brick_particle_scale_x" formatted="false">Width (Scale X):</string>
+<string name="brick_particle_scale_y" formatted="false">Height (Scale Y):</string>
+<string name="brick_particle_rotation_2d" formatted="false">Rotation:</string>
+<string name="brick_particle_property_label" formatted="false">property:</string>
+<string name="brick_particle_burst_count" formatted="false">count:</string>
+<string name="particle_exit_dialog_title">Unsaved Changes</string>
+<string name="particle_exit_dialog_msg">Do you want to save your particle effect before leaving?</string>
+<string name="particle_exit_save">Save &amp; Exit</string>
+<string name="particle_exit_discard">Discard &amp; Exit</string>
+<string name="particle_editor_title">Particle Editor</string>
+<string name="particle_editor_save">Save</string>
+<string name="particle_editor_saved">Particle effect saved successfully!</string>
+<string name="particle_curve_size">Size Curve</string>
+<string name="particle_curve_spin">Spin Curve</string>
+<string name="particle_curve_alpha">Alpha Curve</string>
+<string name="particle_graph_zoom_in">Zoom In</string>
+<string name="particle_graph_zoom_out">Zoom Out</string>
+<string name="particle_graph_reset">Reset</string>
+<string name="particle_graph_add_point">+ Point</string>
+<string name="particle_graph_delete_point">Delete</string>
+<string name="particle_graph_easing">Easing:</string>
+<string name="particle_graph_variance">Variance:</string>
+<string name="particle_section_main">Main &amp; Emission Settings</string>
+<string name="particle_section_spawn">Spawn Area (PosVar)</string>
+<string name="particle_section_physics_gravity">Gravity Physics Mode</string>
+<string name="particle_section_physics_radius">Radius Physics Mode</string>
+<string name="particle_section_color">Particle Color</string>
+<string name="particle_section_texture">Texture &amp; Buffer</string>
+<string name="particle_emitter_mode">Emitter Mode:</string>
+<string name="particle_mode_gravity">Gravity Mode</string>
+<string name="particle_mode_radius">Radius Mode</string>
+<string name="particle_respawn_delay">Respawn Delay:</string>
+<string name="particle_lifetime_var">Lifetime Var (±):</string>
+<string name="particle_fade_in">Fade In Time:</string>
+<string name="particle_fade_out">Fade Out Time:</string>
+<string name="particle_slider_pos_x">PosVar X</string>
+<string name="particle_slider_pos_y">PosVar Y</string>
+<string name="particle_slider_speed">Speed</string>
+<string name="particle_slider_speed_var">Speed Var (±):</string>
+<string name="particle_slider_angle">Angle</string>
+<string name="particle_slider_angle_var">Angle Var (±):</string>
+<string name="particle_slider_gravity_x">Gravity X</string>
+<string name="particle_slider_gravity_y">Gravity Y</string>
+<string name="particle_slider_radial_accel">Radial Accel</string>
+<string name="particle_slider_tangential_accel">Tangential Accel</string>
+<string name="particle_slider_friction">Friction</string>
+<string name="particle_slider_start_radius">Start Radius</string>
+<string name="particle_slider_end_radius">End Radius</string>
+<string name="particle_slider_rotate_sec">Rotation Speed</string>
+<string name="particle_select_color">Pick Color</string>
+<string name="particle_texture_current">Current: %1$s</string>
+<string name="particle_texture_default">Default Circle</string>
+<string name="particle_btn_project_files">Project Files</string>
+<string name="particle_btn_import_photo">+ Import Photo</string>
+<string name="particle_additive_blending">Additive Blending (Glow / Fire)</string>
+<string name="particle_fbo_buffer">FBO Buffer Name:</string>
+<string name="particle_fbo_hint">e.g. background_layer</string>
+<string name="particle_editor_gizmo_gravity">Gravity</string>
+<string name="particle_editor_gizmo_angle">Angle</string>
+<string name="particle_editor_gizmo_posvar">PosVar</string>
+<string name="particle_slider_bounds_title">Slider Range</string>
+<string name="particle_slider_bounds_msg">Set range boundaries for: %1$s</string>
+<string name="particle_min_val">Min Value</string>
+<string name="particle_max_val">Max Value</string>
+<string name="particle_ok">OK</string>
+<string name="particle_cancel">Cancel</string>
+<string name="particle_invalid_range">Min must be strictly less than Max!</string>
+<string name="particle_bg_gallery">Gallery Background</string>
+<string name="particle_texture_picker">Particle Texture</string>
+<string name="particle_graph_reset_zoom">Reset</string>
+<string name="particle_editor_gizmos">Gizmos:</string>
+<string name="particle_editor_gizmo_radius">Radius</string>
+<string name="particle_section_physics">Physics &amp; Motion</string>
+<string name="particle_start_color">Start Color</string>
+<string name="particle_end_color">End Color</string>
+<string name="category_2d_particles" formatted="false">2D Particles</string>
 </resources>

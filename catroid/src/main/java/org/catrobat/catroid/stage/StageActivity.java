@@ -398,9 +398,10 @@ public class StageActivity extends AndroidApplication implements ContextProvider
             android.view.SurfaceView glView = (android.view.SurfaceView) gameView;
 
             if (isFreeStageEnabled) {
-                glView.getHolder().setFormat(PixelFormat.OPAQUE);
                 glView.setZOrderMediaOverlay(true);
+                glView.getHolder().setFormat(PixelFormat.OPAQUE);
             } else {
+                glView.setZOrderMediaOverlay(true);
                 glView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
             }
         }
@@ -1424,9 +1425,25 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	}
 
 
-	public void createVideoPlayer(String viewId, String videoPath, int x, int y, int width, int height, boolean showControls, final boolean loopVideo, boolean isTransparent, int layer) {
-		final VideoView videoView = new VideoView(this);
+	public void createVideoPlayer(String viewId, String videoPath, int x, int y, int width, int height, boolean showControls, final boolean loopVideo, boolean isTransparent, int layer, int keyColor, float keyTolerance) {
+		final VideoView videoView;
+		if (keyTolerance > 0f) {
+			ChromaKeyVideoView chromaView = new ChromaKeyVideoView(this);
+			chromaView.setKeyColor(keyColor);
+			chromaView.setKeyTolerance(keyTolerance);
+			videoView = chromaView;
+		} else {
+			videoView = new VideoView(this);
+		}
 
+		if (layer >= 4) {
+			videoView.setZOrderOnTop(true);
+		} else if (layer == 3) {
+			videoView.setZOrderMediaOverlay(true);
+		} else {
+			videoView.setZOrderOnTop(false);
+			videoView.setZOrderMediaOverlay(false);
+		}
 
 		if (isTransparent) {
 
@@ -1580,6 +1597,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	private void setupNeo3DSurface(FrameLayout root, View gameView) {
 		try {
 			neo3dSurfaceView = new SurfaceView(this);
+			neo3dSurfaceView.setZOrderOnTop(false);
 			neo3dSurfaceView.setZOrderMediaOverlay(false);
 			neo3dSurfaceView.setClickable(false);
 			neo3dSurfaceView.setFocusable(false);

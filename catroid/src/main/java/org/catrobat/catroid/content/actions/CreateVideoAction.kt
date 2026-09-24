@@ -41,6 +41,8 @@ class CreateVideoAction() : TemporalAction() {
     var loop: Formula? = null
     var controls: Formula? = null
     var layer: Formula? = null
+    var keyColor: Formula? = null
+    var keyTolerance: Formula? = null
 
     override fun update(percent: Float) {
         if (scope == null) {
@@ -62,6 +64,8 @@ class CreateVideoAction() : TemporalAction() {
         val posYT = posY?.interpretInteger(scope) ?: 0
         val widthT = width?.interpretInteger(scope) ?: 0
         val heightT = height?.interpretInteger(scope) ?: 0
+        val keyColorT = keyColor?.interpretInteger(scope) ?: 0x00FF00
+        val keyToleranceT = keyTolerance?.interpretDouble(scope)?.toFloat() ?: 0f
 
         val projFile: File? = scope?.project?.getFile(fileT)
         if (projFile == null) {
@@ -74,7 +78,7 @@ class CreateVideoAction() : TemporalAction() {
                 nameT,
                 projFile.absolutePath,
                 posXT, posYT, widthT, heightT,
-                controlsT, loopT, true, layerT
+                controlsT, loopT, true, layerT, keyColorT, keyToleranceT
             )
         }
         Log.d("VideoPlayerAction", "showed")

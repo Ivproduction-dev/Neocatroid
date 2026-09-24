@@ -29,7 +29,7 @@ public class CreateVideoBrickLayerTest {
     public void testLayerDefaultValueIs2() throws org.catrobat.catroid.formulaeditor.InterpretationException {
         CreateVideoBrick brick = new CreateVideoBrick();
         Formula layerFormula = brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_LAYER);
-        assertEquals("Default layer should be 2 (above all)", 2,
+        assertEquals("Default layer should be 2 (above 3D below 2D)", 2,
                 layerFormula.interpretInteger(null).intValue());
     }
 
@@ -74,6 +74,24 @@ public class CreateVideoBrickLayerTest {
         assertNotNull(brick.getFormulaWithBrickField(Brick.BrickField.LOOPED));
         assertNotNull(brick.getFormulaWithBrickField(Brick.BrickField.CONTROLS));
         assertNotNull(brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_LAYER));
+        assertNotNull(brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_KEY_COLOR));
+        assertNotNull(brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_KEY_TOLERANCE));
+    }
+
+    @Test
+    public void testKeyToleranceDefaultIsOff() throws org.catrobat.catroid.formulaeditor.InterpretationException {
+        CreateVideoBrick brick = new CreateVideoBrick();
+        Formula toleranceFormula = brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_KEY_TOLERANCE);
+        assertEquals("Default tolerance should be 0 (chroma key off)", 0,
+                toleranceFormula.interpretInteger(null).intValue());
+    }
+
+    @Test
+    public void testKeyColorDefaultIsGreen() throws org.catrobat.catroid.formulaeditor.InterpretationException {
+        CreateVideoBrick brick = new CreateVideoBrick();
+        Formula colorFormula = brick.getFormulaWithBrickField(Brick.BrickField.VIDEO_KEY_COLOR);
+        assertEquals("Default key color should be green 0x00FF00", 65280,
+                colorFormula.interpretInteger(null).intValue());
     }
 
     @Test
@@ -92,6 +110,6 @@ public class CreateVideoBrickLayerTest {
                 eq(sprite), eq(sequence),
                 any(Formula.class), any(Formula.class), any(Formula.class), any(Formula.class),
                 any(Formula.class), any(Formula.class), any(Formula.class), any(Formula.class),
-                any(Formula.class));
+                any(Formula.class), any(Formula.class), any(Formula.class));
     }
 }

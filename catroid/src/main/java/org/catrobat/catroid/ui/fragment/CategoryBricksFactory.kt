@@ -151,7 +151,16 @@ import org.catrobat.catroid.content.bricks.CreateFolderByPathBrick
 import org.catrobat.catroid.content.bricks.CreateGLViewBrick
 import org.catrobat.catroid.content.bricks.CreateGearJointBrick
 import org.catrobat.catroid.content.bricks.CreateParticlesBrick
+import org.catrobat.catroid.content.bricks.CreateParticleEffectBrick
 import org.catrobat.catroid.content.bricks.CreateParticleSystemBrick
+import org.catrobat.catroid.content.bricks.EmitParticleBurstBrick
+import org.catrobat.catroid.content.bricks.SetParticleBufferRenderBrick
+import org.catrobat.catroid.content.bricks.SetParticlePropertyBrick
+import org.catrobat.catroid.content.bricks.SetParticleTransformBrick
+import org.catrobat.catroid.content.bricks.SpawnParticleInstanceBrick
+import org.catrobat.catroid.content.bricks.StopParticleInstanceBrick
+import org.catrobat.catroid.content.bricks.UpdateScreenBrick
+import org.catrobat.catroid.content.bricks.ApplyShaderBrick
 import org.catrobat.catroid.content.bricks.SetParticleColorBrick
 import org.catrobat.catroid.content.bricks.SetPenPropertyBrick
 import org.catrobat.catroid.content.bricks.SetTextPropertyBrick
@@ -1474,6 +1483,7 @@ eventBrickList.add(WhenConditionBrick(WhenConditionScript(Formula(defaultIf))))
 
         controlBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_control_waiting), template))
         controlBrickList.add(DelayMicrosecondsBrick(Formula(1.0)))
+        controlBrickList.add(UpdateScreenBrick())
 
         controlBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_control_conditions), template))
         controlBrickList.add(SwitchBeginBrick(Formula(0)))
@@ -1985,6 +1995,14 @@ eventBrickList.add(WhenConditionBrick(WhenConditionScript(Formula(defaultIf))))
                 looksBrickList.add(StopBufferRecordingBrick())
                 looksBrickList.add(SetMainRenderLoopsBrick(1f, 1f, 1f))
                 looksBrickList.add(SetBufferEffectsBrick("Map", 1f, 1f))
+                looksBrickList.add(ApplyShaderBrick("shader1", 0, "", 0.5))
+                looksBrickList.add(CreateParticleEffectBrick("fire.particle"))
+                looksBrickList.add(SpawnParticleInstanceBrick("fire.particle", "fire1", 0.0, 0.0))
+                looksBrickList.add(SetParticleBufferRenderBrick("fire1", "myBuffer", 0))
+                looksBrickList.add(SetParticleTransformBrick("fire1", 0.0, 0.0, 1.0, 1.0, 0.0))
+                looksBrickList.add(SetParticlePropertyBrick("fire1", 0, 50.0))
+                looksBrickList.add(EmitParticleBurstBrick("fire1", 20.0))
+                looksBrickList.add(StopParticleInstanceBrick("fire1", 0))
                 looksBrickList.add(SetTileBrick(0, 0, 0))
                 looksBrickList.add(ClearTileBrick(0, 0))
                 looksBrickList.add(SetTilemapSolidBrick(0, true))
@@ -2155,6 +2173,15 @@ eventBrickList.add(WhenConditionBrick(WhenConditionScript(Formula(defaultIf))))
         looksBrickList.add(StopBufferRecordingBrick())
         looksBrickList.add(SetMainRenderLoopsBrick(1f, 1f, 1f))
         looksBrickList.add(SetBufferEffectsBrick("Map", 1f, 1f))
+        looksBrickList.add(ApplyShaderBrick("shader1", 0, "", 0.5))
+        looksBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_looks_particles), template))
+        looksBrickList.add(CreateParticleEffectBrick("fire.particle"))
+        looksBrickList.add(SpawnParticleInstanceBrick("fire.particle", "fire1", 0.0, 0.0))
+        looksBrickList.add(SetParticleBufferRenderBrick("fire1", "myBuffer", 0))
+        looksBrickList.add(SetParticleTransformBrick("fire1", 0.0, 0.0, 1.0, 1.0, 0.0))
+        looksBrickList.add(SetParticlePropertyBrick("fire1", 0, 50.0))
+        looksBrickList.add(EmitParticleBurstBrick("fire1", 20.0))
+        looksBrickList.add(StopParticleInstanceBrick("fire1", 0))
 
         looksBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_tilemap), template))
         looksBrickList.add(SetTileBrick(0, 0, 0))

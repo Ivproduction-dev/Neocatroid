@@ -2172,6 +2172,18 @@ public class ActionFactory extends Actions {
 		return action;
 	}
 
+	public Action createAskAction(Sprite sprite, SequenceAction sequence, Formula questionFormula,
+			UserVariable answerVariable, Formula backgroundColorFormula, Formula buttonColorFormula) {
+		AskAction action = Actions.action(AskAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setQuestionFormula(questionFormula);
+		action.setAnswerVariable(answerVariable);
+		action.setBackgroundColorFormula(backgroundColorFormula);
+		action.setButtonColorFormula(buttonColorFormula);
+		return action;
+	}
+
 	public Action createBigAskAction(Sprite sprite, SequenceAction sequence, Formula questionFormula,
 									 Formula msg, Formula ok, Formula canel, Formula def, UserVariable answerVariable) {
 		BigAskAction action = Actions.action(BigAskAction.class);
@@ -3302,7 +3314,7 @@ public class ActionFactory extends Actions {
 
 	public Action videoAction(Sprite sprite, SequenceAction sequence,
 									  Formula name, Formula url, Formula x, Formula y, Formula width, Formula height,
-									  Formula loop, Formula control, Formula layer) {
+									  Formula loop, Formula control, Formula layer, Formula keyColor, Formula keyTolerance) {
 		CreateVideoAction action = action(CreateVideoAction.class);
 		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
 		action.setScope(scope);
@@ -3315,6 +3327,8 @@ public class ActionFactory extends Actions {
 		action.setLoop(loop);
 		action.setControls(control);
 		action.setLayer(layer);
+		action.setKeyColor(keyColor);
+		action.setKeyTolerance(keyTolerance);
 		return action;
 	}
 
@@ -5574,6 +5588,88 @@ public Action createVarAction(Sprite sprite, SequenceAction sequence,
         action.setFilename(filename);
         action.setVertexCode(vsh);
         action.setFragmentCode(fsh);
+        return action;
+    }
+
+    public Action createApplyShaderAction(Sprite sprite, SequenceAction sequence,
+                                          Formula effectId, int presetSelection, Formula target, Formula strength) {
+        ApplyShaderAction action = action(ApplyShaderAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setEffectIdFormula(effectId);
+        action.setPresetSelection(presetSelection);
+        action.setTargetFormula(target);
+        action.setStrengthFormula(strength);
+        return action;
+    }
+
+    public Action createCreateParticleEffectAction(Sprite sprite, SequenceAction sequence, Formula fileFormula) {
+        CreateParticleEffectAction action = action(CreateParticleEffectAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setFileFormula(fileFormula);
+        return action;
+    }
+
+    public Action createEmitParticleBurstAction(Sprite sprite, SequenceAction sequence, Formula name, Formula count) {
+        EmitParticleBurstAction action = action(EmitParticleBurstAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setInstanceIdFormula(name);
+        action.setCountFormula(count);
+        return action;
+    }
+
+    public Action createSetParticleBufferRenderAction(Sprite sprite, SequenceAction sequence, Formula name, Formula text, int mode) {
+        SetParticleBufferRenderAction action = action(SetParticleBufferRenderAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setInstanceIdFormula(name);
+        action.setBufferNameFormula(text);
+        action.setModeSelection(mode);
+        return action;
+    }
+
+    public Action createSetParticlePropertyAction(Sprite sprite, SequenceAction sequence, Formula name, int propertyIndex, Formula value) {
+        SetParticlePropertyAction action = action(SetParticlePropertyAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setInstanceIdFormula(name);
+        action.setPropertyIndex(propertyIndex);
+        action.setValueFormula(value);
+        return action;
+    }
+
+    public Action createSetParticleTransformAction(Sprite sprite, SequenceAction sequence, Formula name, Formula x, Formula y, Formula scaleX, Formula scaleY, Formula rotation) {
+        SetParticleTransformAction action = action(SetParticleTransformAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setInstanceIdFormula(name);
+        action.setXFormula(x);
+        action.setYFormula(y);
+        action.setScaleXFormula(scaleX);
+        action.setScaleYFormula(scaleY);
+        action.setRotationFormula(rotation);
+        return action;
+    }
+
+    public Action createSpawnParticleInstanceAction(Sprite sprite, SequenceAction sequence, Formula file, Formula name, Formula x, Formula y) {
+        SpawnParticleInstanceAction action = action(SpawnParticleInstanceAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setEffectFileFormula(file);
+        action.setInstanceIdFormula(name);
+        action.setXFormula(x);
+        action.setYFormula(y);
+        return action;
+    }
+
+    public Action createStopParticleInstanceAction(Sprite sprite, SequenceAction sequence, Formula name, int modeSelection) {
+        StopParticleInstanceAction action = action(StopParticleInstanceAction.class);
+        action.setScope(new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence));
+        action.setInstanceIdFormula(name);
+        action.setModeSelection(modeSelection);
+        return action;
+    }
+
+    public Action createUpdateScreenAction(Sprite sprite, SequenceAction sequence) {
+        UpdateScreenAction action = action(UpdateScreenAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
         return action;
     }
 

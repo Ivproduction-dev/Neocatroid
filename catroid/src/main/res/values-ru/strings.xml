@@ -569,6 +569,7 @@
     <string name="subcategory_sound_music">Музыка и инструменты</string>
 
     <string name="subcategory_looks_costumes">Образы и фоны</string>
+    <string name="subcategory_looks_particles">Партиклы</string>
     <string name="subcategory_looks_visibility">Видимость и размер</string>
     <string name="subcategory_looks_effects">Графические эффекты</string>
     <string name="subcategory_looks_dialogs">Текст и диалоги</string>
@@ -2196,7 +2197,9 @@
     <string formatted="false" name="save_to_variable">сохранять в переменную</string>
     <string formatted="false" name="brick_create_textfield">Создать TextField</string>
     <string formatted="false" name="project_file">файл проекта</string>
-<string name="video_layer">слой (2=над всем, 1=посередине, 0=сзади)</string>
+<string name="video_layer">слой (0/1=под 3D и 2D, 2=над 3D под 2D, 3=поверх 2D, 4=поверх всего)</string>
+<string name="video_key_color">цвет хромакея (0xRRGGBB)</string>
+<string name="video_key_tolerance">допуск хромакея (0=выкл)</string>
     <string formatted="false" name="control_enabled">показать управление</string>
     <string formatted="false" name="loop_enabled">зациклить</string>
     <string formatted="false" name="position">позиция (x, y)</string>
@@ -3830,6 +3833,8 @@
     <string formatted="false" name="brick_flash_off">выкл.</string>
     <string formatted="false" name="brick_vibration">Вибрировать</string>
     <string formatted="false" name="brick_ask_label">Спросить</string>
+    <string formatted="false" name="brick_ask_background">Цвет фона (пусто = по умолчанию)</string>
+    <string formatted="false" name="brick_ask_buttons">Цвет кнопок (пусто = по умолчанию)</string>
     <string formatted="false" name="brick_ask_label2">Задать подсказку</string>
     <string formatted="false" name="brick_ask_label3">Задать текст "ОК"</string>
     <string formatted="false" name="brick_ask_label4">Задать текст "Отмена"</string>

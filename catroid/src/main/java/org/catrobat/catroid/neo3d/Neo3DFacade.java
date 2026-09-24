@@ -120,6 +120,36 @@ public final class Neo3DFacade {
         require().setObjectModelBytes(sceneId, objectId, assetKey, glbBytes);
     }
 
+    public static void facadeSetPhysicsBody(String sceneId, String objectId,
+            Neo3DPhysicsBody body) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            throw new IllegalArgumentException("Unknown object: " + objectId);
+        }
+        obj.setPhysicsBody(body == null ? null : body.copy());
+        e.syncObject(sceneId, objectId);
+    }
+
+    public static void facadeSetLinearVelocity(String sceneId, String objectId, float x, float y,
+            float z) {
+        require().getPhysicsBackend().setLinearVelocity(sceneId, objectId, x, y, z);
+    }
+
+    public static void facadeAddImpulse(String sceneId, String objectId, float x, float y,
+            float z) {
+        require().getPhysicsBackend().addImpulse(sceneId, objectId, x, y, z);
+    }
+
+    public static void facadeSetGravity(float x, float y, float z) {
+        require().getPhysicsBackend().setGravity(x, y, z);
+    }
+
+    public static int facadeGetPhysicsBodyCount(String sceneId) {
+        return require().getPhysicsBackend().getBodyCount(sceneId);
+    }
+
     public static float facadeUpdate(String sceneId, float deltaSec, long frameTimeNanos) {
         return require().update(sceneId, deltaSec, frameTimeNanos);
     }

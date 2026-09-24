@@ -50,9 +50,15 @@ public class Light2DControlBrick extends FormulaBrick
     public View getView(Context context) {
         super.getView(context);
 
+        if (actionSelection > 1) {
+            actionSelection = 0;
+        }
         Spinner actionSpinner = view.findViewById(R.id.brick_light_2d_control_action_spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(context,
+        ArrayAdapter<CharSequence> fullAdapter = ArrayAdapter.createFromResource(context,
                 R.array.light2d_control_actions, android.R.layout.simple_spinner_item);
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item);
+        adapter.add(fullAdapter.getItem(0));
+        adapter.add(fullAdapter.getItem(1));
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         actionSpinner.setAdapter(adapter);
         actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -67,13 +73,24 @@ public class Light2DControlBrick extends FormulaBrick
         });
         actionSpinner.setSelection(actionSelection);
 
-        List<Nameable> items = new ArrayList<>();
-        if (ProjectManager.getInstance().getCurrentlyEditedScene() != null) {
-            items.addAll(ProjectManager.getInstance().getCurrentlyEditedScene().getSpriteList());
+        View valueEdit = view.findViewById(R.id.brick_light_2d_control_value);
+        if (valueEdit != null) valueEdit.setVisibility(View.GONE);
+        View spriteSpinnerView = view.findViewById(R.id.brick_light_2d_control_sprite_spinner);
+        if (spriteSpinnerView != null) spriteSpinnerView.setVisibility(View.GONE);
+        android.view.ViewGroup brickLayout = view.findViewById(R.id.brick_light_2d_control_layout);
+        if (brickLayout != null) {
+            String valueLabel = context.getString(R.string.brick_light_2d_control_value);
+            String spriteLabel = context.getString(R.string.brick_light_2d_control_sprite);
+            for (int i = 0; i < brickLayout.getChildCount(); i++) {
+                android.view.View child = brickLayout.getChildAt(i);
+                if (child instanceof android.widget.TextView) {
+                    String t = ((android.widget.TextView) child).getText().toString();
+                    if (t.equals(valueLabel) || t.equals(spriteLabel)) {
+                        child.setVisibility(View.GONE);
+                    }
+                }
+            }
         }
-        spriteSpinner = new BrickSpinner<>(R.id.brick_light_2d_control_sprite_spinner, view, items);
-        spriteSpinner.setOnItemSelectedListener(this);
-        spriteSpinner.setSelection(attachSpriteName);
 
         return view;
     }

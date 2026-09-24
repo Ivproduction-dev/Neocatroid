@@ -19,6 +19,7 @@ public class Neo3DGameObject {
     private Neo3DLight light;
     private Neo3DMaterial material;
     private Neo3DCustomMaterial customMaterial;
+    private Neo3DPhysicsBody physicsBody;
     private final List<Neo3DAnimationClip> animationClips = new ArrayList<>();
     private Neo3DAnimationClip.State animationState;
 
@@ -98,6 +99,14 @@ public class Neo3DGameObject {
 
     public void setCustomMaterial(Neo3DCustomMaterial customMaterial) {
         this.customMaterial = customMaterial;
+    }
+
+    public Neo3DPhysicsBody getPhysicsBody() {
+        return physicsBody;
+    }
+
+    public void setPhysicsBody(Neo3DPhysicsBody physicsBody) {
+        this.physicsBody = physicsBody;
     }
 
     public List<Neo3DAnimationClip> getAnimationClips() {

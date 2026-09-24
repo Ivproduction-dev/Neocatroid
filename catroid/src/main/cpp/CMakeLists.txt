@@ -102,3 +102,11 @@ target_link_libraries(ai_agent_jni
     ${log-lib}
     ${dl-lib}
 )
+
+set(PHYSICS_REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/jolt)
+set(CROSS_PLATFORM_DETERMINISTIC ON CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+include(${PHYSICS_REPO_ROOT}/Jolt/Jolt.cmake)
+
+add_library(neo3d_jolt SHARED neo3d_jolt.cpp)
+target_link_libraries(neo3d_jolt PRIVATE Jolt ${log-lib})

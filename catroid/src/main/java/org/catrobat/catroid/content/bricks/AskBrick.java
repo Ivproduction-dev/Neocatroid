@@ -34,6 +34,8 @@ public class AskBrick extends UserVariableBrickWithFormula {
 
 	public AskBrick() {
 		addAllowedBrickField(BrickField.ASK_QUESTION, R.id.brick_ask_question_edit_text);
+		addAllowedBrickField(BrickField.COLOR, R.id.brick_ask_background_edit_text);
+		addAllowedBrickField(BrickField.COLOR_CHANGE, R.id.brick_ask_buttons_edit_text);
 	}
 
 	public AskBrick(String questionText) {
@@ -50,6 +52,13 @@ public class AskBrick extends UserVariableBrickWithFormula {
 		setFormulaWithBrickField(BrickField.ASK_QUESTION, questionFormula);
 	}
 
+	public AskBrick(Formula questionFormula, UserVariable answerVariable, Formula backgroundColor,
+			Formula buttonColor) {
+		this(questionFormula, answerVariable);
+		setFormulaWithBrickField(BrickField.COLOR, backgroundColor);
+		setFormulaWithBrickField(BrickField.COLOR_CHANGE, buttonColor);
+	}
+
 	@Override
 	public int getViewResource() {
 		return R.layout.brick_ask;
@@ -64,6 +73,7 @@ public class AskBrick extends UserVariableBrickWithFormula {
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
 		sequence.addAction(sprite.getActionFactory()
 				.createAskAction(sprite, sequence, getFormulaWithBrickField(BrickField.ASK_QUESTION),
-						userVariable));
+						userVariable, getFormulaWithBrickField(BrickField.COLOR),
+						getFormulaWithBrickField(BrickField.COLOR_CHANGE)));
 	}
 }

@@ -52,11 +52,31 @@
             style="@style/BrickEditText"
             android:layout_width="match_parent" />
 
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_ask_background"
+            app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_ask_background_edit_text"
+            style="@style/BrickEditText"
+            android:layout_width="match_parent" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_ask_buttons"
+            app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_ask_buttons_edit_text"
+            style="@style/BrickEditText"
+            android:layout_width="match_parent" />
+
        <TextView
-           android:id="@+id/brick_ask_store_label"
-           style="@style/BrickText.SingleLine"
-           android:text="@string/brick_ask_store"
-           app:layout_newLine="true" />
+            android:id="@+id/brick_ask_store_label"
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_ask_store"
+            app:layout_newLine="true" />
 
         <Spinner
             android:id="@+id/brick_ask_spinner"

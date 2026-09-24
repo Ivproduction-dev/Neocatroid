@@ -41,7 +41,11 @@ public class CreateVideoBrick extends FormulaBrick {
         addAllowedBrickField(BrickField.LOOPED, R.id.create_video_loop);
         addAllowedBrickField(BrickField.CONTROLS, R.id.create_video_control);
         addAllowedBrickField(BrickField.VIDEO_LAYER, R.id.create_video_layer);
+        addAllowedBrickField(BrickField.VIDEO_KEY_COLOR, R.id.create_video_key_color);
+        addAllowedBrickField(BrickField.VIDEO_KEY_TOLERANCE, R.id.create_video_key_tolerance);
         setFormulaWithBrickField(BrickField.VIDEO_LAYER, new Formula(2));
+        setFormulaWithBrickField(BrickField.VIDEO_KEY_COLOR, new Formula(65280));
+        setFormulaWithBrickField(BrickField.VIDEO_KEY_TOLERANCE, new Formula(0));
     }
 
     public CreateVideoBrick(String name, String file, Integer x, Integer y, Integer width, Integer height, Integer looped, Integer controls) {
@@ -70,6 +74,7 @@ public class CreateVideoBrick extends FormulaBrick {
         sequence.addAction(sprite.getActionFactory()
                 .videoAction(sprite, sequence,
                         getFormulaWithBrickField(BrickField.NAME), getFormulaWithBrickField(BrickField.FILE), getFormulaWithBrickField(BrickField.POSX), getFormulaWithBrickField(BrickField.POSY), getFormulaWithBrickField(BrickField.WIDTH), getFormulaWithBrickField(BrickField.HEIGHT),
-                        getFormulaWithBrickField(BrickField.LOOPED), getFormulaWithBrickField(BrickField.CONTROLS), getFormulaWithBrickField(BrickField.VIDEO_LAYER)));
+                        getFormulaWithBrickField(BrickField.LOOPED), getFormulaWithBrickField(BrickField.CONTROLS), getFormulaWithBrickField(BrickField.VIDEO_LAYER),
+                        getFormulaWithBrickField(BrickField.VIDEO_KEY_COLOR), getFormulaWithBrickField(BrickField.VIDEO_KEY_TOLERANCE)));
     }
 }

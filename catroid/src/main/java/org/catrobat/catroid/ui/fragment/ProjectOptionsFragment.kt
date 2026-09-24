@@ -47,7 +47,6 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,6 +54,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.lifecycle.lifecycleScope
 import com.danvexteam.lunoscript_annotations.LunoClass
 import com.google.android.material.chip.Chip
@@ -1745,7 +1745,7 @@ class ProjectOptionsFragment : Fragment() {
             setPadding(0, 0, 0, 8)
         })
         val permChecks = BUILD_APK_PERMISSIONS.map { perm ->
-            val cb = CheckBox(ctx).apply {
+            val cb = SwitchMaterial(ctx).apply {
                 text = perm.substringAfterLast('.')
                 isChecked = perm == "android.permission.INTERNET"
             }

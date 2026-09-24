@@ -39,11 +39,6 @@ public final class CollisionDetection {
 	}
 
 	public static boolean checkCollisionBetweenLooks(Look firstLook, Look secondLook) {
-		if (!NativeLookOptimizer.isWorking) {
-			Log.w(CollisionDetection.class.getSimpleName(), "NativeLookOptimizer is not working, collision detection disabled");
-			return false;
-		}
-
 		if (firstLook == null || secondLook == null ||
 				!firstLook.isVisible() || !firstLook.isLookVisible() ||
 				!secondLook.isVisible() || !secondLook.isLookVisible()) {
@@ -63,34 +58,43 @@ public final class CollisionDetection {
 			return false;
 		}
 
-		float[][] firstPreparedPolys = new float[firstPolygons.length][];
-		int firstCount = 0;
-		for (int i = 0; i < firstPolygons.length; i++) {
-			float[] verts = (firstPolygons[i] != null) ? firstPolygons[i].getTransformedVertices() : null;
-			if (verts != null && verts.length >= 6) {
-				firstPreparedPolys[firstCount++] = verts;
+		if (NativeLookOptimizer.isWorking) {
+			float[][] firstPreparedPolys = new float[firstPolygons.length][];
+			int firstCount = 0;
+			for (int i = 0; i < firstPolygons.length; i++) {
+				float[] verts = (firstPolygons[i] != null) ? firstPolygons[i].getTransformedVertices() : null;
+				if (verts != null && verts.length >= 6) {
+					firstPreparedPolys[firstCount++] = verts;
+				}
 			}
-		}
-		if (firstCount < firstPolygons.length) {
-			firstPreparedPolys = Arrays.copyOf(firstPreparedPolys, firstCount);
-		}
-
-		float[][] secondPreparedPolys = new float[secondPolygons.length][];
-		int secondCount = 0;
-		for (int i = 0; i < secondPolygons.length; i++) {
-			float[] verts = (secondPolygons[i] != null) ? secondPolygons[i].getTransformedVertices() : null;
-			if (verts != null && verts.length >= 6) {
-				secondPreparedPolys[secondCount++] = verts;
+			if (firstCount < firstPolygons.length) {
+				firstPreparedPolys = Arrays.copyOf(firstPreparedPolys, firstCount);
 			}
-		}
-		if (secondCount < secondPolygons.length) {
-			secondPreparedPolys = Arrays.copyOf(secondPreparedPolys, secondCount);
-		}
 
-		if (firstCount == 0 || secondCount == 0) {
-			return false;
+			float[][] secondPreparedPolys = new float[secondPolygons.length][];
+			int secondCount = 0;
+			for (int i = 0; i < secondPolygons.length; i++) {
+				float[] verts = (secondPolygons[i] != null) ? secondPolygons[i].getTransformedVertices() : null;
+				if (verts != null && verts.length >= 6) {
+					secondPreparedPolys[secondCount++] = verts;
+				}
+			}
+			if (secondCount < secondPolygons.length) {
+				secondPreparedPolys = Arrays.copyOf(secondPreparedPolys, secondCount);
+			}
+
+			if (firstCount == 0 || secondCount == 0) {
+				return false;
+			}
+			try {
+				return NativeLookOptimizer.checkSingleCollision(firstPreparedPolys, secondPreparedPolys);
+			} catch (Throwable t) {
+				Log.w(CollisionDetection.class.getSimpleName(), "Native collision failed, using java fallback", t);
+			}
+		} else {
+			Log.w(CollisionDetection.class.getSimpleName(), "NativeLookOptimizer is not working, using java fallback");
 		}
-		return NativeLookOptimizer.checkSingleCollision(firstPreparedPolys, secondPreparedPolys);
+		return checkCollisionBetweenPolygonArrays(firstPolygons, secondPolygons);
 	}
 
 

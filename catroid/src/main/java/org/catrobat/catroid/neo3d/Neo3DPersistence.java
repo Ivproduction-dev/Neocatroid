@@ -41,6 +41,25 @@ public final class Neo3DPersistence {
             p.yawDeg = euler[0];
             p.pitchDeg = euler[1];
             p.rollDeg = euler[2];
+            float[] quaternion = obj.getTransform().getQuaternion();
+            p.quaternionX = quaternion[0];
+            p.quaternionY = quaternion[1];
+            p.quaternionZ = quaternion[2];
+            p.quaternionW = quaternion[3];
+            Neo3DPhysicsBody body = obj.getPhysicsBody();
+            if (body != null && body.getMotionType() != Neo3DPhysicsBody.MotionType.NONE) {
+                p.physicsMotionType = body.getMotionType().ordinal();
+                p.physicsShapeType = body.getShapeType().ordinal();
+                p.physicsMass = body.getMass();
+                p.physicsFriction = body.getFriction();
+                p.physicsRestitution = body.getRestitution();
+                p.physicsGravityFactor = body.getGravityFactor();
+                p.physicsLinearDamping = body.getLinearDamping();
+                p.physicsAngularDamping = body.getAngularDamping();
+                p.physicsContinuousCollision = body.isContinuousCollision();
+            } else {
+                p.physicsMotionType = -1;
+            }
             if (obj.getCamera() != null && obj.getCamera().isMainCamera()) {
                 p.primitiveKind = -2;
             }
@@ -73,7 +92,36 @@ public final class Neo3DPersistence {
                 Neo3DGameObject obj = neoScene == null ? null : neoScene.getObject(objectId);
                 if (obj != null) {
                     obj.getTransform().setScale(p.scaleX, p.scaleY, p.scaleZ);
-                    obj.getTransform().setRotationEulerDeg(p.yawDeg, p.pitchDeg, p.rollDeg);
+                    float quaternionLength = (float) Math.sqrt(
+                            p.quaternionX * p.quaternionX
+                                    + p.quaternionY * p.quaternionY
+                                    + p.quaternionZ * p.quaternionZ
+                                    + p.quaternionW * p.quaternionW);
+                    if (quaternionLength > 1e-6f) {
+                        obj.getTransform().setQuaternion(
+                                p.quaternionX, p.quaternionY,
+                                p.quaternionZ, p.quaternionW);
+                    } else {
+                        obj.getTransform().setRotationEulerDeg(
+                                p.yawDeg, p.pitchDeg, p.rollDeg);
+                    }
+                    Neo3DPhysicsBody.MotionType[] motions =
+                            Neo3DPhysicsBody.MotionType.values();
+                    Neo3DPhysicsBody.ShapeType[] shapes =
+                            Neo3DPhysicsBody.ShapeType.values();
+                    if (p.physicsMotionType > 0 && p.physicsMotionType < motions.length
+                            && p.physicsShapeType >= 0 && p.physicsShapeType < shapes.length) {
+                        Neo3DPhysicsBody restoredBody = new Neo3DPhysicsBody(
+                                motions[p.physicsMotionType], shapes[p.physicsShapeType],
+                                p.physicsMass);
+                        restoredBody.setFriction(p.physicsFriction);
+                        restoredBody.setRestitution(p.physicsRestitution);
+                        restoredBody.setGravityFactor(p.physicsGravityFactor);
+                        restoredBody.setLinearDamping(p.physicsLinearDamping);
+                        restoredBody.setAngularDamping(p.physicsAngularDamping);
+                        restoredBody.setContinuousCollision(p.physicsContinuousCollision);
+                        obj.setPhysicsBody(restoredBody);
+                    }
                     engine.syncObject(neoSceneId, objectId);
                 }
                 if (p.primitiveKind == 0) {
