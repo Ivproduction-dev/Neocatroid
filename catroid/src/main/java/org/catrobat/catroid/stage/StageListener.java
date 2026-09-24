@@ -2246,11 +2246,6 @@ public class StageListener implements ApplicationListener {
                         camera.position.y -= shakeOffsetY;
                         camera.update();
                     }
-                    if (followDelta != null && camera != null) {
-                        camera.position.x -= followDelta[0];
-                        camera.position.y -= followDelta[1];
-                        camera.update();
-                    }
 
                     uiStage.draw();
                 } catch (Exception e) {

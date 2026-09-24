@@ -1119,6 +1119,31 @@ stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2
 - Убран per-execution `Log.i` из `CreateLight2DAction` (в цикле спамил каждый
   кадр); разовая диагностика осталась в `StageListener`/`LightmapRenderer`.
 
+# Палитра: порядок как в Danveyd + скрытие диалогов (2026-09)
+
+Эталон раскладки — `C:\Users\ivanp\ньюкатриод\NewCatroid` (Danveyd, мышечная
+память), НЕ upstream Catrobat (у него свой порядок). Правило для плоских
+(ungrouped) списков `CategoryBricksFactory.kt`: общие брики — строго в порядке
+Danveyd, наши кастомы — в конец в текущем относительном порядке.
+Группированные ветки (SubCategoryHeader) — тематические, не тронуты.
+
+- Скрыты из палитры (обе ветки Looks, классы живы для старых проектов):
+  8 native-диалогов (CreateDialog/SetPositive/SetNeutral/SetNegative/AddEdit/
+  AddRadio/SetCallback/ShowDialog) + 8 story-диалогов (StartDialogue/JumpToNode/
+  SelectedChoice/CurrentDialogueText/CurrentNodeID/CurrentSpeaker/
+  DialogueRunning/CloseDialogue). Ask/Say/ShowText/SetText/LocalizeSprites остались.
+- Event/Control/Motion/Sound/Data/Device (ungrouped) — переупорядочены под Danveyd.
+- Возвращены в палитру пропущенные брики Danveyd (классы были, показа не было):
+  Control — `UpdateScreenBrick()`, `OpenAppBrick(com.android.settings)`;
+  Data — `ShowTextRotationBrick()`, `ZipProjectFilesBrick`, `UnzipProjectFilesBrick`;
+  Device — `TestBrick()`, `OpenAppBrick`, Java*×3 (Compile/LoadAndRun/DownloadDep),
+  `ShowNotificationBrick`, `Enable/DisableBackgroundModeBrick`, NativeView-кластер,
+  `LookRequest/BackgroundRequest`, `ShareBrick` (grouped).
+- Не портированы (классов нет в репо, в палитру не вернуть): upstream
+  `ArcBrick`, `GoThroughBrick` (Motion).
+- Проверка целостности после каждой категории: multiset `XxxBrickList.add`
+  против HEAD (потерь/дублей нет) + порядковый чек Danveyd-подпоследовательности.
+
 # Jolt Physics из исходников — нативный бэкенд Neo3D (2026-09)
 
 AAR `com.github.stephengold:jolt-jni-Android:6.1.1` требует minSdk 33 и тянет
@@ -1171,5 +1196,43 @@ neo3d/physics/INeo3DPhysicsBackend.java / Neo3DNullPhysicsBackend.java — ин�
   месте) лечится `./gradlew --stop` + удалить `catroid/build/tmp/kapt3`.
 - ProGuard: stale-keep `com.github.stephengold.joltjni.**` удалён;
   `neo3d.**` и `native <methods>` уже покрывают мост.
+
+## Брик физики Neo3D (проверка Jolt без инструментального теста)
+
+- `NeoSetPhysicsStateBrick` (+ `NeoSetPhysicsStateAction`, палитра 3D после
+  Set position, дефолт Dynamic/Auto/1.0) — задаёт `Neo3DPhysicsBody` объекту
+  по имени через `facadeSetPhysicsBody`. Спиннер motion = ordinal MotionType
+  (0=None/1=Static/2=Kinematic/3=Dynamic), shape = ordinal ShapeType
+  (0=Auto/1=Box/2=Sphere/3=Capsule/4=Cylinder); shape/spinner-visibility как
+  в legacy (`brick_set_physics_state`): shape скрыт при None, масса только
+  при Dynamic. Дефолт поля 0 (None, least destructive), в палитре — Dynamic.
+- Ресурсы: `brick_neo_set_physics_state.xml` (иконка neo3d),
+  `brick_neo_set_physics_state*` en+ru, массивы `brick_neo_physics_states/shapes`
+  en+ru. Регистрация: ActionFactory + XStream + CategoryBricksFactory + BrickInfo.
+- Ручная проверка на устройстве: сцена с полом (Static/Box) и кубом выше
+  (Dynamic/Auto) → куб падает на пол (лог `Neo3D-Jolt`, поза едет через
+  `Neo3DEngine.applyPhysicsPoses`). Тест: `NeoSetPhysicsStateBrickTest` (2, wiring).
+- Legacy `SetPhysicsStateBrick`/`ThreeDManager` (raptor) не тронут — это старый
+  движок, к Neo3D/Jolt отношения не имеет.
+
+## Paintroid: сейв из Catroid-режима теперь копируется в Downloads (2026-09)
+
+Баг: рисунок, сохранённый из Paintroid, открытого из Catroid (образ),
+писался только обратно в URI образа внутри проекта (`FileIO.saveBitmapToUri`)
+и возвращался в редактор — ни галерея, ни файловый менеджер его не видели.
+
+- `FileIO.saveBitmapToUri`: после успешного сейва, если `catroidFlag`,
+  пишет копию битмапа в MediaStore Downloads (`Download/Paintroid`,
+  MIME по compressFormat) + тост `saved_to` с путём (runOnUiThread).
+  Флаг one-shot: сбрасывается после успеха (ретрай при ошибке сохраняет флаг).
+- `FileIO.saveBitmapToFile` (путь Export-диалога): при `catroidFlag` пишет
+  сразу в `Download/Paintroid` вместо Pictures.
+- `MainActivityNavigator.showSaveImageInformationDialogWhenStandalone`:
+  `catroidFlag = isOpenedFromCatroid` на входе (покрывает и Export).
+  Стендалон-режим не тронут.
+- Пре-Q fallback: `DOWNLOADS_DIRECTORY/Paintroid` напрямую (minSdk 31 —
+  фактически мёртвая ветка, оставлена для симметрии).
+- Возвращаемый URI не меняется — Catroid по-прежнему получает образ в проект.
+- Тестов на FileIO в репо нет; проверка — вручную на устройстве.
 
 

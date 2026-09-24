@@ -35,10 +35,12 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import id.zelory.compressor.Compressor
+import org.catrobat.catroid.R
 import org.catrobat.catroid.paintroid.command.serialization.CommandSerializer
 import org.catrobat.catroid.paintroid.common.CATROBAT_IMAGE_ENDING
 import org.catrobat.catroid.paintroid.common.Constants.DOWNLOADS_DIRECTORY
@@ -151,6 +153,22 @@ object FileIO {
             if (cachedFile == null || !compress(context, cachedFile, uri)) {
                 throw IOException("Can not open URI.")
             }
+            if (catroidFlag) {
+                try {
+                    val downloadsPath = saveCopyToDownloads(bitmap, mainActivity)
+                    mainActivity.runOnUiThread {
+                        Toast.makeText(
+                            mainActivity,
+                            mainActivity.getString(R.string.saved_to) + downloadsPath,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } catch (e: IOException) {
+                    Log.e("Can not write", "Can not copy image to Downloads.", e)
+                } finally {
+                    catroidFlag = false
+                }
+            }
         } finally {
             cachedFile?.let {
                 if (it.exists()) {
@@ -216,14 +234,26 @@ object FileIO {
             val contentValues = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/*")
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                if (catroidFlag) {
+                    put(
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        Environment.DIRECTORY_DOWNLOADS + "/" + DOWNLOADS_PAINTROID_FOLDER
+                    )
+                } else {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
             }
             resolver?.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
         } else {
-            if (!(PICTURES_DIRECTORY.exists() || PICTURES_DIRECTORY.mkdirs())) {
+            val targetDir = if (catroidFlag) {
+                File(DOWNLOADS_DIRECTORY, DOWNLOADS_PAINTROID_FOLDER)
+            } else {
+                PICTURES_DIRECTORY
+            }
+            if (!(targetDir.exists() || targetDir.mkdirs())) {
                 throw IOException("Can not create media directory.")
             }
-            Uri.fromFile(File(PICTURES_DIRECTORY, fileName))
+            Uri.fromFile(File(targetDir, fileName))
         }
 
         val cachedImageUri =
@@ -241,6 +271,7 @@ object FileIO {
             ) {
                 throw IOException("Can not compress image file.")
             }
+            catroidFlag = false
             return imageUri
         } finally {
             cachedFile?.let {
@@ -248,6 +279,43 @@ object FileIO {
                     it.delete()
                 }
             }
+        }
+    }
+
+    private const val DOWNLOADS_PAINTROID_FOLDER = "Paintroid"
+
+    @Throws(IOException::class)
+    fun saveCopyToDownloads(bitmap: Bitmap?, mainActivity: MainActivity): String {
+        require(bitmap != null && !bitmap.isRecycled) { "Bitmap is invalid" }
+        val fileName = defaultFileName
+        val mimeType =
+            if (compressFormat == CompressFormat.JPEG) "image/jpeg" else "image/png"
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                put(
+                    MediaStore.Downloads.RELATIVE_PATH,
+                    Environment.DIRECTORY_DOWNLOADS + "/" + DOWNLOADS_PAINTROID_FOLDER
+                )
+            }
+            val downloadsUri = mainActivity.contentResolver
+                .insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                ?: throw IOException("Can not create Downloads entry.")
+            mainActivity.contentResolver.openOutputStream(downloadsUri)?.use { stream ->
+                saveBitmapToStream(stream, bitmap)
+            } ?: throw IOException("Can not open Downloads output stream.")
+            Environment.DIRECTORY_DOWNLOADS + "/" + DOWNLOADS_PAINTROID_FOLDER + "/" + fileName
+        } else {
+            val downloadsDir = File(DOWNLOADS_DIRECTORY, DOWNLOADS_PAINTROID_FOLDER)
+            if (!(downloadsDir.exists() || downloadsDir.mkdirs())) {
+                throw IOException("Can not create downloads directory.")
+            }
+            val target = File(downloadsDir, fileName)
+            FileOutputStream(target).use { stream ->
+                saveBitmapToStream(stream, bitmap)
+            }
+            target.absolutePath
         }
     }
 

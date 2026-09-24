@@ -523,6 +523,8 @@ public final class BrickInfo {
         addEn(NeoDeleteObjectBrick.class, "Deletes an object from the Neo3D scene by name.");
         add(NeoSetCameraPositionBrick.class, "Задаёт позицию X, Y, Z главной камеры Neo3D-сцены (создаёт камеру, если её нет).");
         addEn(NeoSetCameraPositionBrick.class, "Sets the X, Y, Z position of the Neo3D scene main camera (creates the camera if missing).");
+        add(NeoSetPhysicsStateBrick.class, "Задаёт физическое состояние объекта Neo3D-сцены: без физики, статика, кинематика или динамика (Jolt). Для динамики задаётся масса.");
+        addEn(NeoSetPhysicsStateBrick.class, "Sets the physics state of a Neo3D scene object: none, static, kinematic or dynamic (Jolt). Mass applies to dynamic bodies.");
         add(ModifyLight2DPropertyBrick.class, "Изменяет свойство 2D света: координаты X/Y, радиус, интенсивность, цвет или общую темноту (ambient).");
         addEn(ModifyLight2DPropertyBrick.class, "Changes a 2D light property: position X/Y, radius, intensity, color or ambient brightness.");
         add(ApplyShaderBrick.class, "Применяет шейдер-эффект к экрану, спрайту или буферу (для спрайта введи имя, для экрана оставь пусто, для буфера — buffer://имя_буфера).");

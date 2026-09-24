@@ -921,6 +921,7 @@ public final class XstreamSerializer {
         xstream.alias("brick", NeoCreateCylinderBrick.class);
         xstream.alias("brick", NeoDeleteObjectBrick.class);
         xstream.alias("brick", NeoSetCameraPositionBrick.class);
+        xstream.alias("brick", NeoSetPhysicsStateBrick.class);
         xstream.alias("brick", ModifyLight2DPropertyBrick.class);
         xstream.alias("brick", ApplyShaderBrick.class);
         xstream.alias("brick", CreateParticleEffectBrick.class);

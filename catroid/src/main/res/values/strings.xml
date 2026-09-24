@@ -127,6 +127,11 @@
     <string formatted="false" name="brick_neo_set_object_position">Set 3D object position</string>
     <string formatted="false" name="brick_neo_load_model">Load 3D model</string>
     <string formatted="false" name="brick_neo_model_path">File:</string>
+    <string formatted="false" name="brick_neo_set_physics_state">Set 3D physics state</string>
+    <string formatted="false" name="brick_neo_set_physics_state_of">Set physics state of</string>
+    <string formatted="false" name="brick_neo_set_physics_state_to">to</string>
+    <string formatted="false" name="brick_neo_set_physics_state_shape">Shape</string>
+    <string formatted="false" name="brick_neo_set_physics_state_mass">with mass</string>
     <string formatted="false" name="brick_detach_from_camera">Detach object from camera</string>
     <string formatted="false" name="brick_set_max_point_lights">Set max active point lights</string>
     <string formatted="false" name="brick_3d_object_name">Object ID</string>

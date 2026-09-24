@@ -494,6 +494,21 @@
         <item>Capsule</item>
     </string-array>
 
+    <string-array name="brick_neo_physics_states">
+        <item>No physics</item>
+        <item>Static</item>
+        <item>Kinematic</item>
+        <item>Dynamic</item>
+    </string-array>
+
+    <string-array name="brick_neo_physics_shapes">
+        <item>Auto</item>
+        <item>Box</item>
+        <item>Sphere</item>
+        <item>Capsule</item>
+        <item>Cylinder</item>
+    </string-array>
+
     <string-array name="mouse_buttons">
         <item>Left</item>
         <item>Right</item>

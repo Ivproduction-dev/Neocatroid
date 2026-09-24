@@ -480,6 +480,7 @@ class MainActivityNavigator(
         imageNumber: Int,
         isExport: Boolean
     ) {
+        FileIO.catroidFlag = mainActivity.model.isOpenedFromCatroid
         val uri = mainActivity.model.savedPictureUri
         if (uri != null && permissionCode != PERMISSION_EXTERNAL_STORAGE_SAVE_COPY) {
             FileIO.parseFileName(uri, mainActivity.contentResolver)

@@ -140,6 +140,11 @@
     <string formatted="false" name="brick_neo_set_object_position">Задать позицию 3D-объекта</string>
     <string formatted="false" name="brick_neo_load_model">Загрузить 3D-модель</string>
     <string formatted="false" name="brick_neo_model_path">Файл:</string>
+    <string formatted="false" name="brick_neo_set_physics_state">Задать физику 3D-объекта</string>
+    <string formatted="false" name="brick_neo_set_physics_state_of">Задать физику объекта</string>
+    <string formatted="false" name="brick_neo_set_physics_state_to">в состояние</string>
+    <string formatted="false" name="brick_neo_set_physics_state_shape">Форма</string>
+    <string formatted="false" name="brick_neo_set_physics_state_mass">с массой</string>
     <string formatted="false" name="brick_detach_from_camera">Отвязать объект от камеры</string>
     <string formatted="false" name="brick_set_max_point_lights">Максимум точечных светов</string>
     <string formatted="false" name="brick_3d_object_name">ID объекта</string>
@@ -1889,6 +1894,19 @@
         <item>Куб</item>
         <item>Сфера</item>
         <item>Капсула</item>
+    </string-array>
+    <string-array name="brick_neo_physics_states">
+        <item>Без физики</item>
+        <item>Статика</item>
+        <item>Кинематика</item>
+        <item>Динамика</item>
+    </string-array>
+    <string-array name="brick_neo_physics_shapes">
+        <item>Авто</item>
+        <item>Куб</item>
+        <item>Сфера</item>
+        <item>Капсула</item>
+        <item>Цилиндр</item>
     </string-array>
     <string name="threed_skybox_set">Задать Скайбокс</string>
     <string name="threed_skybox_filename">Имя файла</string>

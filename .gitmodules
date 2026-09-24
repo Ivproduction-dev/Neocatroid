@@ -1,0 +1,3 @@
+[submodule "catroid/src/main/cpp/jolt"]
+	path = catroid/src/main/cpp/jolt
+	url = https://github.com/jrouwe/JoltPhysics.git

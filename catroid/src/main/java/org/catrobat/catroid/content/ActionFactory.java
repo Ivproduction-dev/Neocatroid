@@ -6054,6 +6054,17 @@ public Action createVarAction(Sprite sprite, SequenceAction sequence,
         return action;
     }
 
+    public Action createNeoSetPhysicsStateAction(Sprite sprite, SequenceAction sequence, Formula objectName, int motionType, int shapeType, Formula mass) {
+        NeoSetPhysicsStateAction action = action(NeoSetPhysicsStateAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setMotionType(motionType);
+        action.setShapeType(shapeType);
+        action.setMass(mass);
+        return action;
+    }
+
     public Action createModifyLight2DPropertyAction(Sprite sprite, SequenceAction sequence, Formula lightName, Formula objectName, int property, Formula valueX, Formula valueY, Formula value) {
         org.catrobat.catroid.content.actions.ModifyLight2DPropertyAction action = action(org.catrobat.catroid.content.actions.ModifyLight2DPropertyAction.class);
         Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
