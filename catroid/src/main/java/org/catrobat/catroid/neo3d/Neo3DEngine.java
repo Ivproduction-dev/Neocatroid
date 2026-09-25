@@ -31,11 +31,19 @@ public class Neo3DEngine {
         NULL
     }
 
+    public enum CameraTouchMode {
+        FIRST_PERSON,
+        FREE,
+        DISABLED
+    }
+
     private final INeo3DBackend backend;
     private final INeo3DPhysicsBackend physicsBackend;
     private final RenderDispatcher dispatcher;
     private final Neo3DAssetManager assetManager = new Neo3DAssetManager();
     private final Map<String, Neo3DScene> scenes = new LinkedHashMap<>();
+    private final Map<String, TouchLookState> touchLookByScene = new LinkedHashMap<>();
+    private final Map<String, FollowState> followByScene = new LinkedHashMap<>();
     private boolean disposed;
     private String activeSceneId;
 
@@ -166,6 +174,8 @@ public class Neo3DEngine {
         if (scene == null) {
             return false;
         }
+        touchLookByScene.remove(sceneId);
+        followByScene.remove(sceneId);
         physicsBackend.unregisterScene(sceneId);
         for (Neo3DGameObject obj : scene.getAllObjects()) {
             releaseObjectAssets(obj);
@@ -191,11 +201,14 @@ public class Neo3DEngine {
 
     public Neo3DGameObject createObject(String sceneId, String name) {
         Neo3DScene scene = requireScene(sceneId);
-        Neo3DGameObject existing = scene.findByName(name);
-        if (existing != null) {
-            removeObject(sceneId, existing.getId());
+        String baseName = name == null || name.isEmpty() ? "object" : name;
+        String uniqueName = baseName;
+        int counter = 2;
+        while (scene.findByName(uniqueName) != null) {
+            uniqueName = baseName + " (" + counter + ")";
+            counter++;
         }
-        Neo3DGameObject obj = scene.createObject(name);
+        Neo3DGameObject obj = scene.createObject(uniqueName);
         syncPhysicsObject(sceneId, obj);
         dispatcher.dispatch(() -> backend.syncObject(sceneId, obj));
         return obj;
@@ -304,6 +317,7 @@ public class Neo3DEngine {
             }
             dispatcher.dispatch(() -> backend.tickAnimations(sceneId, deltaSec));
             applyPhysicsPoses(sceneId, scene, deltaSec);
+            applyCameraFollow(sceneId, scene);
         }
         if (backend instanceof Neo3DFilamentBackend && backend.getLoadedModelCount() == 0) {
             return 0f;
@@ -381,15 +395,222 @@ public class Neo3DEngine {
         if (scene == null) {
             return null;
         }
-        Neo3DGameObject cameraObject = null;
-        for (Neo3DGameObject obj : scene.getAllObjects()) {
-            if (obj.getCamera() != null && obj.getCamera().isMainCamera() && obj.isActive()) {
-                cameraObject = obj;
-                break;
-            }
-        }
+        Neo3DGameObject cameraObject = findMainCameraObject(scene);
         return Neo3DPicker.pickObject(scene, cameraObject, viewWidth, viewHeight, touchX,
                 touchY);
+    }
+
+    public void setCameraTouchLook(String sceneId, int mode, float sensitivity,
+            float minPitchDeg, float maxPitchDeg) {
+        if (Float.isNaN(sensitivity) || Float.isInfinite(sensitivity)) {
+            sensitivity = 0.3f;
+        }
+        if (Float.isNaN(minPitchDeg) || Float.isInfinite(minPitchDeg)) {
+            minPitchDeg = -60f;
+        }
+        if (Float.isNaN(maxPitchDeg) || Float.isInfinite(maxPitchDeg)) {
+            maxPitchDeg = 60f;
+        }
+        TouchLookState state = touchLookByScene.get(sceneId);
+        if (state == null) {
+            state = new TouchLookState();
+            touchLookByScene.put(sceneId, state);
+        }
+        CameraTouchMode[] modes = CameraTouchMode.values();
+        state.mode = mode >= 0 && mode < modes.length
+                ? modes[mode] : CameraTouchMode.FIRST_PERSON;
+        state.sensitivity = sensitivity;
+        float lowerPitch = Math.max(-89f, Math.min(minPitchDeg, maxPitchDeg));
+        float upperPitch = Math.min(89f, Math.max(minPitchDeg, maxPitchDeg));
+        state.minPitchDeg = lowerPitch;
+        state.maxPitchDeg = upperPitch;
+        state.hasPose = false;
+    }
+
+    public boolean dragCameraLook(String sceneId, float dxPixels, float dyPixels) {
+        if (Float.isNaN(dxPixels) || Float.isNaN(dyPixels)
+                || Float.isInfinite(dxPixels) || Float.isInfinite(dyPixels)) {
+            return false;
+        }
+        TouchLookState state = touchLookByScene.get(sceneId);
+        Neo3DScene scene = scenes.get(sceneId);
+        if (state == null || state.mode == CameraTouchMode.DISABLED || scene == null) {
+            return false;
+        }
+        Neo3DGameObject cameraObject = findMainCameraObject(scene);
+        if (cameraObject == null) {
+            return false;
+        }
+        cameraObject.getCamera().setUseTransformOrientation(true);
+        if (!state.hasPose) {
+            float[] euler = cameraObject.getTransform().getEulerDeg();
+            state.yawDeg = euler[0];
+            state.pitchDeg = euler[1];
+            state.hasPose = true;
+        }
+        state.yawDeg -= dxPixels * state.sensitivity;
+        state.pitchDeg -= dyPixels * state.sensitivity;
+        if (state.mode == CameraTouchMode.FIRST_PERSON) {
+            state.pitchDeg = Math.max(state.minPitchDeg,
+                    Math.min(state.maxPitchDeg, state.pitchDeg));
+        }
+        state.yawDeg = normalizeAngle(state.yawDeg);
+        state.pitchDeg = normalizeAngle(state.pitchDeg);
+        float[] euler = cameraObject.getTransform().getEulerDeg();
+        cameraObject.getTransform().setRotationEulerDeg(state.yawDeg, state.pitchDeg, euler[2]);
+        syncObject(sceneId, cameraObject.getId());
+        return true;
+    }
+
+    private static float normalizeAngle(float degrees) {
+        float normalized = degrees % 360f;
+        if (normalized > 180f) {
+            normalized -= 360f;
+        } else if (normalized < -180f) {
+            normalized += 360f;
+        }
+        return normalized;
+    }
+
+    public void setCameraFollow(String sceneId, String targetName, float offX, float offY,
+            float offZ, boolean lookAt) {
+        if (targetName == null || targetName.isEmpty()) {
+            followByScene.remove(sceneId);
+            return;
+        }
+        FollowState state = followByScene.get(sceneId);
+        if (state == null) {
+            state = new FollowState();
+            followByScene.put(sceneId, state);
+        }
+        state.targetName = targetName;
+        state.offX = offX;
+        state.offY = offY;
+        state.offZ = offZ;
+        state.lookAt = lookAt;
+    }
+
+    public void clearCameraFollow(String sceneId) {
+        followByScene.remove(sceneId);
+    }
+
+    public boolean pointMainCameraAt(String sceneId, String targetName) {
+        Neo3DScene scene = scenes.get(sceneId);
+        if (scene == null || targetName == null || targetName.isEmpty()) {
+            return false;
+        }
+        Neo3DGameObject cameraObject = findMainCameraObject(scene);
+        Neo3DGameObject target = scene.findByName(targetName);
+        if (cameraObject == null || target == null) {
+            return false;
+        }
+        float[] eye = worldPosition(cameraObject);
+        float[] aim = worldPosition(target);
+        float[] yawPitch = Neo3DMath.yawPitchToTarget(eye, aim);
+        float[] euler = cameraObject.getTransform().getEulerDeg();
+        cameraObject.getTransform().setRotationEulerDeg(yawPitch[0], yawPitch[1], euler[2]);
+        cameraObject.getCamera().setUseTransformOrientation(true);
+        syncObject(sceneId, cameraObject.getId());
+        return true;
+    }
+
+    public boolean moveObjectForward(String sceneId, String objectId, float distance) {
+        if (Float.isNaN(distance) || Float.isInfinite(distance)) {
+            return false;
+        }
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            return false;
+        }
+        float[] world = obj.getTransform().getWorldMatrix();
+        float[] pos = obj.getTransform().getPosition();
+        obj.getTransform().setPosition(pos[0] - world[8] * distance,
+                pos[1] - world[9] * distance, pos[2] - world[10] * distance);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
+    public boolean turnObjectToward(String sceneId, String objectId, String targetName) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        Neo3DGameObject target = scene == null || targetName == null ? null
+                : scene.findByName(targetName);
+        if (obj == null || target == null) {
+            return false;
+        }
+        float[] eye = worldPosition(obj);
+        float[] aim = worldPosition(target);
+        float[] yawPitch = Neo3DMath.yawPitchToTarget(eye, aim);
+        float[] euler = obj.getTransform().getEulerDeg();
+        obj.getTransform().setRotationEulerDeg(yawPitch[0], yawPitch[1], euler[2]);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
+    public boolean setObjectVisible(String sceneId, String objectId, boolean visible) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            return false;
+        }
+        obj.setVisible(visible);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
+    public int clearObjects(String sceneId) {
+        Neo3DScene scene = scenes.get(sceneId);
+        if (scene == null) {
+            return 0;
+        }
+        int removed = 0;
+        for (Neo3DGameObject obj : new java.util.ArrayList<>(scene.getAllObjects())) {
+            if (obj.getCamera() != null && obj.getCamera().isMainCamera()) {
+                continue;
+            }
+            if (removeObject(sceneId, obj.getId())) {
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    private void applyCameraFollow(String sceneId, Neo3DScene scene) {
+        FollowState state = followByScene.get(sceneId);
+        if (state == null) {
+            return;
+        }
+        Neo3DGameObject cameraObject = findMainCameraObject(scene);
+        Neo3DGameObject target = scene.findByName(state.targetName);
+        if (cameraObject == null || target == null) {
+            return;
+        }
+        float[] targetPos = worldPosition(target);
+        cameraObject.getTransform().setPosition(targetPos[0] + state.offX,
+                targetPos[1] + state.offY, targetPos[2] + state.offZ);
+        if (state.lookAt) {
+            float[] eye = worldPosition(cameraObject);
+            float[] yawPitch = Neo3DMath.yawPitchToTarget(eye, targetPos);
+            float[] euler = cameraObject.getTransform().getEulerDeg();
+            cameraObject.getTransform().setRotationEulerDeg(yawPitch[0], yawPitch[1], euler[2]);
+            cameraObject.getCamera().setUseTransformOrientation(true);
+        }
+        syncObject(sceneId, cameraObject.getId());
+    }
+
+    private static float[] worldPosition(Neo3DGameObject obj) {
+        float[] world = obj.getTransform().getWorldMatrix();
+        return new float[]{world[12], world[13], world[14]};
+    }
+
+    private Neo3DGameObject findMainCameraObject(Neo3DScene scene) {
+        for (Neo3DGameObject obj : scene.getAllObjects()) {
+            if (obj.getCamera() != null && obj.getCamera().isMainCamera() && obj.isActive()) {
+                return obj;
+            }
+        }
+        return null;
     }
 
     public void attachSurfaceView(SurfaceView view) {
@@ -450,6 +671,24 @@ public class Neo3DEngine {
             throw new IllegalArgumentException("Unknown scene: " + sceneId);
         }
         return scene;
+    }
+
+    private static final class FollowState {
+        private String targetName = "";
+        private float offX;
+        private float offY;
+        private float offZ;
+        private boolean lookAt;
+    }
+
+    private static final class TouchLookState {
+        private CameraTouchMode mode = CameraTouchMode.FIRST_PERSON;
+        private float sensitivity = 0.3f;
+        private float minPitchDeg = -60f;
+        private float maxPitchDeg = 60f;
+        private float yawDeg;
+        private float pitchDeg;
+        private boolean hasPose;
     }
 
     private void checkAlive() {

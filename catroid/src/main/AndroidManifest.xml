@@ -141,6 +141,11 @@
             android:configChanges="orientation|screenSize|keyboardHidden"/>
 
         <activity
+            android:name=".particles.ui.ParticleEditorActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
+
+        <activity
             android:name=".ui.dialogs.RuntimeConsoleActivity"
             android:theme="@style/Catroid" />
 

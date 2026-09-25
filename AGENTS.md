@@ -1215,6 +1215,95 @@ neo3d/physics/INeo3DPhysicsBackend.java / Neo3DNullPhysicsBackend.java — ин�
 - Legacy `SetPhysicsStateBrick`/`ThreeDManager` (raptor) не тронут — это старый
   движок, к Neo3D/Jolt отношения не имеет.
 
+## Камера Neo3D от пальца + поворот (2026-09)
+
+- Режимы (`Neo3DEngine.CameraTouchMode`, ordinal = спиннер): 0 = от первого лица
+  (наклон клампится min/max), 1 = свободная (без клампа), 2 = выключено.
+- Брики (палитра 3D после позиции камеры): `NeoSetCameraRotationBrick`
+  (yaw/pitch/roll) + `NeoCameraTouchLookBrick` (спиннер режима + чувствительность
+  + min/max наклона; лимиты скрываются вне FPS). Чувствительность 0.3, лимиты
+  ±60 по дефолту; NaN/Inf из формул заменяются дефолтами.
+- Поворот хранится в `Neo3DTransform` (yaw/pitch/roll, roll сохраняется при драге);
+  `Neo3DCamera.useTransformOrientation` переключает Filament с `lookAt` на
+  `setModelMatrix(world)` и пикер на forward/up из матрицы (старые сцены без флага
+  работают как раньше). Включают флаг: драг, `facadeSetMainCameraRotation`,
+  restore persisted-камеры.
+- Драг: `StageListener` (`touchDown` запоминает точку, `touchDragged` шлёт дельту в
+  `facadeDragCameraLook` и возвращает handled — съедает событие, 2D-камера не едет;
+  `touchUp/Cancel` сбрасывают). Кламп наклона в FPS + нормализация углов в ±180.
+- Персистентность: `Neo3DPersistedObject.cameraUsesTransformOrientation`, restore
+  ставит флаг + Эйлер. Регистрация: ActionFactory + XStream + палитра + BrickInfo,
+  строки/массивы en+ru (`brick_neo_camera_*`, `brick_neo_camera_touch_modes`).
+- Тесты: `Neo3DEngineNullBackendTest` +3 (FPS-кламп, free без клампа, disabled no-op),
+  `Neo3DPickerTest` +1 (разворот 180° уводит объект из центра — пикер читает поворот),
+  `NeoCameraBricksTest` 2 (wiring обоих бриков).
+- `NeoSetObjectRotationBrick` (+ `NeoSetObjectRotationAction`, палитра 3D между
+  позицией и масштабом) — рыскание/наклон/крен объекту по имени через
+  `facadeSetRotation`. Тест: `NeoSetObjectRotationBrickTest` (1, wiring).
+
+## Формулы Neo3D в свойствах (2026-09)
+
+- Раздел «Neo3D» в OBJECT_TAG (`CategoryListFragment`: `NEO3D_FUNCTIONS/PARAMS`):
+  9 функций с параметром-строкой (имя объекта): `NEO3D_X/Y/Z` (позиция),
+  `NEO3D_YAW/PITCH/ROLL` (поворот), `NEO3D_SCALE_X/Y/Z` (масштаб).
+- `Neo3DFormulaBridge` (новый, `neo3d`): читает активную сцену через фасад
+  без побочных эффектов (не создаёт сцену); нет движка/объекта → 0.0 (масштаб 1.0).
+- Точки как у F2D: `Functions` (enum в конце + TEXT-сет), `FormulaElement` 9 case,
+  `InternFormulaKeyboardAdapter` (`'name'`), `InternToExternGenerator`,
+  строки en (`Neo3D_x/yaw/scaleX`…) + ru (`Neo3D_X/рыскание/масштаб_X`…).
+- Тест: `Neo3DFormulaBridgeTest` (2: чтение всех 9 + дефолты).
+
+## Физика Neo3D: скорость/импульс/гравитация + счётчик тел (2026-09)
+
+- 3 брика после `NeoSetPhysicsStateBrick`: `NeoSetObjectVelocityBrick`
+  (имя + X/Y/Z → `facadeSetLinearVelocity`), `NeoApplyObjectImpulseBrick`
+  (имя + X/Y/Z → `facadeAddImpulse`, дефолт 0/5/0 — толчок вверх),
+  `NeoSetGravityBrick` (X/Y/Z → `facadeSetGravity`, дефолт 0/-9.81/0).
+- Формула `NEO3D_BODY_COUNT` (`Neo3D_bodyCount()` / `Neo3D_число_тел()`, без
+  параметров, в том же разделе Neo3D) → `Neo3DFormulaBridge.getBodyCount()`.
+- Регистрация: ActionFactory + XStream + палитра + BrickInfo, строки en+ru.
+- Тесты: `NeoPhysicsBricksTest` (3, wiring), `Neo3DFormulaBridgeTest` +1
+  (0 без тел → 1 после Dynamic-тела на Null-бэкенде).
+
+## Геймплей Neo3D: фолов/наведение/движение/видимость/очистка/событие (2026-09)
+
+- Движок (`Neo3DEngine`, `Neo3DMath.yawPitchToTarget`, `distance3`):
+  `setCameraFollow/clearCameraFollow` (цель + смещение + lookAt, применяется в
+  `update()` после физики), `pointMainCameraAt`, `moveObjectForward` (по -Z),
+  `turnObjectToward`, `setObjectVisible`, `clearObjects` (всех кроме главной
+  камеры, возвращает число). Фасад: 8 методов `facade*`.
+- 6 бриков: `NeoCameraFollowBrick` (имя + X/Y/Z + спиннер keep/lookAt, пустое имя
+  останавливает), `NeoCameraLookAtBrick` (имя), `NeoMoveObjectForwardBrick`
+  (имя + DISTANCE), `NeoTurnObjectTowardBrick` (имя + TARGET), visible brick —
+  `NeoSetObjectVisibleBrick` (спиннер Показать/Скрыть + имя),
+  `NeoClearObjectsBrick` (без полей, `BrickBaseType`). Палитра 3D после гравитации.
+- Формулы: `NEO3D_DISTANCE('a','b')`, `NEO3D_SPEED('name')` (модуль скорости тела,
+  `INeo3DPhysicsBackend.getLinearVelocity` + Null-реализация нулями),
+  `NEO3D_EXISTS('name')` (в BOOLEAN-сете).
+- Натив (`neo3d_jolt.cpp`): `ContactTracker` (`JPH::ContactListener`: Added/
+  Persisted → insert, Removed → erase, mutex, purge при DestroyBody) +
+  `SetContactListener` в конструкторе мира; `GetLinearVelocity`;
+  JNI `nGetLinearVelocity` / `nGetActiveContacts` (снапшот пар bodyId).
+  Java: `JoltNativeBridge` 2 сигнатуры, `JoltPhysicsBackend.getLinearVelocity`
+  (UnsatisfiedLinkError-safe) + `getActiveContacts` (bodyId→objectId),
+  интерфейс + Null-реализации.
+- Нюанс Jolt v5.2.0: `OnContactAdded/Persisted` принимают
+  `(Body, Body, ContactManifold, ContactSettings)` — БЕЗ `SubShapeIDPair`
+  (он только в `OnContactRemoved`); `Vec3::IsFinite` нет — проверять
+  компоненты через `std::isfinite`.
+- Событие «Когда 3D-объект касается»: `WhenNeo3DCollidesScript` (formulaMap
+  NAME+TARGET как у WhenCondition) + `WhenNeo3DCollidesBrick`
+  (`FormulaBrick implements ScriptBrick`) + `Neo3DCollisionEventId`
+  (sprite + 2 Formula, равенство как у Touching). Оценка в `StageListener`
+  после `facadeUpdate`: контакты → имена, формулы → строки (`Scope(project,
+  sprite, null)`), edge-trigger на скрипт, fire `createEventId` в look хоста.
+  Пустой TARGET = любой объект. Палитра Events (обе ветки, включая фон).
+- Регистрация: ActionFactory (6) + XStream (6 бриков + script/brick события) +
+  BrickInfo (7×2). Тесты: `NeoGameplayBricksTest` (6, wiring),
+  `WhenNeo3DCollidesBrickTest` (4: linkage/clone/eventId), движок +3
+  (фолов, фолов+lookAt −36.87°, point/forward/turn/visible/clear),
+  мост +1 (дистанция 5, скорость 0, exists).
+
 ## Paintroid: сейв из Catroid-режима теперь копируется в Downloads (2026-09)
 
 Баг: рисунок, сохранённый из Paintroid, открытого из Catroid (образ),

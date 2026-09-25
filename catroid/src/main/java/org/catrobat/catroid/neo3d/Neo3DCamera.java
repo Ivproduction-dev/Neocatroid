@@ -11,6 +11,7 @@ public class Neo3DCamera {
     private final float[] lookAtTarget = {0f, 0f, 0f};
     private final float[] up = {0f, 1f, 0f};
     private boolean mainCamera = true;
+    private boolean useTransformOrientation;
 
     public float getFovDeg() {
         return fovDeg;
@@ -84,6 +85,14 @@ public class Neo3DCamera {
         up[0] = x;
         up[1] = y;
         up[2] = z;
+    }
+
+    public boolean isUseTransformOrientation() {
+        return useTransformOrientation;
+    }
+
+    public void setUseTransformOrientation(boolean useTransformOrientation) {
+        this.useTransformOrientation = useTransformOrientation;
     }
 
     public boolean isMainCamera() {

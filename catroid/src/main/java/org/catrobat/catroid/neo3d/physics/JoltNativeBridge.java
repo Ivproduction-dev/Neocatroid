@@ -21,6 +21,10 @@ final class JoltNativeBridge {
     static native void nSetLinearVelocity(long worldHandle, long bodyId,
             float x, float y, float z);
 
+    static native void nGetLinearVelocity(long worldHandle, long bodyId, float[] output);
+
+    static native long[] nGetActiveContacts(long worldHandle);
+
     static native void nAddImpulse(long worldHandle, long bodyId, float x, float y, float z);
 
     static native void nSetGravity(long worldHandle, float x, float y, float z);

@@ -10,6 +10,7 @@ import org.catrobat.catroid.neo3d.Neo3DPrimitiveMeshes;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,10 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
 
     private final Map<String, Long> worldsByScene = new LinkedHashMap<>();
     private final Map<String, Map<String, BodyHandle>> bodiesByScene = new LinkedHashMap<>();
+    private final Map<String, long[]> cachedIdsByScene = new LinkedHashMap<>();
+    private final Map<String, String[]> cachedNamesByScene = new LinkedHashMap<>();
+    private final Map<String, float[]> cachedOutputsByScene = new LinkedHashMap<>();
+    private final Map<String, Boolean> cacheDirtyByScene = new HashMap<>();
     private boolean initialized;
     private float gravityX;
     private float gravityY = -9.81f;
@@ -72,6 +77,10 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
     public synchronized void unregisterScene(String sceneId) {
         Map<String, BodyHandle> bodies = bodiesByScene.remove(sceneId);
         Long world = worldsByScene.remove(sceneId);
+        cachedIdsByScene.remove(sceneId);
+        cachedNamesByScene.remove(sceneId);
+        cachedOutputsByScene.remove(sceneId);
+        cacheDirtyByScene.remove(sceneId);
         if (bodies != null && world != null) {
             for (BodyHandle handle : bodies.values()) {
                 JoltNativeBridge.nDestroyBody(world, handle.bodyId);
@@ -108,6 +117,7 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         BodyHandle created = createBody(world, object, bodyConfig, signature);
         if (created != null) {
             bodies.put(object.getId(), created);
+            cacheDirtyByScene.put(sceneId, true);
         }
     }
 
@@ -118,6 +128,7 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         BodyHandle handle = bodies == null ? null : bodies.remove(objectId);
         if (handle != null && world != null) {
             JoltNativeBridge.nDestroyBody(world, handle.bodyId);
+            cacheDirtyByScene.put(sceneId, true);
         }
     }
 
@@ -145,6 +156,53 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
                 && handle.motionType == Neo3DPhysicsBody.MotionType.DYNAMIC) {
             JoltNativeBridge.nSetLinearVelocity(world, handle.bodyId, x, y, z);
         }
+    }
+
+    @Override
+    public synchronized float[] getLinearVelocity(String sceneId, String objectId) {
+        BodyHandle handle = findBody(sceneId, objectId);
+        Long world = worldsByScene.get(sceneId);
+        if (handle == null || world == null) {
+            return new float[]{0f, 0f, 0f};
+        }
+        float[] output = new float[3];
+        try {
+            JoltNativeBridge.nGetLinearVelocity(world, handle.bodyId, output);
+        } catch (UnsatisfiedLinkError e) {
+            return new float[]{0f, 0f, 0f};
+        }
+        return output;
+    }
+
+    @Override
+    public synchronized List<String[]> getActiveContacts(String sceneId) {
+        Long world = worldsByScene.get(sceneId);
+        Map<String, BodyHandle> bodies = bodiesByScene.get(sceneId);
+        if (world == null || bodies == null || bodies.isEmpty()) {
+            return Collections.emptyList();
+        }
+        long[] pairs;
+        try {
+            pairs = JoltNativeBridge.nGetActiveContacts(world);
+        } catch (UnsatisfiedLinkError e) {
+            return Collections.emptyList();
+        }
+        if (pairs == null || pairs.length < 2) {
+            return Collections.emptyList();
+        }
+        Map<Long, String> objectIdByBodyId = new HashMap<>(bodies.size() * 2);
+        for (Map.Entry<String, BodyHandle> entry : bodies.entrySet()) {
+            objectIdByBodyId.put(entry.getValue().bodyId, entry.getKey());
+        }
+        List<String[]> contacts = new ArrayList<>(pairs.length / 2);
+        for (int i = 0; i + 1 < pairs.length; i += 2) {
+            String first = objectIdByBodyId.get(pairs[i]);
+            String second = objectIdByBodyId.get(pairs[i + 1]);
+            if (first != null && second != null) {
+                contacts.add(new String[]{first, second});
+            }
+        }
+        return contacts;
     }
 
     @Override
@@ -176,12 +234,26 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
                 || Float.isNaN(deltaSec) || Float.isInfinite(deltaSec) || deltaSec <= 0f) {
             return Collections.emptyList();
         }
-        List<BodyHandle> orderedHandles = new ArrayList<>(bodies.values());
-        long[] bodyIds = new long[orderedHandles.size()];
-        for (int index = 0; index < orderedHandles.size(); index++) {
-            bodyIds[index] = orderedHandles.get(index).bodyId;
+        long[] bodyIds = cachedIdsByScene.get(sceneId);
+        String[] names = cachedNamesByScene.get(sceneId);
+        float[] output = cachedOutputsByScene.get(sceneId);
+        if (bodyIds == null || names == null || output == null
+                || bodyIds.length != bodies.size()
+                || Boolean.TRUE.equals(cacheDirtyByScene.get(sceneId))) {
+            bodyIds = new long[bodies.size()];
+            names = new String[bodies.size()];
+            int index = 0;
+            for (Map.Entry<String, BodyHandle> entry : bodies.entrySet()) {
+                bodyIds[index] = entry.getValue().bodyId;
+                names[index] = entry.getKey();
+                index++;
+            }
+            output = new float[bodyIds.length * 8];
+            cachedIdsByScene.put(sceneId, bodyIds);
+            cachedNamesByScene.put(sceneId, names);
+            cachedOutputsByScene.put(sceneId, output);
+            cacheDirtyByScene.put(sceneId, false);
         }
-        float[] output = new float[bodyIds.length * 8];
         int changed = JoltNativeBridge.nUpdate(world, deltaSec, bodyIds, output);
         if (changed <= 0) {
             return Collections.emptyList();
@@ -190,11 +262,10 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         for (int index = 0; index < changed; index++) {
             int offset = index * 8;
             int bodyIndex = (int) output[offset];
-            if (bodyIndex < 0 || bodyIndex >= orderedHandles.size()) {
+            if (bodyIndex < 0 || bodyIndex >= names.length) {
                 continue;
             }
-            BodyHandle handle = orderedHandles.get(bodyIndex);
-            poses.add(new Neo3DPhysicsPose(sceneId, handle.objectId,
+            poses.add(new Neo3DPhysicsPose(sceneId, names[bodyIndex],
                     new float[]{output[offset + 1], output[offset + 2], output[offset + 3]},
                     new float[]{output[offset + 4], output[offset + 5],
                             output[offset + 6], output[offset + 7]}));
@@ -233,6 +304,10 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         }
         worldsByScene.clear();
         bodiesByScene.clear();
+        cachedIdsByScene.clear();
+        cachedNamesByScene.clear();
+        cachedOutputsByScene.clear();
+        cacheDirtyByScene.clear();
     }
 
     private BodyHandle createBody(long world, Neo3DGameObject object,

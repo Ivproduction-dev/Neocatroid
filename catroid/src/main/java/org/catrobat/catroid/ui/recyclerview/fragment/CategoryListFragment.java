@@ -283,6 +283,26 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
             R.string.formula_f2d_is_touched_param, R.string.formula_f2d_is_touched_index_param
     );
 
+    private static final List<Integer> NEO3D_FUNCTIONS = asList(
+            R.string.formula_neo3d_x, R.string.formula_neo3d_y, R.string.formula_neo3d_z,
+            R.string.formula_neo3d_yaw, R.string.formula_neo3d_pitch, R.string.formula_neo3d_roll,
+            R.string.formula_neo3d_scale_x, R.string.formula_neo3d_scale_y,
+            R.string.formula_neo3d_scale_z, R.string.formula_neo3d_body_count,
+            R.string.formula_neo3d_distance, R.string.formula_neo3d_speed,
+            R.string.formula_neo3d_exists
+    );
+
+    private static final List<Integer> NEO3D_PARAMS = asList(
+            R.string.formula_neo3d_name_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param, R.string.formula_no_param,
+            R.string.formula_neo3d_distance_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param
+    );
+
     private static final List<Integer> TILEMAP_FUNCTIONS = asList(
             R.string.formula_tile_at_position, R.string.formula_is_solid_tile_at,
             R.string.formula_tilemap_width, R.string.formula_tilemap_height,
@@ -873,6 +893,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			movement.addAll(OBJECT_PHYSICAL_2);
 			movement.addAll(OBJECT_COLOR_COLLISION);
 			groups.add(new CategoryGroup(context.getString(R.string.formula_editor_object_movement), movement, null));
+			groups.add(new CategoryGroup("Neo3D", NEO3D_FUNCTIONS, NEO3D_PARAMS));
 		} else if (SENSOR_TAG.equals(tag)) {
 			List<Integer> device = new ArrayList<>(SENSORS_DEFAULT);
 			device.addAll(SENSORS_COLOR_AT_XY);

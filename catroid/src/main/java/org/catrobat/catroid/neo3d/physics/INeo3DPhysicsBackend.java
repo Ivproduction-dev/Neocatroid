@@ -24,11 +24,15 @@ public interface INeo3DPhysicsBackend {
 
     void setLinearVelocity(String sceneId, String objectId, float x, float y, float z);
 
+    float[] getLinearVelocity(String sceneId, String objectId);
+
     void addImpulse(String sceneId, String objectId, float x, float y, float z);
 
     void setGravity(float x, float y, float z);
 
     List<Neo3DPhysicsPose> update(String sceneId, float deltaSec);
+
+    List<String[]> getActiveContacts(String sceneId);
 
     int getBodyCount(String sceneId);
 

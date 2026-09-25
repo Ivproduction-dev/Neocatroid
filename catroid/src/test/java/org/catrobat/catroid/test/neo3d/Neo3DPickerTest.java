@@ -55,6 +55,21 @@ public class Neo3DPickerTest {
     }
 
     @Test
+    public void transformOrientedCameraUsesItsRotationForPicking() {
+        Neo3DScene scene = new Neo3DScene("rotated-pick");
+        Neo3DGameObject cam = scene.createObject("cam");
+        cam.getTransform().setPosition(0f, 0f, 5f);
+        cam.setCamera(new Neo3DCamera());
+        cam.getCamera().setUseTransformOrientation(true);
+        Neo3DGameObject box = scene.createObject("box");
+
+        assertEquals(box.getId(), Neo3DPicker.pickObject(scene, cam, 800f, 600f, 400f, 300f));
+
+        cam.getTransform().setRotationEulerDeg(180f, 0f, 0f);
+        assertNull(Neo3DPicker.pickObject(scene, cam, 800f, 600f, 400f, 300f));
+    }
+
+    @Test
     public void farTouchPicksNothing() {
         Neo3DScene scene = sceneWithCamera();
         scene.createObject("box");

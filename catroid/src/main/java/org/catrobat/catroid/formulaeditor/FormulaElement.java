@@ -20,6 +20,7 @@ import org.catrobat.catroid.content.UserVarsManager;
 import org.catrobat.catroid.content.bricks.Brick;
 import org.catrobat.catroid.fast2d.Fast2DFormulaBridge;
 import org.catrobat.catroid.fast2d.FastTwoDManager;
+import org.catrobat.catroid.neo3d.Neo3DFormulaBridge;
 import org.catrobat.catroid.formulaeditor.common.Conversions;
 import org.catrobat.catroid.formulaeditor.function.ArduinoFunctionProvider;
 import org.catrobat.catroid.formulaeditor.function.BinaryFunction;
@@ -795,6 +796,33 @@ public class FormulaElement implements Serializable {
                 return Fast2DFormulaBridge.getCamY();
             case F2D_CAM_ZOOM:
                 return Fast2DFormulaBridge.getCamZoom();
+            case NEO3D_X:
+                return Neo3DFormulaBridge.getX(String.valueOf(arg0));
+            case NEO3D_Y:
+                return Neo3DFormulaBridge.getY(String.valueOf(arg0));
+            case NEO3D_Z:
+                return Neo3DFormulaBridge.getZ(String.valueOf(arg0));
+            case NEO3D_YAW:
+                return Neo3DFormulaBridge.getYaw(String.valueOf(arg0));
+            case NEO3D_PITCH:
+                return Neo3DFormulaBridge.getPitch(String.valueOf(arg0));
+            case NEO3D_ROLL:
+                return Neo3DFormulaBridge.getRoll(String.valueOf(arg0));
+            case NEO3D_SCALE_X:
+                return Neo3DFormulaBridge.getScaleX(String.valueOf(arg0));
+            case NEO3D_SCALE_Y:
+                return Neo3DFormulaBridge.getScaleY(String.valueOf(arg0));
+            case NEO3D_SCALE_Z:
+                return Neo3DFormulaBridge.getScaleZ(String.valueOf(arg0));
+            case NEO3D_BODY_COUNT:
+                return Neo3DFormulaBridge.getBodyCount();
+            case NEO3D_DISTANCE:
+                return Neo3DFormulaBridge.getDistance(String.valueOf(arg0),
+                        String.valueOf(arg1));
+            case NEO3D_SPEED:
+                return Neo3DFormulaBridge.getSpeed(String.valueOf(arg0));
+            case NEO3D_EXISTS:
+                return Neo3DFormulaBridge.getExists(String.valueOf(arg0));
             case PT_DUMP:
                 return MLBridge.nativeGetTensorAsString(String.valueOf(arg0));
             case PT_TOTALSIZE:

@@ -377,9 +377,22 @@ import org.catrobat.catroid.content.bricks.NeoCreateSphereBrick
 import org.catrobat.catroid.content.bricks.NeoCreateCylinderBrick
 import org.catrobat.catroid.content.bricks.NeoDeleteObjectBrick
 import org.catrobat.catroid.content.bricks.NeoSetCameraPositionBrick
+import org.catrobat.catroid.content.bricks.NeoSetCameraRotationBrick
+import org.catrobat.catroid.content.bricks.NeoCameraTouchLookBrick
 import org.catrobat.catroid.content.bricks.NeoSetPhysicsStateBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectVelocityBrick
+import org.catrobat.catroid.content.bricks.NeoApplyObjectImpulseBrick
+import org.catrobat.catroid.content.bricks.NeoSetGravityBrick
+import org.catrobat.catroid.content.bricks.NeoCameraFollowBrick
+import org.catrobat.catroid.content.bricks.NeoCameraLookAtBrick
+import org.catrobat.catroid.content.bricks.NeoMoveObjectForwardBrick
+import org.catrobat.catroid.content.bricks.NeoTurnObjectTowardBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectVisibleBrick
+import org.catrobat.catroid.content.bricks.NeoClearObjectsBrick
 import org.catrobat.catroid.content.bricks.NeoLoadModelBrick
 import org.catrobat.catroid.content.bricks.NeoSetObjectPositionBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectRotationBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectScaleBrick
 import org.catrobat.catroid.content.bricks.NormalizeImgBrick
 import org.catrobat.catroid.content.bricks.NoteBrick
 import org.catrobat.catroid.content.bricks.ObjectLookAtBrick
@@ -829,6 +842,7 @@ import org.catrobat.catroid.content.bricks.SaveGameBrick
 import org.catrobat.catroid.content.bricks.LoadGameBrick
 import org.catrobat.catroid.content.bricks.WhenTouchingSpriteBrick
 import org.catrobat.catroid.content.bricks.WhenTouchingSpriteByNameBrick
+import org.catrobat.catroid.content.bricks.WhenNeo3DCollidesBrick
 import org.catrobat.catroid.content.bricks.WhenButtonPressedBrick
 import org.catrobat.catroid.content.bricks.VolumeButtonHoldBrick
 import org.catrobat.catroid.content.bricks.WhenSwipedBrick
@@ -1179,6 +1193,7 @@ open class CategoryBricksFactory {
                     eventBrickList.add(WhenTouchingSpriteBrick())
                     eventBrickList.add(WhenTouchingSpriteByNameBrick())
                 }
+                eventBrickList.add(WhenNeo3DCollidesBrick())
                 eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
                 eventBrickList.add(WhenTcpMessageBrick())
                 eventBrickList.add(WhenTcpDisconnectedBrick())
@@ -1240,6 +1255,7 @@ open class CategoryBricksFactory {
             eventBrickList.add(WhenTouchingSpriteBrick())
             eventBrickList.add(WhenTouchingSpriteByNameBrick())
         }
+        eventBrickList.add(WhenNeo3DCollidesBrick())
         eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
         eventBrickList.add(WhenTcpMessageBrick())
         eventBrickList.add(WhenTcpDisconnectedBrick())
@@ -3284,8 +3300,21 @@ private fun setupJsonCategoryList(context: Context): List<Brick> {
         neo3dBrickList.add(NeoCreateCylinderBrick("myCylinder"))
         neo3dBrickList.add(NeoLoadModelBrick("myObject", "model.glb"))
         neo3dBrickList.add(NeoSetObjectPositionBrick("myObject", 0f, 0f, 0f))
+        neo3dBrickList.add(NeoSetObjectRotationBrick("myObject", 0f, 0f, 0f))
+        neo3dBrickList.add(NeoSetObjectScaleBrick("myObject", 1f, 1f, 1f))
         neo3dBrickList.add(NeoSetPhysicsStateBrick("myObject", 3, 0, 1.0))
+        neo3dBrickList.add(NeoSetObjectVelocityBrick("myObject", 0f, 0f, 0f))
+        neo3dBrickList.add(NeoApplyObjectImpulseBrick("myObject", 0f, 5f, 0f))
+        neo3dBrickList.add(NeoSetGravityBrick(0f, -9.81f, 0f))
+        neo3dBrickList.add(NeoCameraFollowBrick("myObject", 0f, 3f, 5f, 1))
+        neo3dBrickList.add(NeoCameraLookAtBrick("myObject"))
+        neo3dBrickList.add(NeoMoveObjectForwardBrick("myObject", 1f))
+        neo3dBrickList.add(NeoTurnObjectTowardBrick("myObject", "myTarget"))
+        neo3dBrickList.add(NeoSetObjectVisibleBrick("myObject", 0))
+        neo3dBrickList.add(NeoClearObjectsBrick())
         neo3dBrickList.add(NeoSetCameraPositionBrick(4.5f, 3.2f, 6.5f))
+        neo3dBrickList.add(NeoSetCameraRotationBrick(0f, 0f, 0f))
+        neo3dBrickList.add(NeoCameraTouchLookBrick(0, 0.3f, -60f, 60f))
         neo3dBrickList.add(NeoDeleteObjectBrick("myObject"))
         return neo3dBrickList
     }

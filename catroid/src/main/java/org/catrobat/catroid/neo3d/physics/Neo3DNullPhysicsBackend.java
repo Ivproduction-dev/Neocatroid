@@ -76,6 +76,11 @@ public final class Neo3DNullPhysicsBackend implements INeo3DPhysicsBackend {
     }
 
     @Override
+    public float[] getLinearVelocity(String sceneId, String objectId) {
+        return new float[]{0f, 0f, 0f};
+    }
+
+    @Override
     public void addImpulse(String sceneId, String objectId, float x, float y, float z) {
     }
 
@@ -88,6 +93,11 @@ public final class Neo3DNullPhysicsBackend implements INeo3DPhysicsBackend {
 
     @Override
     public synchronized List<Neo3DPhysicsPose> update(String sceneId, float deltaSec) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public synchronized List<String[]> getActiveContacts(String sceneId) {
         return Collections.emptyList();
     }
 

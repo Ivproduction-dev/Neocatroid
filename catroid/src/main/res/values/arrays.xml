@@ -509,6 +509,22 @@
         <item>Cylinder</item>
     </string-array>
 
+    <string-array name="brick_neo_camera_touch_modes">
+        <item>First person</item>
+        <item>Free</item>
+        <item>Disabled</item>
+    </string-array>
+
+    <string-array name="brick_neo_follow_modes">
+        <item>Keep rotation</item>
+        <item>Look at object</item>
+    </string-array>
+
+    <string-array name="brick_neo_visibility_modes">
+        <item>Show</item>
+        <item>Hide</item>
+    </string-array>
+
     <string-array name="mouse_buttons">
         <item>Left</item>
         <item>Right</item>

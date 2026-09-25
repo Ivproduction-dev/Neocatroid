@@ -19,7 +19,15 @@ public final class Neo3DPicker {
         float[] world = cameraObject.getTransform().getWorldMatrix();
         float[] eye = {world[12], world[13], world[14]};
         Neo3DCamera camera = cameraObject.getCamera();
-        float[] view = Neo3DMath.mat4LookAt(eye, camera.getLookAtTarget(), camera.getUp());
+        float[] view;
+        if (camera.isUseTransformOrientation()) {
+            float[] forward = {world[8], world[9], world[10]};
+            float[] target = {eye[0] - forward[0], eye[1] - forward[1], eye[2] - forward[2]};
+            float[] up = {world[4], world[5], world[6]};
+            view = Neo3DMath.mat4LookAt(eye, target, up);
+        } else {
+            view = Neo3DMath.mat4LookAt(eye, camera.getLookAtTarget(), camera.getUp());
+        }
         float[] proj = Neo3DMath.mat4Perspective(camera.getFovDeg(),
                 viewportWidth / viewportHeight, camera.getNear(), camera.getFar());
         float[] viewProj = Neo3DMath.mat4Mul(proj, view);

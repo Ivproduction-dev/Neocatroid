@@ -2,6 +2,7 @@ package org.catrobat.catroid.content.bricks;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.View;
 
 import org.catrobat.catroid.R;
@@ -45,7 +46,7 @@ public class CreateParticleEffectBrick extends FormulaBrick {
                     intent.putExtra("PARTICLE_FILE_NAME", fileName);
                     context.startActivity(intent);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("CreateParticleEffectBrick", "Cannot open particle editor", e);
                 }
             });
         }

@@ -30,6 +30,7 @@ public class Neo3DPersistedObject implements Serializable {
     public float physicsLinearDamping = 0.05f;
     public float physicsAngularDamping = 0.1f;
     public boolean physicsContinuousCollision;
+    public boolean cameraUsesTransformOrientation;
 
     public Neo3DPersistedObject() {
     }

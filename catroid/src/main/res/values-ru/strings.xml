@@ -137,7 +137,18 @@
     <string formatted="false" name="brick_neo_create_cylinder">Создать 3D-цилиндр</string>
     <string formatted="false" name="brick_neo_delete_object">Удалить 3D-объект</string>
     <string formatted="false" name="brick_neo_set_camera_position">Задать позицию 3D-камеры</string>
+    <string formatted="false" name="brick_neo_set_camera_rotation">Задать поворот 3D-камеры</string>
+    <string formatted="false" name="brick_neo_camera_yaw">Рыскание:</string>
+    <string formatted="false" name="brick_neo_camera_pitch">Наклон:</string>
+    <string formatted="false" name="brick_neo_camera_roll">Крен:</string>
+    <string formatted="false" name="brick_neo_camera_touch_look">Камера от пальца</string>
+    <string formatted="false" name="brick_neo_camera_touch_mode">Режим</string>
+    <string formatted="false" name="brick_neo_camera_sensitivity">Чувствительность</string>
+    <string formatted="false" name="brick_neo_camera_min_pitch">Мин. наклон</string>
+    <string formatted="false" name="brick_neo_camera_max_pitch">Макс. наклон</string>
     <string formatted="false" name="brick_neo_set_object_position">Задать позицию 3D-объекта</string>
+    <string formatted="false" name="brick_neo_set_object_rotation">Задать поворот 3D-объекта</string>
+    <string formatted="false" name="brick_neo_set_object_scale">Задать масштаб 3D-объекта</string>
     <string formatted="false" name="brick_neo_load_model">Загрузить 3D-модель</string>
     <string formatted="false" name="brick_neo_model_path">Файл:</string>
     <string formatted="false" name="brick_neo_set_physics_state">Задать физику 3D-объекта</string>
@@ -145,6 +156,22 @@
     <string formatted="false" name="brick_neo_set_physics_state_to">в состояние</string>
     <string formatted="false" name="brick_neo_set_physics_state_shape">Форма</string>
     <string formatted="false" name="brick_neo_set_physics_state_mass">с массой</string>
+    <string formatted="false" name="brick_neo_set_object_velocity">Задать скорость 3D-объекта</string>
+    <string formatted="false" name="brick_neo_apply_object_impulse">Толкнуть 3D-объект</string>
+    <string formatted="false" name="brick_neo_set_gravity">Задать гравитацию 3D</string>
+    <string formatted="false" name="brick_neo_camera_follow">Следовать за 3D-объектом</string>
+    <string formatted="false" name="brick_neo_camera_look_at">Навести 3D-камеру на</string>
+    <string formatted="false" name="brick_neo_move_object_forward">Двинуть 3D-объект вперёд</string>
+    <string formatted="false" name="brick_neo_distance">Дистанция:</string>
+    <string formatted="false" name="brick_neo_turn_object_toward">Повернуть 3D-объект</string>
+    <string formatted="false" name="brick_neo_toward">к:</string>
+    <string formatted="false" name="brick_neo_clear_objects">Удалить все 3D-объекты</string>
+    <string name="formula_neo3d_distance" formatted="false">Neo3D_дистанция</string>
+    <string name="formula_neo3d_distance_param" formatted="false">(\'name1\', \'name2\')</string>
+    <string name="formula_neo3d_speed" formatted="false">Neo3D_скорость</string>
+    <string name="formula_neo3d_exists" formatted="false">Neo3D_существует</string>
+    <string formatted="false" name="brick_when_neo3d_collides">Когда 3D-объект касается</string>
+    <string name="formula_neo3d_body_count" formatted="false">Neo3D_число_тел</string>
     <string formatted="false" name="brick_detach_from_camera">Отвязать объект от камеры</string>
     <string formatted="false" name="brick_set_max_point_lights">Максимум точечных светов</string>
     <string formatted="false" name="brick_3d_object_name">ID объекта</string>
@@ -890,6 +917,16 @@
     <string name="formula_f2d_cam_x" formatted="false">F2D_камера_X</string>
     <string name="formula_f2d_cam_y" formatted="false">F2D_камера_Y</string>
     <string name="formula_f2d_cam_zoom" formatted="false">F2D_камера_zoom</string>
+    <string name="formula_neo3d_x" formatted="false">Neo3D_X</string>
+    <string name="formula_neo3d_y" formatted="false">Neo3D_Y</string>
+    <string name="formula_neo3d_z" formatted="false">Neo3D_Z</string>
+    <string name="formula_neo3d_yaw" formatted="false">Neo3D_рыскание</string>
+    <string name="formula_neo3d_pitch" formatted="false">Neo3D_наклон</string>
+    <string name="formula_neo3d_roll" formatted="false">Neo3D_крен</string>
+    <string name="formula_neo3d_scale_x" formatted="false">Neo3D_масштаб_X</string>
+    <string name="formula_neo3d_scale_y" formatted="false">Neo3D_масштаб_Y</string>
+    <string name="formula_neo3d_scale_z" formatted="false">Neo3D_масштаб_Z</string>
+    <string name="formula_neo3d_name_param" formatted="false">(\'name\')</string>
     <string name="fast2d_set_color">Цвет и Альфа</string>
     <string name="fast2d_set_camera">Камера</string>
     <string name="fast2d_zoom_param">Зум</string>

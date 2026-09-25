@@ -360,11 +360,15 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
                 tm.create(fs.cameraEntity);
             }
             float[] world = obj.getTransform().getWorldMatrix();
-            float[] target = cam.getLookAtTarget();
-            float[] up = cam.getUp();
-            fs.camera.lookAt(world[12], world[13], world[14],
-                    target[0], target[1], target[2],
-                    up[0], up[1], up[2]);
+            if (cam.isUseTransformOrientation()) {
+                fs.camera.setModelMatrix(world);
+            } else {
+                float[] target = cam.getLookAtTarget();
+                float[] up = cam.getUp();
+                fs.camera.lookAt(world[12], world[13], world[14],
+                        target[0], target[1], target[2],
+                        up[0], up[1], up[2]);
+            }
             float aspect = viewHeight > 0 ? (float) viewWidth / viewHeight : 1f;
             fs.camera.setProjection(cam.getFovDeg(), aspect, cam.getNear(), cam.getFar(),
                     Camera.Fov.VERTICAL);

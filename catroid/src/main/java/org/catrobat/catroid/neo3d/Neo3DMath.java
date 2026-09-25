@@ -197,4 +197,28 @@ public final class Neo3DMath {
     public static boolean epsilonEquals(float a, float b, float eps) {
         return Math.abs(a - b) <= eps;
     }
+
+    public static float[] yawPitchToTarget(float[] eye, float[] target) {
+        float dx = target[0] - eye[0];
+        float dy = target[1] - eye[1];
+        float dz = target[2] - eye[2];
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1e-8f) {
+            return new float[]{0f, 0f};
+        }
+        dx /= len;
+        dy /= len;
+        dz /= len;
+        float clamped = Math.max(-1f, Math.min(1f, dy));
+        float pitchDeg = (float) Math.toDegrees(Math.asin(clamped));
+        float yawDeg = (float) Math.toDegrees(Math.atan2(-dx, -dz));
+        return new float[]{yawDeg, pitchDeg};
+    }
+
+    public static float distance3(float[] a, float[] b) {
+        float dx = a[0] - b[0];
+        float dy = a[1] - b[1];
+        float dz = a[2] - b[2];
+        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
 }

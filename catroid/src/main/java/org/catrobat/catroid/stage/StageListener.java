@@ -425,6 +425,11 @@ public class StageListener implements ApplicationListener {
 	private ThreeDManager threeDManager;
 
 	private String neo3DSceneId;
+	private float neo3DLastDragX;
+	private float neo3DLastDragY;
+	private boolean neo3DHasDragPosition;
+	private final java.util.Map<org.catrobat.catroid.content.Script, Boolean> neo3DCollisionFired =
+			new java.util.HashMap<>();
 
 	public SceneManager sceneManager;
 
@@ -1016,8 +1021,12 @@ public class StageListener implements ApplicationListener {
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 if (pointer != 0 || !org.catrobat.catroid.neo3d.Neo3DFacade.isReady()
                         || neo3DSceneId == null) {
+                    neo3DHasDragPosition = false;
                     return false;
                 }
+                neo3DLastDragX = screenX;
+                neo3DLastDragY = screenY;
+                neo3DHasDragPosition = true;
                 try {
                     float viewportHeight = com.badlogic.gdx.Gdx.graphics.getHeight();
                     String pickedId = org.catrobat.catroid.neo3d.Neo3DFacade
@@ -1030,6 +1039,40 @@ public class StageListener implements ApplicationListener {
                     }
                 } catch (Throwable t) {
                     android.util.Log.e("StageListener", "neo3D pick failed", t);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) {
+                if (pointer != 0 || !org.catrobat.catroid.neo3d.Neo3DFacade.isReady()
+                        || neo3DSceneId == null || !neo3DHasDragPosition) {
+                    return false;
+                }
+                boolean handled = false;
+                try {
+                    handled = org.catrobat.catroid.neo3d.Neo3DFacade.facadeDragCameraLook(
+                            neo3DSceneId, screenX - neo3DLastDragX, screenY - neo3DLastDragY);
+                    neo3DLastDragX = screenX;
+                    neo3DLastDragY = screenY;
+                } catch (Throwable t) {
+                    android.util.Log.e("StageListener", "neo3D camera drag failed", t);
+                }
+                return handled;
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (pointer == 0) {
+                    neo3DHasDragPosition = false;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+                if (pointer == 0) {
+                    neo3DHasDragPosition = false;
                 }
                 return false;
             }
@@ -1704,6 +1747,119 @@ public class StageListener implements ApplicationListener {
 		resume();
 	}
 
+	private void evaluateNeo3DCollisionTriggers() {
+		org.catrobat.catroid.neo3d.Neo3DEngine engine;
+		org.catrobat.catroid.neo3d.Neo3DScene neoScene;
+		java.util.List<String[]> idPairs;
+		try {
+			engine = org.catrobat.catroid.neo3d.Neo3DFacade.getEngineForTest();
+			if (engine == null) {
+				return;
+			}
+			neoScene = engine.getScene(neo3DSceneId);
+			if (neoScene == null) {
+				return;
+			}
+			idPairs = engine.getPhysicsBackend().getActiveContacts(neo3DSceneId);
+		} catch (Throwable t) {
+			android.util.Log.e("StageListener", "neo3D contacts failed", t);
+			return;
+		}
+		java.util.Set<String> touching = new java.util.HashSet<>();
+		for (String[] pair : idPairs) {
+			if (pair == null || pair.length < 2) {
+				continue;
+			}
+			org.catrobat.catroid.neo3d.Neo3DGameObject first = neoScene.getObject(pair[0]);
+			org.catrobat.catroid.neo3d.Neo3DGameObject second = neoScene.getObject(pair[1]);
+			if (first == null || second == null) {
+				continue;
+			}
+			String nameA = first.getName();
+			String nameB = second.getName();
+			if (nameA == null || nameB == null) {
+				continue;
+			}
+			touching.add(nameA.compareTo(nameB) <= 0 ? nameA + "\0" + nameB : nameB + "\0" + nameA);
+		}
+		org.catrobat.catroid.content.Scene scene =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentlyPlayingScene();
+		if (scene == null) {
+			return;
+		}
+		org.catrobat.catroid.content.Project project =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
+		for (org.catrobat.catroid.content.Sprite sprite : scene.getSpriteList()) {
+			if (sprite == null) {
+				continue;
+			}
+			for (org.catrobat.catroid.content.Script script : sprite.getScriptList()) {
+				if (!(script instanceof org.catrobat.catroid.content.WhenNeo3DCollidesScript)) {
+					continue;
+				}
+				org.catrobat.catroid.content.WhenNeo3DCollidesScript collidesScript =
+						(org.catrobat.catroid.content.WhenNeo3DCollidesScript) script;
+				String nameA;
+				String nameB;
+				try {
+					org.catrobat.catroid.content.Scope scope =
+							new org.catrobat.catroid.content.Scope(project, sprite, null);
+					org.catrobat.catroid.formulaeditor.Formula formulaA =
+							collidesScript.getFormulaMap().get(
+									org.catrobat.catroid.content.bricks.Brick.BrickField.NAME);
+					org.catrobat.catroid.formulaeditor.Formula formulaB =
+							collidesScript.getFormulaMap().get(
+									org.catrobat.catroid.content.bricks.Brick.BrickField.TARGET);
+					if (formulaA == null) {
+						continue;
+					}
+					nameA = formulaA.interpretString(scope);
+					nameB = formulaB == null ? "" : formulaB.interpretString(scope);
+				} catch (Throwable t) {
+					continue;
+				}
+				if (nameA == null || nameA.isEmpty()) {
+					neo3DCollisionFired.put(script, false);
+					continue;
+				}
+				boolean nowTouching = isNeo3DPairTouching(touching, nameA, nameB);
+				boolean wasFired = Boolean.TRUE.equals(neo3DCollisionFired.get(script));
+				if (nowTouching && !wasFired) {
+					try {
+						if (sprite.look != null) {
+							sprite.look.fire(new org.catrobat.catroid.content.EventWrapper(
+									collidesScript.createEventId(sprite), false));
+						}
+					} catch (Throwable t) {
+						android.util.Log.e("StageListener", "neo3D collision fire failed", t);
+					}
+					neo3DCollisionFired.put(script, true);
+				} else if (!nowTouching) {
+					neo3DCollisionFired.put(script, false);
+				}
+			}
+		}
+	}
+
+	private static boolean isNeo3DPairTouching(java.util.Set<String> touching, String nameA,
+			String nameB) {
+		if (nameB == null || nameB.isEmpty()) {
+			for (String pair : touching) {
+				int split = pair.indexOf('\0');
+				if (split < 0) {
+					continue;
+				}
+				if (pair.substring(0, split).equals(nameA)
+						|| pair.substring(split + 1).equals(nameA)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		String key = nameA.compareTo(nameB) <= 0 ? nameA + "\0" + nameB : nameB + "\0" + nameA;
+		return touching.contains(key);
+	}
+
 	private void setupNeo3DEngine() {
 		try {
 			if (neo3DSceneId != null && Neo3DFacade.isReady()) {
@@ -1718,6 +1874,7 @@ public class StageListener implements ApplicationListener {
 			Log.e("StageListener", "neo3D delete scene failed", t);
 		}
 		neo3DSceneId = null;
+		neo3DCollisionFired.clear();
 		try {
 			if (!Neo3DFacade.isReady()) {
 				return;
@@ -1748,6 +1905,7 @@ public class StageListener implements ApplicationListener {
 			Log.e("StageListener", "neo3D dispose failed", t);
 		}
 		neo3DSceneId = null;
+		neo3DCollisionFired.clear();
 	}
 
 	private void resetLeavingSceneVariables() {
@@ -2197,6 +2355,7 @@ public class StageListener implements ApplicationListener {
                         } catch (Throwable t) {
                             Log.e("StageListener", "neo3D update failed", t);
                         }
+                        evaluateNeo3DCollisionTriggers();
                     }
                     StageActivity activeActivity = StageActivity.activeStageActivity.get();
                     if (activeActivity != null) {

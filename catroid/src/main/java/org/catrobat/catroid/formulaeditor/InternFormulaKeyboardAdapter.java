@@ -305,6 +305,33 @@ case R.string.formula_editor_function_state_time:
                 return buildFunctionWithoutParametersAndBrackets(Functions.F2D_CAM_Y);
             case R.string.formula_f2d_cam_zoom:
                 return buildFunctionWithoutParametersAndBrackets(Functions.F2D_CAM_ZOOM);
+            case R.string.formula_neo3d_x:
+                return buildSingleParameterFunction(Functions.NEO3D_X, STRING, "name");
+            case R.string.formula_neo3d_y:
+                return buildSingleParameterFunction(Functions.NEO3D_Y, STRING, "name");
+            case R.string.formula_neo3d_z:
+                return buildSingleParameterFunction(Functions.NEO3D_Z, STRING, "name");
+            case R.string.formula_neo3d_yaw:
+                return buildSingleParameterFunction(Functions.NEO3D_YAW, STRING, "name");
+            case R.string.formula_neo3d_pitch:
+                return buildSingleParameterFunction(Functions.NEO3D_PITCH, STRING, "name");
+            case R.string.formula_neo3d_roll:
+                return buildSingleParameterFunction(Functions.NEO3D_ROLL, STRING, "name");
+            case R.string.formula_neo3d_scale_x:
+                return buildSingleParameterFunction(Functions.NEO3D_SCALE_X, STRING, "name");
+            case R.string.formula_neo3d_scale_y:
+                return buildSingleParameterFunction(Functions.NEO3D_SCALE_Y, STRING, "name");
+            case R.string.formula_neo3d_scale_z:
+                return buildSingleParameterFunction(Functions.NEO3D_SCALE_Z, STRING, "name");
+            case R.string.formula_neo3d_body_count:
+                return buildFunctionWithoutParametersAndBrackets(Functions.NEO3D_BODY_COUNT);
+            case R.string.formula_neo3d_distance:
+                return buildDoubleParameterFunction(Functions.NEO3D_DISTANCE, STRING, "name1",
+                        STRING, "name2");
+            case R.string.formula_neo3d_speed:
+                return buildSingleParameterFunction(Functions.NEO3D_SPEED, STRING, "name");
+            case R.string.formula_neo3d_exists:
+                return buildSingleParameterFunction(Functions.NEO3D_EXISTS, STRING, "name");
             case R.string.formula_pt_value:
                 return buildDoubleParameterFunction(Functions.PT_VALUE, STRING, "tensor", NUMBER, "0");
             case R.string.formula_pt_valuend:

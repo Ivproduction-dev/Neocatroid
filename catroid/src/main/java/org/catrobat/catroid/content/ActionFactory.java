@@ -6018,6 +6018,17 @@ public Action createVarAction(Sprite sprite, SequenceAction sequence,
         return action;
     }
 
+    public Action createNeoSetObjectScaleAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula scaleX, Formula scaleY, Formula scaleZ) {
+        NeoSetObjectScaleAction action = action(NeoSetObjectScaleAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setScaleX(scaleX);
+        action.setScaleY(scaleY);
+        action.setScaleZ(scaleZ);
+        return action;
+    }
+
     public Action createNeoLoadModelAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula filePath) {
         NeoLoadModelAction action = action(NeoLoadModelAction.class);
         Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
@@ -6051,6 +6062,124 @@ public Action createVarAction(Sprite sprite, SequenceAction sequence,
         action.setPosX(posX);
         action.setPosY(posY);
         action.setPosZ(posZ);
+        return action;
+    }
+
+    public Action createNeoSetObjectRotationAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula yaw, Formula pitch, Formula roll) {
+        NeoSetObjectRotationAction action = action(NeoSetObjectRotationAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setYaw(yaw);
+        action.setPitch(pitch);
+        action.setRoll(roll);
+        return action;
+    }
+
+    public Action createNeoSetCameraRotationAction(Sprite sprite, SequenceAction sequence, Formula yaw, Formula pitch, Formula roll) {
+        NeoSetCameraRotationAction action = action(NeoSetCameraRotationAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setYaw(yaw);
+        action.setPitch(pitch);
+        action.setRoll(roll);
+        return action;
+    }
+
+    public Action createNeoCameraTouchLookAction(Sprite sprite, SequenceAction sequence, int mode, Formula sensitivity, Formula minPitch, Formula maxPitch) {
+        NeoCameraTouchLookAction action = action(NeoCameraTouchLookAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setMode(mode);
+        action.setSensitivity(sensitivity);
+        action.setMinPitch(minPitch);
+        action.setMaxPitch(maxPitch);
+        return action;
+    }
+
+    public Action createNeoSetObjectVelocityAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula x, Formula y, Formula z) {
+        NeoSetObjectVelocityAction action = action(NeoSetObjectVelocityAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setVelocityX(x);
+        action.setVelocityY(y);
+        action.setVelocityZ(z);
+        return action;
+    }
+
+    public Action createNeoApplyObjectImpulseAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula x, Formula y, Formula z) {
+        NeoApplyObjectImpulseAction action = action(NeoApplyObjectImpulseAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setImpulseX(x);
+        action.setImpulseY(y);
+        action.setImpulseZ(z);
+        return action;
+    }
+
+    public Action createNeoSetGravityAction(Sprite sprite, SequenceAction sequence, Formula x, Formula y, Formula z) {
+        NeoSetGravityAction action = action(NeoSetGravityAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setGravityX(x);
+        action.setGravityY(y);
+        action.setGravityZ(z);
+        return action;
+    }
+
+    public Action createNeoCameraFollowAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula offX, Formula offY, Formula offZ, int followMode) {
+        NeoCameraFollowAction action = action(NeoCameraFollowAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setOffX(offX);
+        action.setOffY(offY);
+        action.setOffZ(offZ);
+        action.setFollowMode(followMode);
+        return action;
+    }
+
+    public Action createNeoCameraLookAtAction(Sprite sprite, SequenceAction sequence, Formula objectName) {
+        NeoCameraLookAtAction action = action(NeoCameraLookAtAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        return action;
+    }
+
+    public Action createNeoMoveObjectForwardAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula distance) {
+        NeoMoveObjectForwardAction action = action(NeoMoveObjectForwardAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setDistance(distance);
+        return action;
+    }
+
+    public Action createNeoTurnObjectTowardAction(Sprite sprite, SequenceAction sequence, Formula objectName, Formula targetName) {
+        NeoTurnObjectTowardAction action = action(NeoTurnObjectTowardAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setTargetName(targetName);
+        return action;
+    }
+
+    public Action createNeoSetObjectVisibleAction(Sprite sprite, SequenceAction sequence, Formula objectName, int visibleMode) {
+        NeoSetObjectVisibleAction action = action(NeoSetObjectVisibleAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
+        action.setObjectName(objectName);
+        action.setVisibleMode(visibleMode);
+        return action;
+    }
+
+    public Action createNeoClearObjectsAction(Sprite sprite, SequenceAction sequence) {
+        NeoClearObjectsAction action = action(NeoClearObjectsAction.class);
+        Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+        action.setScope(scope);
         return action;
     }
 

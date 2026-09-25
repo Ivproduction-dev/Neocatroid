@@ -1,0 +1,23 @@
+package org.catrobat.catroid.content.bricks;
+
+import org.catrobat.catroid.R;
+import org.catrobat.catroid.content.Sprite;
+import org.catrobat.catroid.content.actions.ScriptSequenceAction;
+
+public class NeoClearObjectsBrick extends BrickBaseType {
+    private static final long serialVersionUID = 1L;
+
+    public NeoClearObjectsBrick() {
+    }
+
+    @Override
+    public int getViewResource() {
+        return R.layout.brick_neo_clear_objects;
+    }
+
+    @Override
+    public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
+        sequence.addAction(sprite.getActionFactory()
+                .createNeoClearObjectsAction(sprite, sequence));
+    }
+}

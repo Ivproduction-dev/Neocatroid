@@ -26,4 +26,20 @@
         <item>Астральный свет (Astra Light)</item>
         <item>Прожектор (Spotlight)</item>
     </string-array>
+
+    <string-array name="brick_neo_camera_touch_modes">
+        <item>От первого лица</item>
+        <item>Свободная</item>
+        <item>Выключено</item>
+    </string-array>
+
+    <string-array name="brick_neo_follow_modes">
+        <item>Сохранять поворот</item>
+        <item>Смотреть на объект</item>
+    </string-array>
+
+    <string-array name="brick_neo_visibility_modes">
+        <item>Показать</item>
+        <item>Скрыть</item>
+    </string-array>
 </resources>

@@ -124,7 +124,18 @@
     <string formatted="false" name="brick_neo_create_cylinder">Create 3D cylinder</string>
     <string formatted="false" name="brick_neo_delete_object">Delete 3D object</string>
     <string formatted="false" name="brick_neo_set_camera_position">Set 3D camera position</string>
+    <string formatted="false" name="brick_neo_set_camera_rotation">Set 3D camera rotation</string>
+    <string formatted="false" name="brick_neo_camera_yaw">Yaw:</string>
+    <string formatted="false" name="brick_neo_camera_pitch">Pitch:</string>
+    <string formatted="false" name="brick_neo_camera_roll">Roll:</string>
+    <string formatted="false" name="brick_neo_camera_touch_look">Finger camera</string>
+    <string formatted="false" name="brick_neo_camera_touch_mode">Mode</string>
+    <string formatted="false" name="brick_neo_camera_sensitivity">Sensitivity</string>
+    <string formatted="false" name="brick_neo_camera_min_pitch">Min pitch</string>
+    <string formatted="false" name="brick_neo_camera_max_pitch">Max pitch</string>
     <string formatted="false" name="brick_neo_set_object_position">Set 3D object position</string>
+    <string formatted="false" name="brick_neo_set_object_rotation">Set 3D object rotation</string>
+    <string formatted="false" name="brick_neo_set_object_scale">Set 3D object scale</string>
     <string formatted="false" name="brick_neo_load_model">Load 3D model</string>
     <string formatted="false" name="brick_neo_model_path">File:</string>
     <string formatted="false" name="brick_neo_set_physics_state">Set 3D physics state</string>
@@ -132,6 +143,22 @@
     <string formatted="false" name="brick_neo_set_physics_state_to">to</string>
     <string formatted="false" name="brick_neo_set_physics_state_shape">Shape</string>
     <string formatted="false" name="brick_neo_set_physics_state_mass">with mass</string>
+    <string formatted="false" name="brick_neo_set_object_velocity">Set 3D object velocity</string>
+    <string formatted="false" name="brick_neo_apply_object_impulse">Apply 3D object impulse</string>
+    <string formatted="false" name="brick_neo_set_gravity">Set 3D gravity</string>
+    <string formatted="false" name="brick_neo_camera_follow">Follow 3D object</string>
+    <string formatted="false" name="brick_neo_camera_look_at">Point 3D camera at</string>
+    <string formatted="false" name="brick_neo_move_object_forward">Move 3D object forward</string>
+    <string formatted="false" name="brick_neo_distance">Distance:</string>
+    <string formatted="false" name="brick_neo_turn_object_toward">Turn 3D object</string>
+    <string formatted="false" name="brick_neo_toward">toward:</string>
+    <string formatted="false" name="brick_neo_clear_objects">Delete all 3D objects</string>
+    <string name="formula_neo3d_distance" formatted="false">Neo3D_distance</string>
+    <string name="formula_neo3d_distance_param" formatted="false">(\'name1\', \'name2\')</string>
+    <string name="formula_neo3d_speed" formatted="false">Neo3D_speed</string>
+    <string name="formula_neo3d_exists" formatted="false">Neo3D_exists</string>
+    <string formatted="false" name="brick_when_neo3d_collides">When 3D object touches</string>
+    <string name="formula_neo3d_body_count" formatted="false">Neo3D_bodyCount</string>
     <string formatted="false" name="brick_detach_from_camera">Detach object from camera</string>
     <string formatted="false" name="brick_set_max_point_lights">Set max active point lights</string>
     <string formatted="false" name="brick_3d_object_name">Object ID</string>
@@ -868,6 +895,16 @@
     <string name="formula_f2d_cam_zoom" formatted="false">F2D_cam_Zoom</string>
     <string name="formula_f2d_id_param" formatted="false">(\'id\')</string>
     <string name="formula_f2d_no_param" formatted="false">()</string>
+    <string name="formula_neo3d_x" formatted="false">Neo3D_x</string>
+    <string name="formula_neo3d_y" formatted="false">Neo3D_y</string>
+    <string name="formula_neo3d_z" formatted="false">Neo3D_z</string>
+    <string name="formula_neo3d_yaw" formatted="false">Neo3D_yaw</string>
+    <string name="formula_neo3d_pitch" formatted="false">Neo3D_pitch</string>
+    <string name="formula_neo3d_roll" formatted="false">Neo3D_roll</string>
+    <string name="formula_neo3d_scale_x" formatted="false">Neo3D_scaleX</string>
+    <string name="formula_neo3d_scale_y" formatted="false">Neo3D_scaleY</string>
+    <string name="formula_neo3d_scale_z" formatted="false">Neo3D_scaleZ</string>
+    <string name="formula_neo3d_name_param" formatted="false">(\'name\')</string>
     <string name="fast2d_set_color">Color and Alpha</string>
     <string name="fast2d_set_camera">Camera</string>
     <string name="fast2d_zoom_param">Zoom</string>

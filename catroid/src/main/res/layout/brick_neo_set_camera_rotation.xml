@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <CheckBox
+        android:id="@+id/brick_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:visibility="gone" />
+
+    <org.catrobat.catroid.ui.BrickLayout
+        android:id="@+id/brick_neo_set_camera_rotation_layout"
+        style="@style/BrickContainer.Threed.Medium">
+
+        <include layout="@layout/icon_brick_category_neo3d" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_neo_set_camera_rotation" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_neo_camera_yaw"
+            app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_neo_set_camera_rotation_edit_x"
+            style="@style/BrickEditText" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_neo_camera_pitch"
+            app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_neo_set_camera_rotation_edit_y"
+            style="@style/BrickEditText" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_neo_camera_roll"
+            app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_neo_set_camera_rotation_edit_z"
+            style="@style/BrickEditText" />
+    </org.catrobat.catroid.ui.BrickLayout>
+
+</LinearLayout>

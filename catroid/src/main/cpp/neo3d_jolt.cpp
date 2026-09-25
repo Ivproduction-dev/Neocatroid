@@ -7,6 +7,7 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayerInterfaceTable.h>
 #include <Jolt/Physics/Collision/BroadPhase/ObjectVsBroadPhaseLayerFilterTable.h>
+#include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/Collision/ObjectLayerPairFilterTable.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
@@ -21,6 +22,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -58,9 +60,64 @@ struct BodyRecord {
     JPH::Quat lastRotation = JPH::Quat::sIdentity();
 };
 
+class ContactTracker : public JPH::ContactListener {
+public:
+    void OnContactAdded(const JPH::Body &body1, const JPH::Body &body2,
+            const JPH::ContactManifold &, JPH::ContactSettings &) override {
+        InsertPair(body1.GetID(), body2.GetID());
+    }
+
+    void OnContactPersisted(const JPH::Body &body1, const JPH::Body &body2,
+            const JPH::ContactManifold &, JPH::ContactSettings &) override {
+        InsertPair(body1.GetID(), body2.GetID());
+    }
+
+    void OnContactRemoved(const JPH::SubShapeIDPair &pair) override {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mActive.erase(PairKey(pair.GetBody1ID(), pair.GetBody2ID()));
+    }
+
+    void EraseBody(uint32_t key) {
+        std::lock_guard<std::mutex> lock(mMutex);
+        for (auto it = mActive.begin(); it != mActive.end();) {
+            uint32_t first = static_cast<uint32_t>(*it >> 32);
+            uint32_t second = static_cast<uint32_t>(*it & 0xFFFFFFFFULL);
+            if (first == key || second == key) {
+                it = mActive.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    std::vector<uint64_t> Snapshot() {
+        std::lock_guard<std::mutex> lock(mMutex);
+        return std::vector<uint64_t>(mActive.begin(), mActive.end());
+    }
+
+private:
+    void InsertPair(JPH::BodyID id1, JPH::BodyID id2) {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mActive.insert(PairKey(id1, id2));
+    }
+
+    static uint64_t PairKey(JPH::BodyID id1, JPH::BodyID id2) {
+        uint32_t first = id1.GetIndexAndSequenceNumber();
+        uint32_t second = id2.GetIndexAndSequenceNumber();
+        if (first > second) {
+            std::swap(first, second);
+        }
+        return (static_cast<uint64_t>(first) << 32) | second;
+    }
+
+    std::mutex mMutex;
+    std::set<uint64_t> mActive;
+};
+
 class World {
 public:
-    World(float gravityX, float gravityY, float gravityZ) {
+    World(float gravityX, float gravityY, float gravityZ)
+        : mTempAllocator(10 * 1024 * 1024) {
         mBroadPhaseLayers = std::make_unique<JPH::BroadPhaseLayerInterfaceTable>(2, 1);
         mBroadPhaseLayers->MapObjectToBroadPhaseLayer(kMovingLayer,
                 JPH::BroadPhaseLayer(0));
@@ -76,7 +133,7 @@ public:
         mPhysicsSystem.Init(kMaxBodies, 0, kMaxBodyPairs, kMaxContacts,
                 *mBroadPhaseLayers, *mObjectVsBroadPhaseLayers, *mObjectLayers);
         mPhysicsSystem.SetGravity(JPH::Vec3(gravityX, gravityY, gravityZ));
-        mTempAllocator = std::make_unique<JPH::TempAllocatorMalloc>();
+        mPhysicsSystem.SetContactListener(&mContactTracker);
         mBodyInterface = &mPhysicsSystem.GetBodyInterface();
     }
 
@@ -179,6 +236,47 @@ public:
             mBodyInterface->DestroyBody(bodyId);
         }
         mBodies.erase(iterator);
+        mContactTracker.EraseBody(key);
+    }
+
+    void GetLinearVelocity(uint32_t key, float *out) {
+        out[0] = 0.0f;
+        out[1] = 0.0f;
+        out[2] = 0.0f;
+        auto iterator = mBodies.find(key);
+        if (iterator == mBodies.end()) {
+            return;
+        }
+        JPH::BodyID bodyId(key);
+        if (!mBodyInterface->IsAdded(bodyId)) {
+            return;
+        }
+        JPH::Vec3 velocity = mBodyInterface->GetLinearVelocity(bodyId);
+        float vx = velocity.GetX();
+        float vy = velocity.GetY();
+        float vz = velocity.GetZ();
+        if (std::isfinite(vx) && std::isfinite(vy) && std::isfinite(vz)) {
+            out[0] = vx;
+            out[1] = vy;
+            out[2] = vz;
+        }
+    }
+
+    std::vector<int64_t> GetActiveContacts() {
+        std::vector<uint64_t> snapshot = mContactTracker.Snapshot();
+        std::vector<int64_t> result;
+        result.reserve(snapshot.size() * 2);
+        for (uint64_t pair : snapshot) {
+            uint32_t first = static_cast<uint32_t>(pair >> 32);
+            uint32_t second = static_cast<uint32_t>(pair & 0xFFFFFFFFULL);
+            if (mBodies.find(first) == mBodies.end()
+                    || mBodies.find(second) == mBodies.end()) {
+                continue;
+            }
+            result.push_back(static_cast<int64_t>(first));
+            result.push_back(static_cast<int64_t>(second));
+        }
+        return result;
     }
 
     void SetTransform(uint32_t key, const jfloat *transform) {
@@ -245,7 +343,7 @@ public:
                             kFixedStep);
                 }
             }
-            mPhysicsSystem.Update(kFixedStep, 1, mTempAllocator.get(), gJobSystem.get());
+            mPhysicsSystem.Update(kFixedStep, 1, &mTempAllocator, gJobSystem.get());
             mAccumulator -= kFixedStep;
             steps++;
         }
@@ -323,8 +421,9 @@ private:
     std::unique_ptr<JPH::BroadPhaseLayerInterfaceTable> mBroadPhaseLayers;
     std::unique_ptr<JPH::ObjectLayerPairFilterTable> mObjectLayers;
     std::unique_ptr<JPH::ObjectVsBroadPhaseLayerFilterTable> mObjectVsBroadPhaseLayers;
+    ContactTracker mContactTracker;
     JPH::PhysicsSystem mPhysicsSystem;
-    std::unique_ptr<JPH::TempAllocator> mTempAllocator;
+    JPH::TempAllocatorImplWithMallocFallback mTempAllocator;
     JPH::BodyInterface *mBodyInterface;
     std::unordered_map<uint32_t, BodyRecord> mBodies;
     float mAccumulator = 0.0f;
@@ -426,6 +525,38 @@ Java_org_catrobat_catroid_neo3d_physics_JoltNativeBridge_nAddImpulse(
     if (world != nullptr && key != JPH::BodyID::cInvalidBodyID) {
         world->AddImpulse(key, x, y, z);
     }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_catrobat_catroid_neo3d_physics_JoltNativeBridge_nGetLinearVelocity(
+        JNIEnv *env, jclass, jlong worldHandle, jlong bodyId, jfloatArray outputArray) {
+    World *world = FromHandle(worldHandle);
+    uint32_t key = ToKey(bodyId);
+    if (world == nullptr || key == JPH::BodyID::cInvalidBodyID || outputArray == nullptr
+            || env->GetArrayLength(outputArray) < 3) {
+        return;
+    }
+    jfloat *output = env->GetFloatArrayElements(outputArray, nullptr);
+    if (output != nullptr) {
+        world->GetLinearVelocity(key, output);
+        env->ReleaseFloatArrayElements(outputArray, output, 0);
+    }
+}
+
+extern "C" JNIEXPORT jlongArray JNICALL
+Java_org_catrobat_catroid_neo3d_physics_JoltNativeBridge_nGetActiveContacts(
+        JNIEnv *env, jclass, jlong worldHandle) {
+    World *world = FromHandle(worldHandle);
+    std::vector<int64_t> contacts;
+    if (world != nullptr) {
+        contacts = world->GetActiveContacts();
+    }
+    jlongArray result = env->NewLongArray(static_cast<jsize>(contacts.size()));
+    if (result != nullptr && !contacts.empty()) {
+        env->SetLongArrayRegion(result, 0, static_cast<jsize>(contacts.size()),
+                reinterpret_cast<const jlong *>(contacts.data()));
+    }
+    return result;
 }
 
 extern "C" JNIEXPORT void JNICALL

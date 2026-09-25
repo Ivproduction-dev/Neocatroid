@@ -62,6 +62,8 @@ public final class Neo3DPersistence {
             }
             if (obj.getCamera() != null && obj.getCamera().isMainCamera()) {
                 p.primitiveKind = -2;
+                p.cameraUsesTransformOrientation =
+                        obj.getCamera().isUseTransformOrientation();
             }
             out.add(p);
         }
@@ -83,7 +85,18 @@ public final class Neo3DPersistence {
             }
             try {
                 if (p.primitiveKind == -2) {
-                    Neo3DFacade.facadeSetMainCameraPosition(neoSceneId, p.x, p.y, p.z);
+                    String cameraId = Neo3DFacade.facadeSetMainCameraPosition(
+                            neoSceneId, p.x, p.y, p.z);
+                    Neo3DGameObject camera = engine.getScene(neoSceneId).getObject(cameraId);
+                    if (camera != null) {
+                        camera.getTransform().setScale(p.scaleX, p.scaleY, p.scaleZ);
+                        if (p.cameraUsesTransformOrientation) {
+                            camera.getCamera().setUseTransformOrientation(true);
+                            camera.getTransform().setRotationEulerDeg(
+                                    p.yawDeg, p.pitchDeg, p.rollDeg);
+                        }
+                        engine.syncObject(neoSceneId, cameraId);
+                    }
                     continue;
                 }
                 String objectId = Neo3DFacade.facadeCreateObject(neoSceneId, p.name);

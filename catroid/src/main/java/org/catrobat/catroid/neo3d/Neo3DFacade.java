@@ -120,6 +120,71 @@ public final class Neo3DFacade {
         require().setObjectModelBytes(sceneId, objectId, assetKey, glbBytes);
     }
 
+    public static String facadeSetMainCameraRotation(String sceneId, float yawDeg,
+            float pitchDeg, float rollDeg) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        if (scene == null) {
+            throw new IllegalArgumentException("Unknown scene: " + sceneId);
+        }
+        Neo3DGameObject mainCamera = null;
+        for (Neo3DGameObject obj : scene.getAllObjects()) {
+            if (obj.getCamera() != null && obj.getCamera().isMainCamera() && obj.isActive()) {
+                mainCamera = obj;
+                break;
+            }
+        }
+        if (mainCamera == null) {
+            mainCamera = scene.createObject("MainCamera");
+            mainCamera.setCamera(new Neo3DCamera());
+        }
+        mainCamera.getCamera().setUseTransformOrientation(true);
+        mainCamera.getTransform().setRotationEulerDeg(yawDeg, pitchDeg, rollDeg);
+        e.syncObject(sceneId, mainCamera.getId());
+        return mainCamera.getId();
+    }
+
+    public static void facadeSetCameraTouchLook(String sceneId, int mode, float sensitivity,
+            float minPitchDeg, float maxPitchDeg) {
+        require().setCameraTouchLook(sceneId, mode, sensitivity, minPitchDeg, maxPitchDeg);
+    }
+
+    public static boolean facadeDragCameraLook(String sceneId, float dxPixels, float dyPixels) {
+        return require().dragCameraLook(sceneId, dxPixels, dyPixels);
+    }
+
+    public static void facadeSetCameraFollow(String sceneId, String targetName, float offX,
+            float offY, float offZ, boolean lookAt) {
+        require().setCameraFollow(sceneId, targetName, offX, offY, offZ, lookAt);
+    }
+
+    public static void facadeClearCameraFollow(String sceneId) {
+        require().clearCameraFollow(sceneId);
+    }
+
+    public static boolean facadePointMainCameraAt(String sceneId, String targetName) {
+        return require().pointMainCameraAt(sceneId, targetName);
+    }
+
+    public static boolean facadeMoveObjectForward(String sceneId, String objectId,
+            float distance) {
+        return require().moveObjectForward(sceneId, objectId, distance);
+    }
+
+    public static boolean facadeTurnObjectToward(String sceneId, String objectId,
+            String targetName) {
+        return require().turnObjectToward(sceneId, objectId, targetName);
+    }
+
+    public static boolean facadeSetObjectVisible(String sceneId, String objectId,
+            boolean visible) {
+        return require().setObjectVisible(sceneId, objectId, visible);
+    }
+
+    public static int facadeClearObjects(String sceneId) {
+        return require().clearObjects(sceneId);
+    }
+
     public static void facadeSetPhysicsBody(String sceneId, String objectId,
             Neo3DPhysicsBody body) {
         Neo3DEngine e = require();
