@@ -150,3 +150,7 @@ buildSrc/build/
 # nested clone + build log
 /newcatroid/NewCatroid/
 /build-log.txt
+
+!catroid/src/full/assets/
+!catroid/src/full/assets/**/
+!catroid/src/full/assets/**
