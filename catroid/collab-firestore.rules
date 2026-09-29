@@ -12,6 +12,10 @@ service cloud.firestore {
       return isSignedIn()
         && get(/databases/$(database)/documents/collabSessions/$(sid)/meta/meta).data.ownerUid == request.auth.uid;
     }
+    function isOwnerAfter(sid) {
+      return isSignedIn()
+        && getAfter(/databases/$(database)/documents/collabSessions/$(sid)/meta/meta).data.ownerUid == request.auth.uid;
+    }
     match /collabSessions/{sid}/meta/meta {
       allow read: if isMember(sid);
       allow create: if isSignedIn()
@@ -21,9 +25,11 @@ service cloud.firestore {
     }
 
     match /collabSessions/{sid}/members/{uid} {
-      allow get: if isMember(sid);
+      allow get: if isMember(sid) || (isSignedIn() && uid == request.auth.uid);
       allow list: if isMember(sid);
-      allow create, update: if isOwner(sid)
+      allow create: if (isOwner(sid) || (uid == request.auth.uid && request.resource.data.role == 'host' && isOwnerAfter(sid)))
+        && request.resource.data.role in ['host', 'editor', 'viewer'];
+      allow update: if isOwner(sid)
         && request.resource.data.role in ['host', 'editor', 'viewer'];
       allow delete: if isOwner(sid) && uid != request.auth.uid;
     }
@@ -31,7 +37,7 @@ service cloud.firestore {
     match /collabSessions/{sid}/invites/{code} {
       allow get: if isSignedIn();
       allow list: if isMember(sid);
-      allow create: if isOwner(sid);
+      allow create: if isOwner(sid) || isOwnerAfter(sid);
       allow update: if isSignedIn()
         && resource.data.usedBy == ''
         && request.resource.data.usedBy == request.auth.uid

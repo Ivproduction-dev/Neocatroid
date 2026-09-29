@@ -132,37 +132,33 @@ object CollabSession {
             val code = randomInviteCode()
             val now = System.currentTimeMillis()
             val metaDoc = metaRef(sid)?.collection("meta")?.document("meta")
-            if (metaDoc == null) {
+            val memberDoc = membersRef(sid)?.document(uid)
+            val inviteDoc = invitesRef(sid)?.document(code)
+            if (metaDoc == null || memberDoc == null || inviteDoc == null) {
                 callback(null, null)
                 return@ensureSignedIn
             }
-            metaDoc.set(CollabMeta(
-                ownerUid = uid, ownerName = displayName, projectName = projectName,
-                createdAt = now
-            ).toMap()).addOnSuccessListener {
-                var attempts = 0
-                fun commitBatch() {
-                    val batch = database.batch()
-                    batch.set(membersRef(sid)!!.document(uid), CollabMember(
-                        role = CollabRoles.HOST, colorHue = hue, name = displayName, joinedAt = now
-                    ).toMap())
-                    batch.set(invitesRef(sid)!!.document(code), CollabInvite(
-                        role = CollabRoles.EDITOR, expiresAt = now + INVITE_TTL_MS
-                    ).toMap())
-                    batch.commit()
-                        .addOnSuccessListener {
-                            enterLocalState(sid, uid, projectName)
-                            isHost = true
-                            myRole = CollabRoles.HOST
-                            startListeners()
-                            callback(sid, code)
-                        }
-                        .addOnFailureListener { e ->
-                            Log.w(TAG, "create failed", e)
-                            if (++attempts < 2) commitBatch() else callback(null, null)
-                        }
+            database.runTransaction { tx ->
+                if (tx.get(metaDoc).exists()) {
+                    throw FirebaseFirestoreException("session already exists", FirebaseFirestoreException.Code.ABORTED)
                 }
-                commitBatch()
+                tx.set(metaDoc, CollabMeta(
+                    ownerUid = uid, ownerName = displayName, projectName = projectName,
+                    createdAt = now
+                ).toMap())
+                tx.set(memberDoc, CollabMember(
+                    role = CollabRoles.HOST, colorHue = hue, name = displayName, joinedAt = now
+                ).toMap())
+                tx.set(inviteDoc, CollabInvite(
+                    role = CollabRoles.EDITOR, expiresAt = now + INVITE_TTL_MS
+                ).toMap())
+                null
+            }.addOnSuccessListener {
+                enterLocalState(sid, uid, projectName)
+                isHost = true
+                myRole = CollabRoles.HOST
+                startListeners()
+                callback(sid, code)
             }.addOnFailureListener { e ->
                 Log.w(TAG, "create failed", e)
                 callback(null, null)
@@ -240,7 +236,17 @@ object CollabSession {
         }
         mainHandler.postDelayed(timeout, timeoutMs)
         approvalReg = membersRef(sid)!!.document(uid).addSnapshotListener { snap, error ->
-            if (done || error != null) return@addSnapshotListener
+            if (done) return@addSnapshotListener
+            if (error != null) {
+                if (CollabAccess.isRevoked((error as? FirebaseFirestoreException)?.code)) {
+                    done = true
+                    mainHandler.removeCallbacks(timeout)
+                    approvalReg?.remove()
+                    approvalReg = null
+                    callback(null)
+                }
+                return@addSnapshotListener
+            }
             if (snap != null && snap.exists()) {
                 done = true
                 mainHandler.removeCallbacks(timeout)

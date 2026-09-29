@@ -195,10 +195,6 @@ android {
                                  intentFilterHost: "share.catrob.at",
                                  intentFilterPathPattern: "/.*/project/.*"]
 
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
-        }
-
         buildConfigField "String", "GIT_COMMIT_INFO", "\"${getGitCommitInfo()}\""
         buildConfigField "String", "WEB_TEST_URL", "\"" + project.getProperties().get('webTestUrl') + "\""
         buildConfigField "boolean", "WEB_TEST_FLAG", (project.hasProperty('webTestUrl') ? 'true' :
@@ -388,6 +384,15 @@ android {
             matchingFallbacks = ["release"]
         }
 
+        storeRelease {
+            initWith buildTypes.release
+            minifyEnabled false
+            shrinkResources false
+            signingConfig rootProject.hasProperty("signingKeystore") ?
+                    signingConfigs.signedRelease : signingConfigs.debug
+            matchingFallbacks = ["release"]
+        }
+
         template {
             initWith debug // intentional: templates need debug symbols and proguard
             minifyEnabled true
@@ -485,6 +490,17 @@ android {
             ndk {
                 abiFilters 'arm64-v8a'
             }
+        }
+    }
+
+    def fullAssetsDir = 'src/full/assets'
+    android.productFlavors.all { flavor ->
+        if (flavor.name != 'chat') {
+            def ss = android.sourceSets.findByName(flavor.name)
+            if (ss != null) {
+                ss.assets.srcDirs += fullAssetsDir
+            }
+            flavor.ndk.abiFilters.addAll(['armeabi-v7a', 'arm64-v8a', 'x86_64'])
         }
     }
 
@@ -587,30 +603,15 @@ android.applicationVariants.all { variant ->
         }
     }
 
-    // Флейвор 'chat': убираем QEMU, Python и лишние ABI — только arm64-v8a
     if (variant.flavorName == 'chat') {
-        def mergeAssetsTask = tasks.findByName("merge${variant.name.capitalize()}Assets")
-        if (mergeAssetsTask != null) {
-            mergeAssetsTask.outputs.upToDateWhen { false }
-            mergeAssetsTask.doLast {
-                delete(fileTree(mergeAssetsTask.outputDir) {
-                    include '**/qemu_x86_64/**'
-                    include '**/qemu_arm64/**'
-                    include '**/python3.12/**'
-                    include '**/default_pylibs/**'
-                })
-            }
-        }
         def mergeNativeLibsTask = tasks.findByName("merge${variant.name.capitalize()}NativeLibs")
         if (mergeNativeLibsTask != null) {
+            mergeNativeLibsTask.doNotTrackState("chat strips native libs after merge")
             mergeNativeLibsTask.doLast {
                 delete(fileTree(mergeNativeLibsTask.outputDir) {
-                    // Оставляем только arm64-v8a — удаляем остальные ABI
                     include 'lib/armeabi-v7a/**'
                     include 'lib/x86/**'
                     include 'lib/x86_64/**'
-                    // Python: libcatroid.so линкуется против libpython3.12.so, поэтому
-                    // при удалении python-библиотек CORE-фича деградирует (no-op), а не падает
                     include '**/libpython3.12.so'
                     include '**/libopenblas.so'
                     include '**/libcrypto.so'
