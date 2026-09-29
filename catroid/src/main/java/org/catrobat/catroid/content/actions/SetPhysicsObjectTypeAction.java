@@ -24,12 +24,13 @@ package org.catrobat.catroid.content.actions;
 
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 
+import org.catrobat.catroid.physics.IPhysicsObject;
 import org.catrobat.catroid.physics.PhysicsObject;
 import org.catrobat.catroid.physics.PhysicsObject.Type;
 
 public class SetPhysicsObjectTypeAction extends TemporalAction {
 
-	private PhysicsObject physicsObject;
+	private IPhysicsObject physicsObject;
 	private Type type = PhysicsObject.Type.NONE;
 
 	@Override
@@ -38,7 +39,7 @@ public class SetPhysicsObjectTypeAction extends TemporalAction {
 		physicsObject.setType(type);
 	}
 
-	public void setPhysicsObject(PhysicsObject physicsObject) {
+	public void setPhysicsObject(IPhysicsObject physicsObject) {
 		this.physicsObject = physicsObject;
 	}
 

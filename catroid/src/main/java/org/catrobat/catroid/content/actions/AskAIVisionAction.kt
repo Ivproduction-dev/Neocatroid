@@ -26,6 +26,7 @@ package org.catrobat.catroid.content.actions
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction
 import kotlinx.coroutines.runBlocking
 import org.catrobat.catroid.ai.model.AiProvider
@@ -86,10 +87,12 @@ class AskAIVisionAction : TemporalAction() {
                     )
                 }
             }
-            variable.value = result
-            val sprite = sc.sprite
-            if (sprite != null && sprite.look != null) {
-                sprite.look.fire(EventWrapper(AiResponseEventId(sprite, providerObj.id), false))
+            Gdx.app.postRunnable {
+                variable.value = result
+                val sprite = sc.sprite
+                if (sprite != null && sprite.look != null) {
+                    sprite.look.fire(EventWrapper(AiResponseEventId(sprite, providerObj.id), false))
+                }
             }
         }.start()
     }

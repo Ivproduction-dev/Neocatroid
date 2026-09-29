@@ -105,14 +105,7 @@ public final class Neo3DFacade {
     }
 
     public static void facadeSetScale(String sceneId, String objectId, float x, float y, float z) {
-        Neo3DEngine e = require();
-        Neo3DScene scene = e.getScene(sceneId);
-        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
-        if (obj == null) {
-            throw new IllegalArgumentException("Unknown object: " + objectId);
-        }
-        obj.getTransform().setScale(x, y, z);
-        e.syncObject(sceneId, objectId);
+        require().setObjectScale(sceneId, objectId, x, y, z);
     }
 
     public static void facadeSetModelBytes(String sceneId, String objectId, String assetKey,
@@ -185,6 +178,79 @@ public final class Neo3DFacade {
         return require().clearObjects(sceneId);
     }
 
+    public static String facadeRenameObject(String sceneId, String objectId, String newName) {
+        return require().renameObject(sceneId, objectId, newName);
+    }
+
+    public static String facadeGetObjectParentName(String sceneId, String objectId) {
+        return require().getObjectParentName(sceneId, objectId);
+    }
+
+    public static boolean facadeCopyObjectPosition(String sceneId, String objectId,
+            String sourceName) {
+        return require().copyObjectPosition(sceneId, objectId, sourceName);
+    }
+
+    public static boolean facadeSetObjectPositionToCamera(String sceneId, String objectId) {
+        return require().setObjectPositionToCamera(sceneId, objectId);
+    }
+
+    public static boolean facadeSetCameraPositionToObject(String sceneId, String targetName) {
+        return require().setCameraPositionToObject(sceneId, targetName);
+    }
+
+    public static boolean facadeTurnObjectToCamera(String sceneId, String objectId) {
+        return require().turnObjectToCamera(sceneId, objectId);
+    }
+
+    public static void facadeSetRay(String sceneId, String rayName, String fromName,
+            String towardName, float distance, int maxHits) {
+        require().setRay(sceneId, rayName, fromName, towardName, distance, maxHits);
+    }
+
+    public static void facadeClearRay(String sceneId, String rayName) {
+        require().clearRay(sceneId, rayName);
+    }
+
+    public static java.util.List<Neo3DRaycaster.Hit> facadeCastRay(String sceneId,
+            String rayName) {
+        return require().castRay(sceneId, rayName);
+    }
+
+    public static String facadeGetRayHitName(String sceneId, String rayName, int index) {
+        java.util.List<Neo3DRaycaster.Hit> hits = require().getRayHits(sceneId, rayName);
+        if (index < 0 || index >= hits.size() || hits.get(index).name == null) {
+            return "";
+        }
+        return hits.get(index).name;
+    }
+
+    public static int facadeGetRayHitCount(String sceneId, String rayName) {
+        return require().getRayHits(sceneId, rayName).size();
+    }
+
+    public static void facadeSetObjectVariable(String sceneId, String objectId, String key,
+            Object value) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            throw new IllegalArgumentException("Unknown object: " + objectId);
+        }
+        obj.setVariable(key, value);
+    }
+
+    public static Object facadeGetObjectVariable(String sceneId, String name, String key) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null || name == null ? null : scene.findByName(name);
+        if (obj == null) {
+            return 0.0;
+        }
+        Object value = obj.getVariable(key);
+        return value == null ? 0.0 : value;
+    }
+
     public static void facadeSetPhysicsBody(String sceneId, String objectId,
             Neo3DPhysicsBody body) {
         Neo3DEngine e = require();
@@ -225,6 +291,52 @@ public final class Neo3DFacade {
 
     public static Neo3DEngine getEngineForTest() {
         return engine;
+    }
+
+    public static float[] facadeGetObjectPosition(String sceneId, String objectId) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        return obj == null ? null : obj.getTransform().getPosition();
+    }
+
+    public static float[] facadeGetObjectPositionByName(String sceneId, String name) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null || name == null ? null : scene.findByName(name);
+        return obj == null ? null : obj.getTransform().getPosition();
+    }
+
+    public static float[] facadeGetMainCameraPosition(String sceneId) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        if (scene == null) {
+            return null;
+        }
+        for (Neo3DGameObject obj : scene.getAllObjects()) {
+            if (obj.getCamera() != null && obj.getCamera().isMainCamera() && obj.isActive()) {
+                return obj.getTransform().getPosition();
+            }
+        }
+        return null;
+    }
+
+    public static void facadeSetPhysicsCollision(String sceneId, String objectId,
+            boolean collide) {
+        Neo3DEngine e = require();
+        Neo3DScene scene = e.getScene(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            throw new IllegalArgumentException("Unknown object: " + objectId);
+        }
+        Neo3DPhysicsBody body = obj.getPhysicsBody();
+        if (body == null) {
+            android.util.Log.w("Neo3D", "SetCollision: no physics body on '"
+                    + obj.getName() + "'");
+            return;
+        }
+        body.setNoCollision(!collide);
+        e.syncObject(sceneId, objectId);
     }
 
     public static String facadeGetObjectName(String sceneId, String objectId) {

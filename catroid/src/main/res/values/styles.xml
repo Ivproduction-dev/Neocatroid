@@ -248,7 +248,9 @@
         <item name="android:scaleType">fitXY</item>
     </style>
 
-    <style name="BrickContainer.Motion" />
+    <style name="BrickContainer.Motion">
+        <item name="scratchFill">@color/scratch_brick_motion</item>
+    </style>
 
     <style name="BrickContainer.Motion.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -270,7 +272,9 @@
         <item name="android:background">@drawable/brick_3h_blue</item>
     </style>
 
-    <style name="BrickContainer.Sound" />
+    <style name="BrickContainer.Sound">
+        <item name="scratchFill">@color/scratch_brick_sound</item>
+    </style>
 
     <style name="BrickContainer.Sound.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -287,7 +291,9 @@
         <item name="android:background">@drawable/brick_3h_violet</item>
     </style>
 
-    <style name="BrickContainer.Look" />
+    <style name="BrickContainer.Look">
+        <item name="scratchFill">@color/scratch_brick_look</item>
+    </style>
 
     <style name="BrickContainer.Look.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -304,7 +310,9 @@
         <item name="android:background">@drawable/brick_3h_green</item>
     </style>
 
-    <style name="BrickContainer.Device" />
+    <style name="BrickContainer.Device">
+        <item name="scratchFill">@color/scratch_brick_device</item>
+    </style>
 
     <style name="BrickContainer.Device.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -331,7 +339,9 @@
         <item name="android:background">@drawable/brick_3h_gold</item>
     </style>
 
-    <style name="BrickContainer.Embroidery" />
+    <style name="BrickContainer.Embroidery">
+        <item name="scratchFill">@color/scratch_brick_embroidery</item>
+    </style>
 
     <style name="BrickContainer.Embroidery.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -348,7 +358,9 @@
         <item name="android:background">@drawable/brick_3h_pink</item>
     </style>
 
-    <style name="BrickContainer.Data" />
+    <style name="BrickContainer.Data">
+        <item name="scratchFill">@color/scratch_brick_data</item>
+    </style>
 
     <style name="BrickContainer.Data.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -365,7 +377,9 @@
         <item name="android:background">@drawable/brick_3h_orange</item>
     </style>
 
-    <style name="BrickContainer.Event" />
+    <style name="BrickContainer.Event">
+        <item name="scratchFill">@color/scratch_brick_event</item>
+    </style>
 
     <style name="BrickContainer.Event.Small" tools:ignore="UnusedResources">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -383,7 +397,9 @@
     </style>
 
 
-    <style name="BrickContainer.AdMob" />
+    <style name="BrickContainer.AdMob">
+        <item name="scratchFill">@color/scratch_brick_admob</item>
+    </style>
     <style name="BrickContainer.AdMob.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
         <item name="android:background">@drawable/brick_1h_admob</item>
@@ -396,7 +412,9 @@
         <item name="android:minHeight">@dimen/brick_height_big</item>
         <item name="android:background">@drawable/brick_3h_admob</item>
     </style>
-    <style name="BrickContainer.Plot" />
+    <style name="BrickContainer.Plot">
+        <item name="scratchFill">@color/scratch_brick_plot</item>
+    </style>
 
     <style name="BrickContainer.Plot.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -413,7 +431,9 @@
         <item name="android:background">@drawable/brick_3h_winered</item>
     </style>
 
-    <style name="BrickContainer.Pocketensor" />
+    <style name="BrickContainer.Pocketensor">
+        <item name="scratchFill">@color/scratch_brick_pocketensor</item>
+    </style>
 
     <style name="BrickContainer.Pocketensor.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -430,7 +450,9 @@
         <item name="android:background">@drawable/brick_3h_olive</item>
     </style>
 
-    <style name="BrickContainer.Transition" />
+    <style name="BrickContainer.Transition">
+        <item name="scratchFill">@color/scratch_brick_transition</item>
+    </style>
 
     <style name="BrickContainer.Transition.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -453,7 +475,9 @@
 
     <style name="BrickContainer.Fast2d" />
 
-    <style name="BrickContainer.Pathfinder" />
+    <style name="BrickContainer.Pathfinder">
+        <item name="scratchFill">@color/scratch_brick_pathfinder</item>
+    </style>
 
     <style name="BrickContainer.Pathfinder.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -489,7 +513,9 @@
         <item name="android:background">@drawable/brick_3h_green</item>
     </style>
 
-    <style name="BrickContainer.File" />
+    <style name="BrickContainer.File">
+        <item name="scratchFill">@color/scratch_brick_file</item>
+    </style>
 
     <style name="BrickContainer.File.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -506,7 +532,9 @@
         <item name="android:background">@drawable/brick_3h_olive</item>
     </style>
 
-    <style name="BrickContainer.NeoScript" />
+    <style name="BrickContainer.NeoScript">
+        <item name="scratchFill">@color/scratch_brick_neoscript</item>
+    </style>
 
     <style name="BrickContainer.NeoScript.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -523,7 +551,9 @@
         <item name="android:background">@drawable/brick_3h_slate</item>
     </style>
 
-    <style name="BrickContainer.Dialogue" />
+    <style name="BrickContainer.Dialogue">
+        <item name="scratchFill">@color/scratch_brick_dialogue</item>
+    </style>
 
     <style name="BrickContainer.Dialogue.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -540,7 +570,9 @@
         <item name="android:background">@drawable/brick_3h_violet</item>
     </style>
 
-    <style name="BrickContainer.Neural" />
+    <style name="BrickContainer.Neural">
+        <item name="scratchFill">@color/scratch_brick_neural</item>
+    </style>
 
     <style name="BrickContainer.Neural.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -557,7 +589,9 @@
         <item name="android:background">@drawable/brick_3h_cyan</item>
     </style>
 
-    <style name="BrickContainer.Threed" />
+    <style name="BrickContainer.Threed">
+        <item name="scratchFill">@color/scratch_brick_threed</item>
+    </style>
 
     <style name="BrickContainer.Threed.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -574,7 +608,9 @@
         <item name="android:background">@drawable/brick_3h_yellow</item>
     </style>
 
-    <style name="BrickContainer.Libs" />
+    <style name="BrickContainer.Libs">
+        <item name="scratchFill">@color/scratch_brick_libs</item>
+    </style>
 
     <style name="BrickContainer.Libs.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -591,7 +627,9 @@
         <item name="android:background">@drawable/brick_3h_magenta</item>
     </style>
 
-    <style name="BrickContainer.Internet" />
+    <style name="BrickContainer.Internet">
+        <item name="scratchFill">@color/scratch_brick_internet</item>
+    </style>
 
     <style name="BrickContainer.Internet.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -609,7 +647,9 @@
     </style>
 
 
-    <style name="BrickContainer.Pen" />
+    <style name="BrickContainer.Pen">
+        <item name="scratchFill">@color/scratch_brick_pen</item>
+    </style>
 
     <style name="BrickContainer.Pen.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -626,7 +666,9 @@
         <item name="android:background">@drawable/brick_3h_green</item>
     </style>
 
-    <style name="BrickContainer.UserVariables" />
+    <style name="BrickContainer.UserVariables">
+        <item name="scratchFill">@color/scratch_brick_user_variables</item>
+    </style>
 
     <style name="BrickContainer.UserVariables.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -643,14 +685,18 @@
         <item name="android:background">@drawable/brick_3h_red</item>
     </style>
 
-    <style name="BrickContainer.UserList" />
+    <style name="BrickContainer.UserList">
+        <item name="scratchFill">@color/scratch_brick_user_list</item>
+    </style>
 
     <style name="BrickContainer.UserList.Medium">
         <item name="android:minHeight">@dimen/brick_height_medium</item>
         <item name="android:background">@drawable/brick_2h_red</item>
     </style>
 
-    <style name="BrickContainer.Preload" />
+    <style name="BrickContainer.Preload">
+        <item name="scratchFill">@color/scratch_brick_preload</item>
+    </style>
 
     <style name="BrickContainer.Preload.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -684,7 +730,9 @@
         <item name="android:background">@drawable/brick_3h_olive</item>
     </style>
 
-    <style name="BrickContainer.Phiro" />
+    <style name="BrickContainer.Phiro">
+        <item name="scratchFill">@color/scratch_brick_phiro</item>
+    </style>
 
     <style name="BrickContainer.Phiro.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -706,7 +754,9 @@
         <item name="android:background">@drawable/brick_3h_phiro_green</item>
     </style>
 
-    <style name="BrickContainer.Arduino" />
+    <style name="BrickContainer.Arduino">
+        <item name="scratchFill">@color/scratch_brick_arduino</item>
+    </style>
 
     <style name="BrickContainer.Arduino.Small" tools:ignore="UnusedResources">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -757,7 +807,9 @@
         <item name="android:background">@drawable/brick_3h_cyan</item>
     </style>
 
-    <style name="BrickContainer.Lego" />
+    <style name="BrickContainer.Lego">
+        <item name="scratchFill">@color/scratch_brick_lego</item>
+    </style>
 
     <style name="BrickContainer.Lego.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -774,7 +826,9 @@
         <item name="android:background">@drawable/brick_3h_yellow</item>
     </style>
 
-    <style name="BrickContainer.Control" />
+    <style name="BrickContainer.Control">
+        <item name="scratchFill">@color/scratch_brick_control</item>
+    </style>
 
     <style name="BrickContainer.Control.Small">
         <item name="android:minHeight">@dimen/brick_height_small</item>
@@ -803,7 +857,9 @@
         <item name="android:background">@drawable/brick_brown_2h_when_9</item>
     </style>
 
-    <style name="BrickContainer.Script" />
+    <style name="BrickContainer.Script">
+        <item name="scratchFill">@color/scratch_brick_script</item>
+    </style>
 
     <style name="BrickContainer.Script.Medium">
         <item name="android:minHeight">@dimen/brick_height_medium</item>

@@ -37,7 +37,11 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Spinner;
+import android.graphics.drawable.Drawable;
+import android.widget.Spinner;
 import android.widget.TextView;
+
+import androidx.core.content.ContextCompat;
 
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.common.SharedPreferenceKeys;
@@ -64,9 +68,23 @@ public class BrickLayout extends ViewGroup {
 			(sharedPreferences, key) -> {
 				if (SharedPreferenceKeys.REDRAWN_BRICK_MODE_PREFERENCE_KEY.equals(key)) {
 					redrawnMode = sharedPreferences.getBoolean(key, false);
-					invalidate();
+					applyScratchAppearance();
 				}
 			};
+	private int scratchFillColor;
+	private Drawable savedBrickBackground;
+	private boolean scratchApplied;
+
+	private static final int TAG_SAVED_BACKGROUND = R.id.scratch_saved_background;
+	private static final int TAG_SAVED_TEXT_COLOR = R.id.scratch_saved_text_color;
+
+	public static boolean isScratchMode(Context context) {
+		if (context == null) {
+			return false;
+		}
+		return PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext())
+				.getBoolean(SharedPreferenceKeys.REDRAWN_BRICK_MODE_PREFERENCE_KEY, false);
+	}
 
 	protected LinkedList<LineData> lines;
 
@@ -444,6 +462,68 @@ public class BrickLayout extends ViewGroup {
 		redrawnMode = redrawnPreferences.getBoolean(
 				SharedPreferenceKeys.REDRAWN_BRICK_MODE_PREFERENCE_KEY, false);
 		redrawnPreferences.registerOnSharedPreferenceChangeListener(redrawnModeListener);
+		applyScratchAppearance();
+	}
+
+	private void applyScratchAppearance() {
+		boolean scratch = redrawnMode && scratchFillColor != 0;
+		if (scratch == scratchApplied) {
+			invalidate();
+			return;
+		}
+		scratchApplied = scratch;
+		if (scratch) {
+			if (savedBrickBackground == null) {
+				savedBrickBackground = getBackground();
+			}
+			setBackground(null);
+			Drawable pill = ContextCompat.getDrawable(getContext(), R.drawable.scratch_input_pill);
+			int pillTextColor;
+			try {
+				pillTextColor = getResources().getColor(R.color.scratch_input_text);
+			} catch (android.content.res.Resources.NotFoundException e) {
+				pillTextColor = 0xFF212121;
+			}
+			for (int i = 0; i < getChildCount(); i++) {
+				View child = getChildAt(i);
+				if (!(child.getLayoutParams() instanceof LayoutParams)) {
+					continue;
+				}
+				LayoutParams params = (LayoutParams) child.getLayoutParams();
+				if (child instanceof TextView && params.editText) {
+					if (child.getTag(TAG_SAVED_BACKGROUND) == null) {
+						child.setTag(TAG_SAVED_BACKGROUND, child.getBackground());
+						child.setTag(TAG_SAVED_TEXT_COLOR, ((TextView) child).getCurrentTextColor());
+					}
+					child.setBackground(pill);
+					((TextView) child).setTextColor(pillTextColor);
+				} else if (child instanceof Spinner) {
+					if (child.getTag(TAG_SAVED_BACKGROUND) == null) {
+						child.setTag(TAG_SAVED_BACKGROUND, child.getBackground());
+					}
+					child.setBackground(pill);
+				}
+			}
+		} else {
+			if (savedBrickBackground != null) {
+				setBackground(savedBrickBackground);
+				savedBrickBackground = null;
+			}
+			for (int i = 0; i < getChildCount(); i++) {
+				View child = getChildAt(i);
+				Object savedBackground = child.getTag(TAG_SAVED_BACKGROUND);
+				if (savedBackground instanceof Drawable || savedBackground == null) {
+					child.setBackground((Drawable) savedBackground);
+					child.setTag(TAG_SAVED_BACKGROUND, null);
+				}
+				Object savedTextColor = child.getTag(TAG_SAVED_TEXT_COLOR);
+				if (child instanceof TextView && savedTextColor instanceof Integer) {
+					((TextView) child).setTextColor((Integer) savedTextColor);
+					child.setTag(TAG_SAVED_TEXT_COLOR, null);
+				}
+			}
+		}
+		invalidate();
 	}
 
 	@Override
@@ -468,6 +548,11 @@ public class BrickLayout extends ViewGroup {
 		clipPath.addRoundRect(bounds, cornerRadius, cornerRadius, Path.Direction.CW);
 
 		int saveCount = canvas.save();
+		if (scratchApplied && scratchFillColor != 0) {
+			Paint fillPaint = createPaint(scratchFillColor);
+			fillPaint.setStyle(Paint.Style.FILL);
+			canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, fillPaint);
+		}
 		canvas.clipPath(clipPath);
 		super.draw(canvas);
 		canvas.restoreToCount(saveCount);
@@ -514,6 +599,7 @@ public class BrickLayout extends ViewGroup {
 	private void readStyleParameters(Context context, AttributeSet attributeSet) {
 		TypedArray styledAttributes = context.obtainStyledAttributes(attributeSet, R.styleable.BrickLayout);
 		try {
+			scratchFillColor = styledAttributes.getColor(R.styleable.BrickLayout_scratchFill, 0);
 			horizontalSpacing = styledAttributes.getDimensionPixelSize(R.styleable.BrickLayout_horizontalSpacing, 0);
 			verticalSpacing = styledAttributes.getDimensionPixelSize(R.styleable.BrickLayout_verticalSpacing, 0);
 			orientation = styledAttributes.getInteger(R.styleable.BrickLayout_orientation, HORIZONTAL);

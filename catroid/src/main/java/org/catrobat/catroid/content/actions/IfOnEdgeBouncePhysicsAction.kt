@@ -29,8 +29,10 @@ import org.catrobat.catroid.content.Look
 import org.catrobat.catroid.content.Sprite
 import org.catrobat.catroid.physics.PhysicalCollision
 import org.catrobat.catroid.physics.PhysicsBoundaryBox.BoundaryBoxIdentifier
+import org.catrobat.catroid.physics.IPhysicsObject
 import org.catrobat.catroid.physics.PhysicsLook
 import org.catrobat.catroid.physics.PhysicsObject
+import org.catrobat.catroid.physics.IPhysicsWorld
 import org.catrobat.catroid.physics.PhysicsWorld
 
 class IfOnEdgeBouncePhysicsAction : TemporalAction() {
@@ -48,7 +50,7 @@ class IfOnEdgeBouncePhysicsAction : TemporalAction() {
     private val vsHeight: Int get() = ProjectManager.getInstance().currentProject?.xmlHeader?.getVirtualScreenHeight() ?: 800
 
     lateinit var sprite: Sprite
-    lateinit var physicsWorld: PhysicsWorld
+    lateinit var physicsWorld: IPhysicsWorld
 
     private var boundaryBoxWidth = 0.0f
     private var boundaryBoxHeight = 0.0f
@@ -187,7 +189,7 @@ class IfOnEdgeBouncePhysicsAction : TemporalAction() {
         }
     }
 
-    private fun calculateBoundaryBoxDimensions(physicsObject: PhysicsObject) {
+    private fun calculateBoundaryBoxDimensions(physicsObject: IPhysicsObject) {
         val boundaryBoxLowerEdge = Vector2()
         val boundaryBoxUpperEdge = Vector2()
         physicsObject.getBoundaryBox(boundaryBoxLowerEdge, boundaryBoxUpperEdge)
@@ -239,16 +241,16 @@ class IfOnEdgeBouncePhysicsAction : TemporalAction() {
     private fun calculateTopCollisionAreaOuterBorder(): Float =
         calculateTopCollisionAreaInnerBorder() + COLLISION_OVERLAP_RANGE_FACTOR * boundaryBoxHeight
 
-    private fun isLeftVelocityHighEnoughToCollideAfterRepositioning(physicsObject: PhysicsObject):
+    private fun isLeftVelocityHighEnoughToCollideAfterRepositioning(physicsObject: IPhysicsObject):
         Boolean = physicsObject.velocity.x <= -Companion.THRESHOLD_VELOCITY_TO_ACTIVATE_BOUNCE
 
-    private fun isRightVelocityHighEnoughToCollideAfterRepositioning(physicsObject: PhysicsObject):
+    private fun isRightVelocityHighEnoughToCollideAfterRepositioning(physicsObject: IPhysicsObject):
         Boolean = physicsObject.velocity.x >= Companion.THRESHOLD_VELOCITY_TO_ACTIVATE_BOUNCE
 
-    private fun isBottomVelocityHighEnoughToCollideAfterRepositioning(physicsObject: PhysicsObject):
+    private fun isBottomVelocityHighEnoughToCollideAfterRepositioning(physicsObject: IPhysicsObject):
         Boolean = physicsObject.velocity.y <= -Companion.THRESHOLD_VELOCITY_TO_ACTIVATE_BOUNCE
 
-    private fun isTopVelocityHighEnoughToCollideAfterRepositioning(physicsObject: PhysicsObject):
+    private fun isTopVelocityHighEnoughToCollideAfterRepositioning(physicsObject: IPhysicsObject):
         Boolean = physicsObject.velocity.y >= Companion.THRESHOLD_VELOCITY_TO_ACTIVATE_BOUNCE
 
     private fun isLeftGravityPresent(): Boolean = physicsWorld.gravity.x < 0

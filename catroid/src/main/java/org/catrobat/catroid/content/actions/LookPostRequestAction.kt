@@ -13,6 +13,7 @@ import org.catrobat.catroid.web.WebConnection
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.TimeUnit
 
 class LookPostRequestAction : WebAction() {
     private var response: Response? = null
@@ -21,6 +22,16 @@ class LookPostRequestAction : WebAction() {
     private var header: String? = null
     private var lookName: String? = null
     private var fileExtension: String? = null
+
+    companion object {
+        private val sharedClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(30L, TimeUnit.SECONDS)
+                .readTimeout(30L, TimeUnit.SECONDS)
+                .writeTimeout(30L, TimeUnit.SECONDS)
+                .build()
+        }
+    }
 
     fun setRequestBody(json: String) {
         requestBodyJson = json
@@ -59,7 +70,7 @@ class LookPostRequestAction : WebAction() {
         val requestUrl = url ?: return false
         webConnection = WebConnection(this, requestUrl)
 
-        val client = OkHttpClient()
+        val client = sharedClient
         val bodyJson = requestBodyJson ?: return false
         val requestBody = RequestBody.create("${header}; charset=utf-8".toMediaType(), bodyJson)
 

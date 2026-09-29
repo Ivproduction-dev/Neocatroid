@@ -22,6 +22,7 @@ public class Neo3DGameObject {
     private Neo3DPhysicsBody physicsBody;
     private final List<Neo3DAnimationClip> animationClips = new ArrayList<>();
     private Neo3DAnimationClip.State animationState;
+    private final java.util.Map<String, Object> variables = new java.util.HashMap<>();
 
     public Neo3DGameObject(String name) {
         this.id = UUID.randomUUID().toString();
@@ -138,5 +139,23 @@ public class Neo3DGameObject {
         if (animationState != null) {
             animationState.setPlaying(false);
         }
+    }
+
+    public void setVariable(String key, Object value) {
+        if (key == null || key.isEmpty()) {
+            return;
+        }
+        if (value == null) {
+            variables.remove(key);
+        } else {
+            variables.put(key, value);
+        }
+    }
+
+    public Object getVariable(String key) {
+        if (key == null) {
+            return null;
+        }
+        return variables.get(key);
     }
 }

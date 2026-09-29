@@ -23,7 +23,7 @@
 package org.catrobat.catroid.content.tilemap;
 
 import org.catrobat.catroid.common.TilemapLookData;
-import org.catrobat.catroid.physics.PhysicsWorld;
+import org.catrobat.catroid.physics.IPhysicsWorld;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public final class TilemapRuntimeManager {
 		return RUNTIMES.get(data);
 	}
 
-	public static synchronized void disposeAll(PhysicsWorld physicsWorld) {
+	public static synchronized void disposeAll(IPhysicsWorld physicsWorld) {
 		List<TilemapRuntime> snapshot = new ArrayList<>(RUNTIMES.values());
 		for (TilemapRuntime runtime : snapshot) {
 			runtime.dispose(physicsWorld);

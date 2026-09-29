@@ -174,14 +174,16 @@ class SyncFlowsTest {
     fun guestUploadsWhenDirty() {
         files.codeXml = "<xml>v2</xml>"
         files.media["images/a.png"] = byteArrayOf(1, 2, 3)
-        var done = false
+        var uploaded = false
+        var snapshotCode: String? = null
         SyncFlows.guestUpload("sid", guest, files, null, transport, { _, _ -> listOf("line") }, 100L) {
-            done = it.uploaded
+            uploaded = it.uploaded
+            snapshotCode = it.snapshotToSave?.first
         }
-        assertTrue(done)
+        assertTrue(uploaded)
         assertEquals(1, transport.patches.size)
         assertEquals("uid-guest", transport.patches.values.first().first.fromUid)
-        assertEquals("<xml>v2</xml>", files.snapshot?.codeXml)
+        assertEquals("<xml>v2</xml>", snapshotCode)
     }
 
     @Test

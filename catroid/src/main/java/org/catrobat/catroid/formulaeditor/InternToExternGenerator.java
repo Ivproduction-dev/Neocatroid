@@ -122,6 +122,8 @@ public class InternToExternGenerator {
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.VARVALUE.name(), R.string.formula_editor_function_var_value);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.JOIN.name(), R.string.formula_editor_function_join);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.JOIN3.name(), R.string.formula_editor_function_join3);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.WORD.name(), R.string.formula_editor_function_word);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.SPLIT.name(), R.string.formula_editor_function_split);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DISTANCE.name(), R.string.formula_editor_function_distance);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put("JOINNUMBER", R.string.formula_editor_function_joinnumber);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.REGEX.name(), R.string.formula_editor_function_regex);
@@ -172,6 +174,18 @@ public class InternToExternGenerator {
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_SCALE_Y.name(), R.string.formula_neo3d_scale_y);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_SCALE_Z.name(), R.string.formula_neo3d_scale_z);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_BODY_COUNT.name(), R.string.formula_neo3d_body_count);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.ANDROID_ID.name(), R.string.formula_android_id);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.SESSION_GET.name(), R.string.formula_session_get);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_ROOTED.name(), R.string.formula_device_rooted);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_BOOTLOADER_UNLOCKED.name(), R.string.formula_device_bootloader);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_EMULATOR.name(), R.string.formula_device_emulator);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_GMS_INSTALLED.name(), R.string.formula_device_gms_installed);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_GMS_SYSTEM.name(), R.string.formula_device_gms_system);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.DEVICE_PLAY_STATUS.name(), R.string.formula_device_play_status);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_PARENT.name(), R.string.formula_neo3d_parent);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_VAR.name(), R.string.formula_neo3d_var);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_RAY_HIT.name(), R.string.formula_neo3d_ray_hit);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_RAY_COUNT.name(), R.string.formula_neo3d_ray_count);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_DISTANCE.name(), R.string.formula_neo3d_distance);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_SPEED.name(), R.string.formula_neo3d_speed);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.NEO3D_EXISTS.name(), R.string.formula_neo3d_exists);

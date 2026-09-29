@@ -94,6 +94,42 @@
                         android:textColor="@color/solid_white"
                         android:text="@string/new_project_dialog_example_project"
                         app:thumbTint="@color/accent" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/project_physics_engine_label"
+                        android:textColor="@color/accent"
+                        android:textSize="12sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/physics_toggle_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        app:checkedButton="@id/btn_physics_v1">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_physics_v1"
+                            style="@style/Widget.NeoCatroid.ToggleButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="54dp"
+                            android:text="@string/project_physics_engine_v1" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_physics_v2"
+                            style="@style/Widget.NeoCatroid.ToggleButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="54dp"
+                            android:text="@string/project_physics_engine_v2" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
                 </LinearLayout>
 
                 <View

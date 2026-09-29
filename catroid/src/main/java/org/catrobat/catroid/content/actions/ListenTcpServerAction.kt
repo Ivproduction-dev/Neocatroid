@@ -31,6 +31,25 @@ class ListenTcpServerAction() : Action() {
         }
 
         @Synchronized
+        private fun registerOneShot(action: ListenTcpServerAction) {
+            var scheduler = sharedScheduler
+            if (scheduler == null || scheduler.isShutdown) {
+                scheduler = Executors.newSingleThreadScheduledExecutor()
+                sharedScheduler = scheduler
+            }
+            while (tasks.size >= MAX_TASKS) {
+                tasks.removeAt(0).cancel(false)
+            }
+            val self = scheduler
+            action.oneShotFuture = self.scheduleAtFixedRate({
+                if (action.pollOnce()) {
+                    action.oneShotFuture?.cancel(false)
+                }
+            }, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS)
+            action.oneShotFuture?.let { tasks.add(it) }
+        }
+
+        @Synchronized
         fun stopAll() {
             for (task in tasks) {
                 task.cancel(false)
@@ -43,24 +62,36 @@ class ListenTcpServerAction() : Action() {
 
     var scope: Scope? = null
     var variables: List<UserVariable>? = null
+    var listenMode: Int = 0
+
+    private var oneShotFuture: ScheduledFuture<*>? = null
 
     override fun act(delta: Float): Boolean {
         val vars = variables ?: return true
         if (vars.isEmpty()) {
             return true
         }
-        register(this)
+        if (listenMode == 1) {
+            oneShotFuture?.cancel(false)
+            registerOneShot(this)
+        } else {
+            register(this)
+        }
         return true
     }
 
     fun poll() {
-        val vars = variables ?: return
+        pollOnce()
+    }
+
+    private fun pollOnce(): Boolean {
+        val vars = variables ?: return false
         if (vars.isEmpty()) {
-            return
+            return false
         }
         val messages = LocalServer.getMessages()
         if (messages.isEmpty()) {
-            return
+            return false
         }
         val last = messages.last()
         if (last.indexOf(LocalServer.VALUE_SEPARATOR) >= 0) {
@@ -79,5 +110,7 @@ class ListenTcpServerAction() : Action() {
                 }
             }
         }
+        return true
     }
+
 }

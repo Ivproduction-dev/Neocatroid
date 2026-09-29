@@ -188,6 +188,8 @@ abstract class BaseActivity : AppCompatActivity(), PermissionHandlingActivity {
         super.onResume()
         SettingsFragment.setToChosenLanguage(this)
         SmoothMode.apply(this)
+        org.catrobat.catroid.ui.theme.ThemeApplier.apply(this)
+        window?.decorView?.post { org.catrobat.catroid.ui.theme.ThemeApplier.apply(this) }
         if (SettingsFragment.isCastSharedPreferenceEnabled(this)) {
             CastManager.getInstance().initializeCast(this)
         }

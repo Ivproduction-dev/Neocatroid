@@ -388,7 +388,36 @@ import org.catrobat.catroid.content.bricks.NeoCameraLookAtBrick
 import org.catrobat.catroid.content.bricks.NeoMoveObjectForwardBrick
 import org.catrobat.catroid.content.bricks.NeoTurnObjectTowardBrick
 import org.catrobat.catroid.content.bricks.NeoSetObjectVisibleBrick
+import org.catrobat.catroid.content.bricks.NeoRenameObjectBrick
+import org.catrobat.catroid.content.bricks.NeoCopyObjectPositionBrick
+import org.catrobat.catroid.content.bricks.NeoObjectPositionToCameraBrick
+import org.catrobat.catroid.content.bricks.NeoCameraPositionToObjectBrick
+import org.catrobat.catroid.content.bricks.NeoTurnObjectToCameraBrick
+import org.catrobat.catroid.content.bricks.NeoMoveObjectStepsBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectStepSizeBrick
+import org.catrobat.catroid.content.bricks.NeoSetObjectVariableBrick
+import org.catrobat.catroid.content.bricks.NeoGlideObjectBrick
+import org.catrobat.catroid.content.bricks.NeoGlideCameraToObjectBrick
+import org.catrobat.catroid.content.bricks.NeoGlideCameraToPositionBrick
+import org.catrobat.catroid.content.bricks.NeoObjectVelocityTowardBrick
+import org.catrobat.catroid.content.bricks.NeoObjectVelocityCameraBrick
+import org.catrobat.catroid.content.bricks.NeoDebrisBrick
+import org.catrobat.catroid.content.bricks.NeoSetPhysicsCollisionBrick
+import org.catrobat.catroid.content.bricks.WhenNeo3DTouchBrick
+import org.catrobat.catroid.content.bricks.WhenNeo3DRayHitBrick
+import org.catrobat.catroid.content.bricks.NeoCastRayBrick
+import org.catrobat.catroid.content.bricks.NeoClearRayBrick
+import org.catrobat.catroid.content.bricks.NeoPlay3DSoundBrick
+import org.catrobat.catroid.content.bricks.NeoPlay3DSoundAtCameraBrick
+import org.catrobat.catroid.content.bricks.NeoStop3DSoundBrick
 import org.catrobat.catroid.content.bricks.NeoClearObjectsBrick
+import org.catrobat.catroid.content.bricks.CreateSessionVariableBrick
+import org.catrobat.catroid.content.bricks.SetSessionVariableBrick
+import org.catrobat.catroid.content.bricks.ChangeSessionVariableBrick
+import org.catrobat.catroid.content.bricks.DeleteSessionVariableBrick
+import org.catrobat.catroid.content.bricks.ShowSpritesByPrefixBrick
+import org.catrobat.catroid.content.bricks.HideSpritesByPrefixBrick
+import org.catrobat.catroid.content.bricks.SetStepSizeBrick
 import org.catrobat.catroid.content.bricks.NeoLoadModelBrick
 import org.catrobat.catroid.content.bricks.NeoSetObjectPositionBrick
 import org.catrobat.catroid.content.bricks.NeoSetObjectRotationBrick
@@ -1194,6 +1223,8 @@ open class CategoryBricksFactory {
                     eventBrickList.add(WhenTouchingSpriteByNameBrick())
                 }
                 eventBrickList.add(WhenNeo3DCollidesBrick())
+                eventBrickList.add(WhenNeo3DTouchBrick())
+                eventBrickList.add(WhenNeo3DRayHitBrick())
                 eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
                 eventBrickList.add(WhenTcpMessageBrick())
                 eventBrickList.add(WhenTcpDisconnectedBrick())
@@ -1256,6 +1287,8 @@ open class CategoryBricksFactory {
             eventBrickList.add(WhenTouchingSpriteByNameBrick())
         }
         eventBrickList.add(WhenNeo3DCollidesBrick())
+        eventBrickList.add(WhenNeo3DTouchBrick())
+        eventBrickList.add(WhenNeo3DRayHitBrick())
         eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
         eventBrickList.add(WhenTcpMessageBrick())
         eventBrickList.add(WhenTcpDisconnectedBrick())
@@ -1594,6 +1627,7 @@ open class CategoryBricksFactory {
                 motionBrickList.add(GoToBrick(null))
                 if (!isBackgroundSprite) motionBrickList.add(IfOnEdgeBounceBrick())
                 motionBrickList.add(MoveNStepsBrick(BrickValues.MOVE_STEPS))
+                motionBrickList.add(SetStepSizeBrick(1f))
                 motionBrickList.add(TurnLeftBrick(BrickValues.TURN_DEGREES))
                 motionBrickList.add(TurnRightBrick(BrickValues.TURN_DEGREES))
                 motionBrickList.add(PointInDirectionBrick(BrickValues.POINT_IN_DIRECTION))
@@ -1671,6 +1705,7 @@ open class CategoryBricksFactory {
 
         motionBrickList.add(SubCategoryHeaderBrick(context?.getString(R.string.subcategory_motion_rotation) ?: "", template))
         motionBrickList.add(MoveNStepsBrick(BrickValues.MOVE_STEPS))
+        motionBrickList.add(SetStepSizeBrick(1f))
         motionBrickList.add(TurnLeftBrick(BrickValues.TURN_DEGREES))
         motionBrickList.add(TurnRightBrick(BrickValues.TURN_DEGREES))
         motionBrickList.add(PointInDirectionBrick(BrickValues.POINT_IN_DIRECTION))
@@ -1906,6 +1941,8 @@ open class CategoryBricksFactory {
                 looksBrickList.add(PointInDirectionForAllBrick(BrickValues.POINT_IN_DIRECTION))
                 looksBrickList.add(ShowAllBrick())
                 looksBrickList.add(HideAllBrick())
+                looksBrickList.add(ShowSpritesByPrefixBrick("show_"))
+                looksBrickList.add(HideSpritesByPrefixBrick("hide_"))
                 looksBrickList.add(FlashColorBrick(0.0, 1.0))
                 looksBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
                 looksBrickList.add(BigAskBrick(context.getString(R.string.brick_ask_default_question), "Введите ответ:", "OK", "Отмена", "Ваш ответ"))
@@ -2052,6 +2089,8 @@ open class CategoryBricksFactory {
         looksBrickList.add(PointInDirectionForAllBrick(BrickValues.POINT_IN_DIRECTION))
         looksBrickList.add(ShowAllBrick())
         looksBrickList.add(HideAllBrick())
+        looksBrickList.add(ShowSpritesByPrefixBrick("show_"))
+        looksBrickList.add(HideSpritesByPrefixBrick("hide_"))
         looksBrickList.add(SetSizeToBrick(BrickValues.SET_SIZE_TO))
         looksBrickList.add(ChangeSizeByNBrick(BrickValues.CHANGE_SIZE_BY))
         looksBrickList.add(SetWidthBrick(BrickValues.SET_SIZE_TO))
@@ -2251,6 +2290,10 @@ open class CategoryBricksFactory {
                 val dataBrickList: MutableList<Brick> = ArrayList()
                 dataBrickList.add(SetVariableBrick(BrickValues.SET_VARIABLE))
                 dataBrickList.add(ChangeVariableBrick(BrickValues.CHANGE_VARIABLE))
+                dataBrickList.add(CreateSessionVariableBrick("sessionVar", 0.0))
+                dataBrickList.add(SetSessionVariableBrick("sessionVar", 0.0))
+                dataBrickList.add(ChangeSessionVariableBrick("sessionVar", 1.0))
+                dataBrickList.add(DeleteSessionVariableBrick("sessionVar"))
                 dataBrickList.add(SetVariableEasingBrick(1, 0f, 10f, 0f, 100f))
                 dataBrickList.add(ShowTextBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION))
                 dataBrickList.add(ShowTextColorSizeAlignmentBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION, BrickValues.RELATIVE_SIZE_IN_PERCENT, BrickValues.SHOW_VARIABLE_COLOR))
@@ -2365,6 +2408,10 @@ open class CategoryBricksFactory {
         dataBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_data_variables), template))
         dataBrickList.add(SetVariableBrick(BrickValues.SET_VARIABLE))
         dataBrickList.add(ChangeVariableBrick(BrickValues.CHANGE_VARIABLE))
+        dataBrickList.add(CreateSessionVariableBrick("sessionVar", 0.0))
+        dataBrickList.add(SetSessionVariableBrick("sessionVar", 0.0))
+        dataBrickList.add(ChangeSessionVariableBrick("sessionVar", 1.0))
+        dataBrickList.add(DeleteSessionVariableBrick("sessionVar"))
         dataBrickList.add(SetVariableEasingBrick(1, 0f, 10f, 0f, 100f))
         dataBrickList.add(CreateVarBrick("variable1", "0"))
         dataBrickList.add(SetVariableByNameBrick("variable1", "0"))
@@ -3311,6 +3358,26 @@ private fun setupJsonCategoryList(context: Context): List<Brick> {
         neo3dBrickList.add(NeoMoveObjectForwardBrick("myObject", 1f))
         neo3dBrickList.add(NeoTurnObjectTowardBrick("myObject", "myTarget"))
         neo3dBrickList.add(NeoSetObjectVisibleBrick("myObject", 0))
+        neo3dBrickList.add(NeoRenameObjectBrick("myObject", "newName"))
+        neo3dBrickList.add(NeoCopyObjectPositionBrick("myObject", "myTarget"))
+        neo3dBrickList.add(NeoObjectPositionToCameraBrick("myObject"))
+        neo3dBrickList.add(NeoCameraPositionToObjectBrick("myObject"))
+        neo3dBrickList.add(NeoTurnObjectToCameraBrick("myObject"))
+        neo3dBrickList.add(NeoMoveObjectStepsBrick("myObject", 1f))
+        neo3dBrickList.add(NeoSetObjectStepSizeBrick(1f))
+        neo3dBrickList.add(NeoSetObjectVariableBrick("myObject", "PlayerID", 0.0))
+        neo3dBrickList.add(NeoGlideObjectBrick("myObject", "myTarget", 2f))
+        neo3dBrickList.add(NeoGlideCameraToObjectBrick("myObject", 2f))
+        neo3dBrickList.add(NeoGlideCameraToPositionBrick(0f, 3f, 6f, 2f))
+        neo3dBrickList.add(NeoObjectVelocityTowardBrick("myObject", "myTarget", 5f))
+        neo3dBrickList.add(NeoObjectVelocityCameraBrick("myObject", 5f))
+        neo3dBrickList.add(NeoDebrisBrick("myObject", 10f))
+        neo3dBrickList.add(NeoSetPhysicsCollisionBrick("myObject", 0))
+        neo3dBrickList.add(NeoCastRayBrick("ray", "myObject", "myTarget", 200f, 50))
+        neo3dBrickList.add(NeoClearRayBrick("ray"))
+        neo3dBrickList.add(NeoPlay3DSoundBrick())
+        neo3dBrickList.add(NeoPlay3DSoundAtCameraBrick())
+        neo3dBrickList.add(NeoStop3DSoundBrick())
         neo3dBrickList.add(NeoClearObjectsBrick())
         neo3dBrickList.add(NeoSetCameraPositionBrick(4.5f, 3.2f, 6.5f))
         neo3dBrickList.add(NeoSetCameraRotationBrick(0f, 0f, 0f))

@@ -35,15 +35,15 @@ public class PhysicalCollision {
 	private int contactCounter = 0;
 	private CollidingSprites objects;
 
-	PhysicalCollision(CollidingSprites objects) {
+	public PhysicalCollision(CollidingSprites objects) {
 		this.objects = objects;
 	}
 
-	void increaseContactCounter() {
+	public void increaseContactCounter() {
 		contactCounter++;
 	}
 
-	void decreaseContactCounter() {
+	public void decreaseContactCounter() {
 		if (contactCounter > 0) {
 			contactCounter--;
 		}
@@ -53,7 +53,7 @@ public class PhysicalCollision {
 		return contactCounter;
 	}
 
-	void sendBounceOffEvents() {
+	public void sendBounceOffEvents() {
 		sendBounceOffEvent(objects.sprite1, objects.sprite2);
 		sendBounceOffEvent(objects.sprite2, objects.sprite1);
 	}

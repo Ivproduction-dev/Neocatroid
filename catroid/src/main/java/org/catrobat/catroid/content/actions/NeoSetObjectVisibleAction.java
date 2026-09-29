@@ -38,6 +38,7 @@ public class NeoSetObjectVisibleAction extends TemporalAction {
             String sceneId = Neo3DFacade.facadeEnsureDefaultScene();
             String objectId = Neo3DFacade.facadeFindObjectIdByName(sceneId, name);
             if (objectId == null) {
+                android.util.Log.w("Neo3D", "SetVisible: object not found: '" + name + "'");
                 return;
             }
             Neo3DFacade.facadeSetObjectVisible(sceneId, objectId, visibleMode == 0);

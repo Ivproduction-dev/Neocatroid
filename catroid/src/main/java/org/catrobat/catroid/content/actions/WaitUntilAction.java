@@ -54,7 +54,7 @@ public class WaitUntilAction extends Action {
 
 	@Override
 	public boolean act(float delta) {
-		if (scope == null) {
+		if (scope == null || condition == null) {
 			return true;
 		}
 		if (completed || hasError) {

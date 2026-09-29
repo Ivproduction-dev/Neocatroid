@@ -54,7 +54,12 @@ class CustomAction : TemporalAction() {
             lunoArgs.add(LunoValue.NativeObject(scope.sprite))
 
             parameterFormulas.forEach { formula ->
-                val result = formula.interpretObject(scope)
+                val result = try {
+                    formula.interpretObject(scope)
+                } catch (e: Exception) {
+                    Log.e("CustomAction", "Не удалось вычислить аргумент для блока ${definition.id}: ${e.message}", e)
+                    null
+                }
                 lunoArgs.add(LunoValue.fromKotlin(result))
             }
 

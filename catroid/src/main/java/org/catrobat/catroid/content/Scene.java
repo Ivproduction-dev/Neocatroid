@@ -36,7 +36,8 @@ import org.catrobat.catroid.content.bricks.CloneBrick;
 import org.catrobat.catroid.formulaeditor.UserData;
 import org.catrobat.catroid.formulaeditor.UserVariable;
 import org.catrobat.catroid.io.XStreamFieldKeyOrder;
-import org.catrobat.catroid.physics.PhysicsWorld;
+import org.catrobat.catroid.physics.IPhysicsWorld;
+import org.catrobat.catroid.physics.PhysicsWorldFactory;
 import org.catrobat.catroid.ui.controller.BackpackListManager;
 import org.catrobat.catroid.utils.FileMetaDataExtractor;
 
@@ -102,7 +103,7 @@ public class Scene implements Nameable, Serializable {
 	@XStreamAlias("exitTransitionDuration")
 	private float exitTransitionDuration = 1.0f;
 
-	private transient PhysicsWorld physicsWorld;
+	private transient IPhysicsWorld physicsWorld;
 	private transient Project project;
 	private boolean isGlobalScene = false;
 
@@ -232,7 +233,7 @@ public class Scene implements Nameable, Serializable {
 	}
 
 	public UserVariable getSceneVariable(String name) {
-		for (UserVariable variable : sceneVariables) {
+		for (UserVariable variable : getSceneVariables()) {
 			if (variable.getName().equals(name)) {
 				return variable;
 			}
@@ -245,9 +246,9 @@ public class Scene implements Nameable, Serializable {
 	}
 
 	public boolean removeSceneVariable(String name) {
-		for (UserVariable variable : sceneVariables) {
+		for (UserVariable variable : getSceneVariables()) {
 			if (variable.getName().equals(name)) {
-				return sceneVariables.remove(variable);
+				return getSceneVariables().remove(variable);
 			}
 		}
 		return false;
@@ -293,7 +294,7 @@ public class Scene implements Nameable, Serializable {
 		return spriteList.remove(sprite);
 	}
 
-	public PhysicsWorld getPhysicsWorld() {
+	public IPhysicsWorld getPhysicsWorld() {
 		if (physicsWorld == null) {
 			resetPhysicsWorld();
 		}
@@ -313,13 +314,13 @@ public class Scene implements Nameable, Serializable {
 		return null;
 	}
 
-	public synchronized PhysicsWorld resetPhysicsWorld() {
-		return (physicsWorld = new PhysicsWorld(
+	public synchronized IPhysicsWorld resetPhysicsWorld() {
+		return (physicsWorld = PhysicsWorldFactory.create(
 				project.getXmlHeader().getVirtualScreenWidth(),
 				project.getXmlHeader().getVirtualScreenHeight(), project));
 	}
 
-	public synchronized void setPhysicsWorld(PhysicsWorld world) {
+	public synchronized void setPhysicsWorld(IPhysicsWorld world) {
 		physicsWorld = world;
 	}
 

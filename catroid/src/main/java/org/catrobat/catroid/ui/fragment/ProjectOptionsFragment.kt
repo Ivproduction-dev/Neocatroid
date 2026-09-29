@@ -180,6 +180,7 @@ class ProjectOptionsFragment : Fragment() {
 
         setupNameInputLayout()
         setupPhysicsInputLayout()
+        setupPhysicsEngineSelector()
         setupDescriptionInputLayout()
         setupNotesAndCreditsInputLayout()
         addTags()
@@ -744,6 +745,34 @@ class ProjectOptionsFragment : Fragment() {
                     binding.projectOptionsPhysicsHeightLayout.error = error
                 }
             })
+        }
+    }
+
+    private fun setupPhysicsEngineSelector() {
+        val spinner = binding.projectOptionsPhysicsEngine ?: return
+        val adapter = android.widget.ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.project_physics_engine_options,
+            android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.setSelection(project?.physicsVersion ?: Project.PHYSICS_BOX2D_2X)
+        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: android.widget.AdapterView<*>?,
+                view: android.view.View?,
+                position: Int,
+                id: Long
+            ) {
+                if (project?.physicsVersion != position) {
+                    project?.physicsVersion = position
+                    saveProject()
+                }
+            }
+
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+            }
         }
     }
 

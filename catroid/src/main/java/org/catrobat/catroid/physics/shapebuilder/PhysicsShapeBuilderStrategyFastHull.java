@@ -200,6 +200,10 @@ public final class PhysicsShapeBuilderStrategyFastHull implements PhysicsShapeBu
 			convexPoints[i] = PhysicsWorldConverter.convertCatroidToBox2dVector(new Vector2(x, y));
 		}
 
+		if (signedArea(convexPoints) < 0) {
+			reverse(convexPoints);
+		}
+
 		if (convexPoints.length < 3) {
 			return null;
 		}
@@ -237,5 +241,25 @@ public final class PhysicsShapeBuilderStrategyFastHull implements PhysicsShapeBu
 		}
 
 		return shapes.toArray(new Shape[shapes.size()]);
+	}
+
+	private static float signedArea(Vector2[] points) {
+		float area = 0f;
+		int n = points.length;
+		for (int i = 0; i < n; i++) {
+			Vector2 current = points[i];
+			Vector2 next = points[(i + 1) % n];
+			area += current.x * next.y - next.x * current.y;
+		}
+		return area * 0.5f;
+	}
+
+	private static void reverse(Vector2[] points) {
+		int n = points.length;
+		for (int i = 0; i < n / 2; i++) {
+			Vector2 temp = points[i];
+			points[i] = points[n - 1 - i];
+			points[n - 1 - i] = temp;
+		}
 	}
 }

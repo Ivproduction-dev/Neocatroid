@@ -98,13 +98,43 @@ object ThemeManager {
             return null
         }
         return try {
+            val night = (context.resources.configuration.uiMode
+                and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            fun sysColor(id: Int, fallback: Int): Int {
+                return try {
+                    ContextCompat.getColor(context, id)
+                } catch (e: Exception) {
+                    fallback
+                }
+            }
             ThemePalette(
                 name = "Material You",
                 author = null,
-                toolbar = ContextCompat.getColor(context, android.R.color.system_neutral1_800),
-                background = ContextCompat.getColor(context, android.R.color.system_neutral1_900),
-                button = ContextCompat.getColor(context, android.R.color.system_accent2_700),
-                accent = ContextCompat.getColor(context, android.R.color.system_accent1_200)
+                toolbar = sysColor(android.R.color.system_neutral1_800,
+                    ThemePalette.DEFAULT_TOOLBAR),
+                background = if (night) sysColor(android.R.color.system_neutral1_900,
+                    ThemePalette.DEFAULT_BACKGROUND)
+                else sysColor(android.R.color.system_neutral1_100,
+                    ThemePalette.DEFAULT_BACKGROUND),
+                button = sysColor(android.R.color.system_accent2_700,
+                    ThemePalette.DEFAULT_BUTTON),
+                accent = if (night) sysColor(android.R.color.system_accent1_200,
+                    ThemePalette.DEFAULT_ACCENT)
+                else sysColor(android.R.color.system_accent1_600,
+                    ThemePalette.DEFAULT_ACCENT),
+                surface = if (night) sysColor(android.R.color.system_neutral1_800,
+                    ThemePalette.DEFAULT_SURFACE)
+                else sysColor(android.R.color.system_neutral1_200,
+                    ThemePalette.DEFAULT_SURFACE),
+                textPrimary = if (night) sysColor(android.R.color.system_neutral1_100,
+                    ThemePalette.DEFAULT_TEXT_PRIMARY)
+                else sysColor(android.R.color.system_neutral1_900,
+                    ThemePalette.DEFAULT_TEXT_PRIMARY),
+                textSecondary = if (night) sysColor(android.R.color.system_neutral2_200,
+                    ThemePalette.DEFAULT_TEXT_SECONDARY)
+                else sysColor(android.R.color.system_neutral2_700,
+                    ThemePalette.DEFAULT_TEXT_SECONDARY)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read system dynamic colours", e)
@@ -115,13 +145,17 @@ object ThemeManager {
     fun defaultTemplateText(): String = buildString {
         append("# NeoCatroid theme template (.neotema)\n")
         append("# Edit the colours below, then import this file in Settings > Themes.\n")
-        append("# Colours are #RRGGBB or #AARRGGBB. Keys: toolbar, background, button, accent.\n")
+        append("# Colours are #RRGGBB or #AARRGGBB. Keys: toolbar, background, button, accent,\n")
+        append("# surface, textPrimary, textSecondary.\n")
         append("name=My theme\n")
         append("author=\n")
         append("toolbar=").append(templateHex(ThemePalette.DEFAULT_TOOLBAR)).append('\n')
         append("background=").append(templateHex(ThemePalette.DEFAULT_BACKGROUND)).append('\n')
         append("button=").append(templateHex(ThemePalette.DEFAULT_BUTTON)).append('\n')
         append("accent=").append(templateHex(ThemePalette.DEFAULT_ACCENT)).append('\n')
+        append("surface=").append(templateHex(ThemePalette.DEFAULT_SURFACE)).append('\n')
+        append("textPrimary=").append(templateHex(ThemePalette.DEFAULT_TEXT_PRIMARY)).append('\n')
+        append("textSecondary=").append(templateHex(ThemePalette.DEFAULT_TEXT_SECONDARY)).append('\n')
     }
 
     private fun templateHex(color: Int): String = String.format("#%08X", color)

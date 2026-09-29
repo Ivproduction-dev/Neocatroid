@@ -78,6 +78,7 @@
     <!-- /Accessibility -->
 
     <declare-styleable name="BrickLayout">
+        <attr name="scratchFill" format="color"/>
         <attr name="customPadding" format="dimension"/>
         <attr name="horizontalSpacing" format="dimension"/>
         <attr name="verticalSpacing" format="dimension"/>

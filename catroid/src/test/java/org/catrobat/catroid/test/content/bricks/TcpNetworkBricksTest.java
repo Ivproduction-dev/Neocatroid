@@ -121,7 +121,21 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createListenTcpServerAction(eq(sprite),
-				any(SequenceAction.class), anyList());
+				any(SequenceAction.class), anyList(), eq(0));
+	}
+
+	@Test
+	public void testListenTcpServerBrickPassesListenMode() {
+		ActionFactory actionFactory = Mockito.mock(ActionFactory.class);
+		sprite.setActionFactory(actionFactory);
+		ListenTcpServerBrick brick = new ListenTcpServerBrick(new UserVariable("received"));
+		assertEquals(0, brick.getListenModeSelection());
+		brick.setListenModeSelection(1);
+
+		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
+
+		verify(actionFactory).createListenTcpServerAction(eq(sprite),
+				any(SequenceAction.class), anyList(), eq(1));
 	}
 
 	@Test

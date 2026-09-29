@@ -525,6 +525,26 @@
         <item>Hide</item>
     </string-array>
 
+    <string-array name="brick_neo_collision_modes">
+        <item>Collide</item>
+        <item>No collision</item>
+    </string-array>
+
+    <string-array name="brick_neo_loop_modes">
+        <item>@string/brick_neo_loop_no</item>
+        <item>@string/brick_neo_loop_yes</item>
+    </string-array>
+
+    <string-array name="project_physics_engine_options">
+        <item>@string/project_physics_engine_v1</item>
+        <item>@string/project_physics_engine_v2</item>
+    </string-array>
+
+    <string-array name="listen_tcp_modes">
+        <item>@string/listen_tcp_mode_always</item>
+        <item>@string/listen_tcp_mode_once</item>
+    </string-array>
+
     <string-array name="mouse_buttons">
         <item>Left</item>
         <item>Right</item>

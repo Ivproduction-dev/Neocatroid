@@ -297,7 +297,7 @@ class TcpNetworkBricksDeepTest {
 		brick.setVisibleVariables(2)
 		brick.addActionToSequence(sprite, sequence)
 		Mockito.verify(actionFactory).createListenTcpServerAction(
-			Mockito.eq(sprite), Mockito.any(), Mockito.anyList())
+			Mockito.eq(sprite), Mockito.any(), Mockito.anyList(), Mockito.eq(0))
 	}
 
 	@Test

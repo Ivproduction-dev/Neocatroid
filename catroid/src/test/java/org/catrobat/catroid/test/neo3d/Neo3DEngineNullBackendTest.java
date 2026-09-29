@@ -2,7 +2,10 @@ package org.catrobat.catroid.test.neo3d;
 
 import org.catrobat.catroid.neo3d.Neo3DEngine;
 import org.catrobat.catroid.neo3d.Neo3DFacade;
+import org.catrobat.catroid.neo3d.Neo3DFormulaBridge;
 import org.catrobat.catroid.neo3d.Neo3DGameObject;
+import org.catrobat.catroid.neo3d.Neo3DPhysicsBody;
+import org.catrobat.catroid.neo3d.Neo3DRaycaster;
 import org.catrobat.catroid.neo3d.Neo3DScene;
 import org.catrobat.catroid.neo3d.backend.Neo3DNullBackend;
 import org.catrobat.catroid.neo3d.demo.Neo3DEmbeddedCube;
@@ -206,6 +209,91 @@ public class Neo3DEngineNullBackendTest {
         assertEquals(2, engine.clearObjects(scene.getId()));
         assertEquals(1, scene.getObjectCount());
         assertNotNull(scene.getObject(cameraId));
+        engine.dispose();
+    }
+
+    @Test
+    public void renameCopyPositionsAndTurnToCamera() {
+        Neo3DEngine engine = Neo3DEngine.create(null, Neo3DEngine.BackendType.NULL);
+        Neo3DFacade.install(engine);
+        Neo3DScene scene = engine.createScene("batch1-scene");
+        Neo3DGameObject box = engine.createObject(scene.getId(), "box");
+        Neo3DGameObject ball = engine.createObject(scene.getId(), "ball");
+        ball.getTransform().setPosition(5f, 1f, 2f);
+        engine.createObject(scene.getId(), "taken");
+        Neo3DFacade.facadeSetMainCameraPosition(scene.getId(), 0f, 0f, 5f);
+
+        assertEquals("box2", engine.renameObject(scene.getId(), box.getId(), "box2"));
+        assertEquals("taken (2)", engine.renameObject(scene.getId(), box.getId(), "taken"));
+        Neo3DGameObject renamed = engine.getScene(scene.getId()).findByName("taken (2)");
+        assertNotNull(renamed);
+
+        assertTrue(engine.copyObjectPosition(scene.getId(), renamed.getId(), "ball"));
+        assertEquals(5f, renamed.getTransform().getPosition()[0], 1e-4f);
+
+        assertTrue(engine.turnObjectToCamera(scene.getId(), renamed.getId()));
+        engine.dispose();
+    }
+
+    @Test
+    public void objectVariablesRoundTrip() {
+        Neo3DEngine engine = Neo3DEngine.create(null, Neo3DEngine.BackendType.NULL);
+        Neo3DFacade.install(engine);
+        Neo3DScene scene = engine.createScene("var-scene");
+        Neo3DGameObject box = engine.createObject(scene.getId(), "box");
+
+        box.setVariable("PlayerID", "001");
+        assertEquals("001", box.getVariable("PlayerID"));
+        assertNull(box.getVariable("missing"));
+        assertEquals("001", Neo3DFormulaBridge.getVariable("box", "PlayerID"));
+        assertEquals("", Neo3DFormulaBridge.getParentName("box"));
+        Neo3DGameObject child = engine.createObject(scene.getId(), "child");
+        assertTrue(scene.setParent(child.getId(), box.getId()));
+        assertEquals("box", Neo3DFormulaBridge.getParentName("child"));
+        assertEquals("", Neo3DFormulaBridge.getParentName("missing"));
+        box.setVariable("PlayerID", null);
+        assertNull(box.getVariable("PlayerID"));
+        assertEquals(0.0, Neo3DFormulaBridge.getVariable("box", "PlayerID"));
+        engine.dispose();
+    }
+
+    @Test
+    public void physicsCollisionFlagRoundTrips() {
+        Neo3DEngine engine = Neo3DEngine.create(null, Neo3DEngine.BackendType.NULL);
+        Neo3DFacade.install(engine);
+        Neo3DScene scene = engine.createScene("collision-scene");
+        Neo3DGameObject obj = engine.createObject(scene.getId(), "box");
+        obj.setPhysicsBody(new Neo3DPhysicsBody(Neo3DPhysicsBody.MotionType.DYNAMIC,
+                Neo3DPhysicsBody.ShapeType.BOX, 1f));
+
+        Neo3DFacade.facadeSetPhysicsCollision(scene.getId(), obj.getId(), false);
+        assertTrue(obj.getPhysicsBody().isNoCollision());
+        Neo3DFacade.facadeSetPhysicsCollision(scene.getId(), obj.getId(), true);
+        assertFalse(obj.getPhysicsBody().isNoCollision());
+        engine.dispose();
+    }
+
+    @Test
+    public void rayRegistryCastsAndClears() {
+        Neo3DEngine engine = Neo3DEngine.create(null, Neo3DEngine.BackendType.NULL);
+        Neo3DFacade.install(engine);
+        Neo3DScene scene = engine.createScene("ray-scene");
+        Neo3DGameObject from = engine.createObject(scene.getId(), "from");
+        from.getTransform().setPosition(0f, 0f, 5f);
+        Neo3DGameObject target = engine.createObject(scene.getId(), "target");
+        target.getTransform().setPosition(0f, 0f, 0f);
+
+        engine.setRay(scene.getId(), "ray", "from", "target", 200f, 50);
+        java.util.List<Neo3DRaycaster.Hit> hits = engine.castRay(scene.getId(), "ray");
+        assertEquals(1, hits.size());
+        assertEquals("target", hits.get(0).name);
+        assertEquals("target", Neo3DFacade.facadeGetRayHitName(scene.getId(), "ray", 0));
+        assertEquals("", Neo3DFacade.facadeGetRayHitName(scene.getId(), "ray", 5));
+        assertEquals(1, Neo3DFacade.facadeGetRayHitCount(scene.getId(), "ray"));
+        assertEquals(0, Neo3DFacade.facadeGetRayHitCount(scene.getId(), "missing"));
+
+        engine.clearRay(scene.getId(), "ray");
+        assertTrue(engine.castRay(scene.getId(), "ray").isEmpty());
         engine.dispose();
     }
 

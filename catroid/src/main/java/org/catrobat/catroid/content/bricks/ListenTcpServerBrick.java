@@ -32,6 +32,7 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 	private UserVariable userVariable;
 	private List<UserVariable> extraVariables = new ArrayList<>();
 	private int visibleVariables = 1;
+	private int listenModeSelection;
 
 	private transient Map<Integer, BrickSpinner<UserVariable>> spinners = new HashMap<>();
 	private transient Map<Integer, Integer> spinnerSlots = new HashMap<>();
@@ -85,6 +86,14 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 		this.visibleVariables = visibleVariables;
 	}
 
+	public int getListenModeSelection() {
+		return listenModeSelection;
+	}
+
+	public void setListenModeSelection(int listenModeSelection) {
+		this.listenModeSelection = listenModeSelection;
+	}
+
 	private List<UserVariable> getVariables() {
 		List<UserVariable> variables = new ArrayList<>();
 		for (int i = 0; i < visibleVariables; i++) {
@@ -96,6 +105,28 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 	@Override
 	public View getView(Context context) {
 		View view = super.getView(context);
+
+		android.widget.Spinner modeSpinner = view.findViewById(R.id.listen_tcp_mode_spinner);
+		if (modeSpinner != null) {
+			android.widget.ArrayAdapter<CharSequence> modeAdapter =
+					android.widget.ArrayAdapter.createFromResource(context,
+							R.array.listen_tcp_modes, android.R.layout.simple_spinner_item);
+			modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+			modeSpinner.setAdapter(modeAdapter);
+			modeSpinner.setOnItemSelectedListener(
+					new android.widget.AdapterView.OnItemSelectedListener() {
+						@Override
+						public void onItemSelected(android.widget.AdapterView<?> parent,
+								View selectedView, int position, long id) {
+							listenModeSelection = position;
+						}
+
+						@Override
+						public void onNothingSelected(android.widget.AdapterView<?> parent) {
+						}
+					});
+			modeSpinner.setSelection(listenModeSelection);
+		}
 
 		Sprite sprite = ProjectManager.getInstance().getCurrentSprite();
 		List<Nameable> items = new ArrayList<>();
@@ -220,7 +251,7 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 
 	@Override
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
-		sequence.addAction(sprite.getActionFactory().createListenTcpServerAction(sprite, sequence, getVariables()));
+		sequence.addAction(sprite.getActionFactory().createListenTcpServerAction(sprite, sequence, getVariables(), listenModeSelection));
 	}
 
 	@Override

@@ -29,12 +29,13 @@ import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import org.catrobat.catroid.content.Scope;
 import org.catrobat.catroid.formulaeditor.Formula;
 import org.catrobat.catroid.formulaeditor.InterpretationException;
+import org.catrobat.catroid.physics.IPhysicsObject;
 import org.catrobat.catroid.physics.PhysicsObject;
 
 public class SetFrictionAction extends TemporalAction {
 
 	private Scope scope;
-	private PhysicsObject physicsObject;
+	private IPhysicsObject physicsObject;
 	private Formula friction;
 
 	@Override
@@ -50,7 +51,7 @@ public class SetFrictionAction extends TemporalAction {
 		}
 	}
 
-	public void setPhysicsObject(PhysicsObject physicsObject) {
+	public void setPhysicsObject(IPhysicsObject physicsObject) {
 		this.physicsObject = physicsObject;
 	}
 

@@ -42,7 +42,7 @@ import java.util.Arrays;
 import androidx.annotation.VisibleForTesting;
 
 	@LunoClass
-public class PhysicsObject {
+public class PhysicsObject implements IPhysicsObject {
 
 	public void dispose() {
 		if (body != null && body.getWorld() != null) {
@@ -77,6 +77,7 @@ public class PhysicsObject {
 
 	private short collisionMaskRecord = 0;
 	private short categoryMaskRecord = PhysicsWorld.CATEGORY_PHYSICSOBJECT;
+	private boolean nonCollidingActive = false;
 
 	final Body body;
 	private final FixtureDef fixtureDef = new FixtureDef();
@@ -112,7 +113,8 @@ public class PhysicsObject {
 		setType(Type.NONE);
 	}
 
-	public void copyTo(PhysicsObject destination) {
+	@Override
+	public void copyTo(IPhysicsObject destination) {
 		destination.setType(this.getType());
 		destination.setPosition(this.getPosition());
 		destination.setDirection(this.getDirection());
@@ -160,10 +162,16 @@ public class PhysicsObject {
 	}
 
 	public void setShape(Shape[] shapes) {
+		setShape((Object) shapes);
+	}
+
+	@Override
+	public void setShape(Object shapes) {
 		disposeShapes();
 
-		if (shapes != null) {
-			this.shapes = Arrays.copyOf(shapes, shapes.length);
+		Shape[] shapeArray = shapes instanceof Shape[] ? (Shape[]) shapes : null;
+		if (shapeArray != null) {
+			this.shapes = Arrays.copyOf(shapeArray, shapeArray.length);
 		} else {
 			this.shapes = null;
 		}
@@ -173,8 +181,8 @@ public class PhysicsObject {
 			body.destroyFixture(oldFixture);
 		}
 
-		if (shapes != null) {
-			for (Shape tempShape : shapes) {
+		if (shapeArray != null) {
+			for (Shape tempShape : shapeArray) {
 				fixtureDef.shape = tempShape;
 				body.createFixture(fixtureDef);
 			}
@@ -223,16 +231,19 @@ public class PhysicsObject {
 				body.setBullet(true);
 				setMass(mass);
 				collisionMaskRecord = PhysicsWorld.MASK_PHYSICSOBJECT;
+				nonCollidingActive = false;
 				break;
 			case FIXED:
 				body.setType(BodyType.StaticBody);
 				body.setGravityScale(0.0f);
 				collisionMaskRecord = PhysicsWorld.MASK_PHYSICSOBJECT;
+				nonCollidingActive = false;
 				break;
 			case NONE:
 				body.setType(BodyType.StaticBody);
 				body.setGravityScale(0.0f);
 				collisionMaskRecord = PhysicsWorld.MASK_NO_COLLISION;
+				nonCollidingActive = true;
 				break;
 		}
 		calculateCircumference();
@@ -485,18 +496,20 @@ public class PhysicsObject {
 	}
 
 	public void activateNonColliding(boolean updateState) {
-		collisionMaskRecord = PhysicsWorld.MASK_NO_COLLISION;
+		nonCollidingActive = true;
 		setCollisionBits(categoryMaskRecord, PhysicsWorld.MASK_NO_COLLISION, updateState);
 	}
 
 	public void deactivateNonColliding(boolean record, boolean updateState) {
 		if (record) {
+			nonCollidingActive = false;
 			setCollisionBits(categoryMaskRecord, collisionMaskRecord, updateState);
 		}
 	}
 
 	public void setCollisionMaskRecord(short mask) {
 		collisionMaskRecord = mask;
+		nonCollidingActive = mask == PhysicsWorld.MASK_NO_COLLISION;
 	}
 
 	public void activateFixed() {
@@ -511,7 +524,7 @@ public class PhysicsObject {
 	}
 
 	public boolean isNonColliding() {
-		return collisionMaskRecord == PhysicsWorld.MASK_NO_COLLISION;
+		return nonCollidingActive;
 	}
 
 	private void calculateAabb() {

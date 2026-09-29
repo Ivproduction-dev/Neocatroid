@@ -165,7 +165,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 	private static final List<Integer> STRING_FUNCTIONS = asList(R.string.formula_editor_function_length,
 			R.string.formula_editor_function_letter,
 			R.string.formula_editor_function_subtext, R.string.formula_editor_function_upper, R.string.formula_editor_function_lower, R.string.formula_editor_function_reverse, R.string.formula_editor_function_var, R.string.formula_editor_function_var_name, R.string.formula_editor_function_var_value, R.string.formula_editor_function_join,
-			R.string.formula_editor_function_join3, R.string.formula_editor_function_replace, R.string.formula_editor_function_contains_str, R.string.formula_editor_function_repeat, 			R.string.formula_editor_function_random_str, R.string.formula_editor_function_distance, R.string.formula_editor_function_regex,
+			R.string.formula_editor_function_join3, R.string.formula_editor_function_word, R.string.formula_editor_function_split, R.string.formula_editor_function_replace, R.string.formula_editor_function_contains_str, R.string.formula_editor_function_repeat, 			R.string.formula_editor_function_random_str, R.string.formula_editor_function_distance, R.string.formula_editor_function_regex,
 			R.string.formula_editor_function_regex_assistant,
 			R.string.formula_editor_function_flatten, R.string.formula_editor_function_connect,
 			R.string.formula_editor_function_table_x, R.string.formula_editor_function_table_y, R.string.formula_editor_function_table_element,
@@ -186,7 +186,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			R.string.formula_http_response_text, R.string.formula_http_response_code, R.string.formula_http_response_header,
 			R.string.formula_mqtt_message,
 			R.string.formula_camera_x, R.string.formula_camera_y, R.string.formula_camera_rotation, R.string.formula_camera_zoom,
-			R.string.formula_clipboard_text);
+			R.string.formula_clipboard_text, R.string.formula_session_get);
 	private static final List<Integer> STRING_PARAMS = asList(R.string.formula_editor_function_length_parameter,
 			R.string.formula_editor_function_letter_parameter,
 			R.string.formula_editor_function_subtext_parameter,
@@ -198,6 +198,8 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			R.string.formula_editor_function_var_value_parameter,
 			R.string.formula_editor_function_join_parameter,
 			R.string.formula_editor_function_join3_parameter,
+			R.string.formula_editor_function_word_parameter,
+			R.string.formula_editor_function_split_parameter,
 			R.string.formula_editor_function_replace_parameter,
 			R.string.formula_editor_function_contains_str_parameter,
 			R.string.formula_editor_function_repeat_parameter,
@@ -232,7 +234,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			R.string.formula_http_response_text_param, R.string.formula_http_response_code_param, R.string.formula_http_response_header_param,
 			R.string.formula_mqtt_message_param,
 			R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param,
-			R.string.formula_no_param);
+			R.string.formula_no_param, R.string.formula_session_get_param);
 	private static final List<Integer> LIST_FUNCTIONS = asList(R.string.formula_editor_function_number_of_items,
 			R.string.formula_editor_function_list_item, R.string.formula_editor_function_get_item, R.string.formula_editor_function_contains,
 			R.string.formula_editor_function_index_of_item, R.string.formula_editor_function_flatten, R.string.formula_editor_function_connect, R.string.formula_editor_function_find,
@@ -289,7 +291,9 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
             R.string.formula_neo3d_scale_x, R.string.formula_neo3d_scale_y,
             R.string.formula_neo3d_scale_z, R.string.formula_neo3d_body_count,
             R.string.formula_neo3d_distance, R.string.formula_neo3d_speed,
-            R.string.formula_neo3d_exists
+            R.string.formula_neo3d_exists, R.string.formula_neo3d_parent,
+            R.string.formula_neo3d_var, R.string.formula_neo3d_ray_hit,
+            R.string.formula_neo3d_ray_count
     );
 
     private static final List<Integer> NEO3D_PARAMS = asList(
@@ -300,6 +304,8 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
             R.string.formula_neo3d_name_param, R.string.formula_neo3d_name_param,
             R.string.formula_neo3d_name_param, R.string.formula_no_param,
             R.string.formula_neo3d_distance_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_name_param, R.string.formula_neo3d_name_param,
+            R.string.formula_neo3d_var_param, R.string.formula_neo3d_ray_hit_param,
             R.string.formula_neo3d_name_param
     );
 
@@ -354,7 +360,14 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
             R.string.formula_is_pc,
             R.string.formula_is_mobile,
             R.string.formula_editor_function_current_state,
-            R.string.formula_editor_function_state_time
+            R.string.formula_editor_function_state_time,
+            R.string.formula_android_id,
+            R.string.formula_device_rooted,
+            R.string.formula_device_bootloader,
+            R.string.formula_device_emulator,
+            R.string.formula_device_gms_installed,
+            R.string.formula_device_gms_system,
+            R.string.formula_device_play_status
     );
 
     private static final List<Integer> OBJECTS_FUNCTIONS = asList(
@@ -490,8 +503,14 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
         deviceParams.set(2, R.string.formula_file_project_exists_param);
         deviceParams.set(3, R.string.formula_file_exists_in_dir_param);
         deviceParams.set(4, R.string.formula_file_exists_at_path_param);
-        deviceParams.set(DEVICE_FUNCTIONS.size() - 2, R.string.formula_editor_function_current_state_parameter);
-        deviceParams.set(DEVICE_FUNCTIONS.size() - 1, R.string.formula_editor_function_state_time_parameter);
+        int currentStateIndex = DEVICE_FUNCTIONS.indexOf(R.string.formula_editor_function_current_state);
+        if (currentStateIndex >= 0) {
+            deviceParams.set(currentStateIndex, R.string.formula_editor_function_current_state_parameter);
+        }
+        int stateTimeIndex = DEVICE_FUNCTIONS.indexOf(R.string.formula_editor_function_state_time);
+        if (stateTimeIndex >= 0) {
+            deviceParams.set(stateTimeIndex, R.string.formula_editor_function_state_time_parameter);
+        }
         DEVICE_PARAMS = java.util.Collections.unmodifiableList(deviceParams);
     }
 

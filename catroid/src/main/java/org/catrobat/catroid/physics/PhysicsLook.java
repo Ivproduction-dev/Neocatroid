@@ -38,7 +38,7 @@ public class PhysicsLook extends Look {
 	private static final int FULL_CIRCLE_DEGREE = 360;
 	private static final int HALF_CIRCLE_DEGREE = 180;
 
-	private final PhysicsObject physicsObject;
+	private final IPhysicsObject physicsObject;
 	private final PhysicsObjectStateHandler physicsObjectStateHandler;
 
 	private boolean isFlippedByAction = false;
@@ -47,13 +47,13 @@ public class PhysicsLook extends Look {
 	private float followTargetY;
 	private boolean followTargetSet;
 
-	public PhysicsLook(Sprite sprite, PhysicsWorld physicsWorld) {
+	public PhysicsLook(Sprite sprite, IPhysicsWorld physicsWorld) {
 		super(sprite);
 		physicsObject = physicsWorld.getPhysicsObject(sprite);
 		physicsObjectStateHandler = new PhysicsObjectStateHandler(this, physicsObject, physicsWorld);
 	}
 
-	public boolean isPhysicsObject(PhysicsObject other) {
+	public boolean isPhysicsObject(IPhysicsObject other) {
 		return physicsObject == other;
 	}
 
@@ -74,7 +74,7 @@ public class PhysicsLook extends Look {
 	@Override
 	public void setLookData(LookData lookData) {
 		super.setLookData(lookData);
-		PhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
+		IPhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
 		physicsWorld.changeLook(physicsObject, this);
 		updatePhysicsObjectState(true);
 	}
@@ -263,7 +263,7 @@ public class PhysicsLook extends Look {
 			return;
 		}
 		if (physicsObject != null) {
-			PhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
+			IPhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
 			physicsWorld.changeLook(physicsObject, this);
 			updatePhysicsObjectState(true);
 		}

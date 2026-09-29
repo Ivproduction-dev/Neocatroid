@@ -88,7 +88,7 @@ public class NeoScriptPersistenceTest extends TestCase {
 		CreateObjectAction action = new CreateObjectAction();
 		action.setScope(new Scope(project, hero1, null));
 		action.setObjectName(new Formula(name));
-		action.setSceneName(new Formula(scene));
+		action.setSceneName(sceneFormula(scene));
 		action.setPersist(persist);
 		action.act(1.0f);
 	}
@@ -98,10 +98,24 @@ public class NeoScriptPersistenceTest extends TestCase {
 		action.setScope(new Scope(project, hero1, null));
 		action.setFilePath(new Formula(path));
 		action.setObjectName(new Formula(objectName));
-		action.setSceneName(new Formula(scene));
+		action.setSceneName(sceneFormula(scene));
 		action.setReplaceExistingScripts(replace);
 		action.setSavePersistent(save);
 		action.act(1.0f);
+	}
+
+	private static Formula sceneFormula(String scene) {
+		return scene == null ? null : new Formula(scene);
+	}
+
+	private static void awaitTrue(java.util.function.BooleanSupplier condition) throws InterruptedException {
+		long deadline = System.currentTimeMillis() + 10000L;
+		while (System.currentTimeMillis() < deadline) {
+			if (condition.getAsBoolean()) {
+				return;
+			}
+			Thread.sleep(25L);
+		}
 	}
 
 	private XStream xstream() {
@@ -150,13 +164,15 @@ public class NeoScriptPersistenceTest extends TestCase {
 		dir.delete();
 	}
 
-	public void testCreateObjectAddsSpriteToCanonicalProject() {
+	public void testCreateObjectAddsSpriteToCanonicalProject() throws Exception {
 		runCreateObject("Enemy", null, false);
+		awaitTrue(() -> project.getDefaultScene().getSprite("Enemy") != null);
 		assertNotNull(project.getDefaultScene().getSprite("Enemy"));
 	}
 
-	public void testCreateObjectPersistTrueStillMutatesCanonicalProject() {
+	public void testCreateObjectPersistTrueStillMutatesCanonicalProject() throws Exception {
 		runCreateObject("Enemy", null, true);
+		awaitTrue(() -> project.getDefaultScene().getSprite("Enemy") != null);
 		assertNotNull(project.getDefaultScene().getSprite("Enemy"));
 	}
 
@@ -167,29 +183,33 @@ public class NeoScriptPersistenceTest extends TestCase {
 		assertNull(project.getDefaultScene().getSprite("Enemy"));
 	}
 
-	public void testAssignScriptsAddsScriptsToCanonicalProject() {
+	public void testAssignScriptsAddsScriptsToCanonicalProject() throws Exception {
 		int before = hero1.getScriptList().size();
 		runAssignScripts(moduleFile.getAbsolutePath(), "Hero1", null, false, false);
+		awaitTrue(() -> hero1.getScriptList().size() == before + 1);
 		assertEquals(before + 1, hero1.getScriptList().size());
 		assertTrue(containsSetVariableBrick(hero1));
 	}
 
-	public void testAssignScriptsPersistTrueStillMutatesCanonicalProject() {
+	public void testAssignScriptsPersistTrueStillMutatesCanonicalProject() throws Exception {
 		runAssignScripts(moduleFile.getAbsolutePath(), "Hero1", null, false, true);
+		awaitTrue(() -> containsSetVariableBrick(hero1));
 		assertTrue(containsSetVariableBrick(hero1));
 	}
 
-	public void testAssignScriptsAppendKeepsExisting() {
+	public void testAssignScriptsAppendKeepsExisting() throws Exception {
 		runAssignScripts(moduleFile.getAbsolutePath(), "Hero1", null, false, false);
+		awaitTrue(() -> hero1.getScriptList().size() == 2);
 		assertEquals(2, hero1.getScriptList().size());
 	}
 
-	public void testAssignScriptsReplaceRemovesExisting() {
+	public void testAssignScriptsReplaceRemovesExisting() throws Exception {
 		runAssignScripts(moduleFile.getAbsolutePath(), "Hero1", null, true, false);
+		awaitTrue(() -> hero1.getScriptList().size() == 1 && containsSetVariableBrick(hero1));
 		assertEquals(1, hero1.getScriptList().size());
 	}
 
-	public void testAssignScriptsTargetScene() {
+	public void testAssignScriptsTargetScene() throws Exception {
 		project.addScene(new Scene("Scene2", project));
 		Sprite s2hero = new Sprite("S2Hero");
 		s2hero.addScript(new StartScript());
@@ -198,6 +218,7 @@ public class NeoScriptPersistenceTest extends TestCase {
 
 		runAssignScripts(moduleFile.getAbsolutePath(), "S2Hero", "Scene2", false, false);
 
+		awaitTrue(() -> s2hero.getScriptList().size() == beforeS2 + 1);
 		assertEquals(beforeS2 + 1, s2hero.getScriptList().size());
 		assertTrue(containsSetVariableBrick(s2hero));
 		assertEquals(1, hero1.getScriptList().size());
@@ -213,6 +234,7 @@ public class NeoScriptPersistenceTest extends TestCase {
 
 		runAssignScripts(unknownFile.getAbsolutePath(), "Hero1", null, false, false);
 
+		awaitTrue(() -> containsNoteBrick(hero1));
 		assertTrue(containsNoteBrick(hero1));
 	}
 
@@ -220,6 +242,7 @@ public class NeoScriptPersistenceTest extends TestCase {
 		File large = helperMakeLargeModuleFile(50);
 		int before = hero1.getScriptList().size();
 		runAssignScripts(large.getAbsolutePath(), "Hero1", null, false, false);
+		awaitTrue(() -> hero1.getScriptList().size() == before + 50);
 		assertEquals(before + 50, hero1.getScriptList().size());
 	}
 

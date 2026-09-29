@@ -195,7 +195,8 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
             nativeScenes.put(scene.getId(), fs);
             activeSceneId = scene.getId();
             stats.liveScenes = nativeScenes.size();
-            for (Neo3DGameObject obj : scene.getAllObjects()) {
+            for (Neo3DGameObject obj :
+                    new java.util.ArrayList<>(scene.getAllObjects())) {
                 syncObject(scene.getId(), obj);
             }
             Log.i(TAG, "Scene loaded: " + scene.getName() + " (" + scene.getObjectCount()

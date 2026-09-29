@@ -125,6 +125,8 @@ public class FormulaElement implements Serializable {
     private static boolean rhinoInitialized = false;
     private static final String TAG_FORMULA_ELEMENT = "FormulaElement";
 
+    private static final long MAX_BASE64_FILE_BYTES = 4194304L;
+
     private transient org.catrobat.catroid.formulaeditor.UserVariable cachedUserVariable = null;
     private transient org.catrobat.catroid.formulaeditor.UserList cachedUserList = null;
     private transient org.catrobat.catroid.content.Scope cachedScope = null;
@@ -604,6 +606,10 @@ public class FormulaElement implements Serializable {
                 return interpretFunctionLetter(arg0, arg1);
             case SUBTEXT:
                 return interpretFunctionSubtext(arg0, arg1, arg2);
+            case WORD:
+                return interpretFunctionWord(arg0, arg1);
+            case SPLIT:
+                return interpretFunctionSplit(arg0, arg1, arg2);
             case FILE: {
                 String fileName = String.valueOf(arg0);
                 if (scope.getProject() == null) return false;
@@ -618,10 +624,15 @@ public class FormulaElement implements Serializable {
                 String fileName = String.valueOf(arg0);
                 try {
                     File file = scope.getProject() != null ? scope.getProject().getFile(fileName) : null;
-                    if (file != null && file.exists()) {
+                    if (file != null && file.exists() && file.isFile() && file.length() <= MAX_BASE64_FILE_BYTES) {
                         byte[] bytes = new byte[(int) file.length()];
                         try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
-                            fis.read(bytes);
+                            int offset = 0;
+                            while (offset < bytes.length) {
+                                int read = fis.read(bytes, offset, bytes.length - offset);
+                                if (read < 0) break;
+                                offset += read;
+                            }
                         }
                         return android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP);
                     }
@@ -816,6 +827,46 @@ public class FormulaElement implements Serializable {
                 return Neo3DFormulaBridge.getScaleZ(String.valueOf(arg0));
             case NEO3D_BODY_COUNT:
                 return Neo3DFormulaBridge.getBodyCount();
+            case ANDROID_ID: {
+                try {
+                    String id = android.provider.Settings.Secure.getString(
+                            CatroidApplication.getAppContext().getContentResolver(),
+                            android.provider.Settings.Secure.ANDROID_ID);
+                    return id == null ? "" : id;
+                } catch (Exception e) {
+                    return "";
+                }
+            }
+            case SESSION_GET:
+                return org.catrobat.catroid.content.SessionData.get(String.valueOf(arg0));
+            case DEVICE_ROOTED:
+                return org.catrobat.catroid.utils.DeviceIntegrity.isRooted(
+                        CatroidApplication.getAppContext());
+            case DEVICE_BOOTLOADER_UNLOCKED:
+                return org.catrobat.catroid.utils.DeviceIntegrity.isBootloaderUnlocked();
+            case DEVICE_EMULATOR:
+                return org.catrobat.catroid.utils.DeviceIntegrity.isEmulator();
+            case DEVICE_GMS_INSTALLED:
+                return org.catrobat.catroid.utils.DeviceIntegrity.isGmsInstalled(
+                        CatroidApplication.getAppContext());
+            case DEVICE_GMS_SYSTEM:
+                return org.catrobat.catroid.utils.DeviceIntegrity.isGmsSystemApp(
+                        CatroidApplication.getAppContext());
+            case DEVICE_PLAY_STATUS:
+                return org.catrobat.catroid.utils.DeviceIntegrity.playServicesStatus(
+                        CatroidApplication.getAppContext());
+            case NEO3D_PARENT:
+                return Neo3DFormulaBridge.getParentName(String.valueOf(arg0));
+            case NEO3D_VAR:
+                return Neo3DFormulaBridge.getVariable(String.valueOf(arg0),
+                        String.valueOf(arg1));
+            case NEO3D_RAY_HIT: {
+                Integer rayIndex = tryParseIntFromObject(arg1);
+                return Neo3DFormulaBridge.getRayHit(String.valueOf(arg0),
+                        rayIndex != null ? rayIndex : 0);
+            }
+            case NEO3D_RAY_COUNT:
+                return Neo3DFormulaBridge.getRayHitCount(String.valueOf(arg0));
             case NEO3D_DISTANCE:
                 return Neo3DFormulaBridge.getDistance(String.valueOf(arg0),
                         String.valueOf(arg1));
@@ -987,6 +1038,7 @@ public class FormulaElement implements Serializable {
             case RAY_HIT_DISTANCE: {
                 Scene scene = ProjectManager.getInstance().getCurrentlyPlayingScene();
                 if (scene == null) return 0.0;
+                if (scope.getSprite() == null || scope.getSprite().look == null) return 0.0;
                 PhysicsWorld.RayCastResult result9 = scene.getPhysicsWorld().getRayCastResult(String.valueOf(arg0));
                 if (result9 != null && result9.hasHit) {
                     return (double) result9.hitPoint.dst(scope.getSprite().look.getX(), scope.getSprite().look.getY());
@@ -1479,7 +1531,7 @@ public class FormulaElement implements Serializable {
                         android.net.NetworkCapabilities nc = cm.getNetworkCapabilities(activeNetwork);
                         if (nc != null) {
                             int down = nc.getLinkDownstreamBandwidthKbps();
-                            return (double) (down / 1000);
+                            return down / 1000.0;
                         }
                     }
                 } catch (Exception e) {
@@ -2573,6 +2625,41 @@ public class FormulaElement implements Serializable {
             return "";
         }
         return String.valueOf(stringValueOfRight.charAt(index));
+    }
+
+    private Object interpretFunctionWord(Object index, Object text) {
+        if (index == null || text == null) return "";
+
+        Integer idxOpt = tryParseIntFromObject(index);
+        if (idxOpt == null) return "";
+
+        String value = String.valueOf(text).trim();
+        if (value.isEmpty()) return "";
+        String[] parts = value.split("\\s+");
+
+        int i = idxOpt - 1;
+        if (i < 0 || i >= parts.length) {
+            return "";
+        }
+        return parts[i];
+    }
+
+    private Object interpretFunctionSplit(Object index, Object text, Object delimiter) {
+        if (index == null || text == null || delimiter == null) return "";
+
+        Integer idxOpt = tryParseIntFromObject(index);
+        if (idxOpt == null) return "";
+
+        String value = String.valueOf(text);
+        String delim = String.valueOf(delimiter);
+        String[] parts = delim.isEmpty() ? new String[] {value}
+                : value.split(java.util.regex.Pattern.quote(delim), -1);
+
+        int i = idxOpt - 1;
+        if (i < 0 || i >= parts.length) {
+            return "";
+        }
+        return parts[i];
     }
 
     public static int levenshtain(String str1, String str2) {

@@ -1,40 +1,79 @@
 # NeoCatroid — гайд для разработчиков
 
-Быстрый старт: `./gradlew copyTemplateApk` для обновления APK-темплейта (только для регенерации и пабликации в репозиторий Neocatroid-Template; при сборке APK-игр игры V3 шаблон скачивается с GitHub и кэшируется).
+Данный проект - NeoCatroid. Форк Danveyd/NewCatroid. Форк Catrobat/Catroid (Pocket Code).
 
+То есть цепочка такая: Pocket Code (Catrobat) = оригинал, NewCatroid (Danveyd) = форк оригинала,
+NeoCatroid (мы) = форк форка. Основной код, структура и соглашения — от оригинала,
+поэтому этот файл повторяет структуру `C:\Users\ivanp\ньюкатриод\AGENTS.md`, а ниже —
+только то, чем мы отличаемся.
 
+Это универсальный конструктор приложений / игр с визуальным программированием через блоки.
 
-# Структура проекта
+**Чем NeoCatroid отличается от NewCatroid (коротко):**
+*   **APK Builder V3:** сборка автономной игры из `template_runtime.apk` с переименованием пакета.
+*   **Neo3D + Jolt:** новый 3D-движок (`neo3d/`), физика Jolt v5.2.0 из исходников (`catroid/src/main/cpp/jolt/`).
+*   **Свет 2D (`twodlight/`):** overlay-освещение без новых зависимостей.
+*   **NeoScript (`.neoscript`):** переиспользуемые модули скриптов (экспорт/импорт + рантайм-брики).
+*   **Совместное редактирование (`collab/`):** presence + локи скриптов + хост-шлюз синхронизация через Firestore.
+*   **AI-блок один вместо четырёх:** `AskAIBrick` + событие `WhenAIResponseBrick`.
+*   **Scene-переменные:** переменные уровня сцены (списков сцен нет).
+*   **Касание спрайтов:** события `WhenTouchingSprite / WhenTouchingSpriteByName` без физики.
+*   Палитра выровнена под Danveyd, наши кастомы — в конец.
 
-`res/values` — глобальные значения: цвета, строки.
+# Теперь гайд по проекту #
 
-`res/values/strings.xml` — английский (обязательно обновлять). `values-ru/` — русский.
+Пути внутри синхронизированного проекта Android Studio. Предполагается, что проект уже настроен.
 
-`res/layout` — все layout'ы (xml блоков, меню, диалогов).
+`res/values` - тут все глобальные значения: цвета, строки и др.
 
-`assets` — ассеты (зелёное = тестовое, не включается в релиз).
+`res/values/strings` - языки, основные английский и русский. Английский обновлять обязательно, без него не будет работать. Английский никак не обозначен, русский подписан ru.
 
-`kotlin+java/org.catrobat.catroid/` — основные .java/.kt файлы.
+`res/layout` - все лайауты, то есть xml файлы, где прописано как выглядят блоки, менюшки и др.
 
-`content/` — контент: блоки, действия, контроллеры (Gemini, Firebase, микрофон).
-`content/actions/` — код действий блоков.
-`content/bricks/` — классы блоков (соединяют action + layout).
-`content/ActionFactory.java` — фабрика: создаёт Action с параметрами.
-`content/GlobalManager.kt` — глобальные флаги (stopSounds, saveScenes).
+`assets` - ассеты. То что зеленое - тестовое, при релизном билде не будет включено (так везде).
 
-`raptor/` — 3D (ThreeDManager, SceneManager, компоненты).
-`fast2d/` — 2D рендер (ECS-based).
-`editor/` — 3D редактор.
-`utils/lunoscript/` — LunoScript (Interpreter, Parser, Lexer).
-`stage/` — StageActivity, рендер-луп, события.
-`formulaeditor/` — FormulaElement, Functions, парсер формул.
-`ui/` — Activity, Fragment'ы, адаптеры, диалоги.
+`kotlin+java/org.catrobat.catroid/` - основные скрипты, тут все .java, .kt файлы.
 
----
+`kotlin+java/org.catrobat.catroid/content` - основной контент (блоки, действия блоков и др.), контроллеры (микрофон, Firebase, ИИ и т.д.).
 
-# Гайд: добавление блока
+`kotlin+java/org.catrobat.catroid/content/actions` - действия блоков, то есть по сути их код.
 
-### 1. Action (Kotlin)
+`kotlin+java/org.catrobat.catroid/content/bricks` - классы блоков, они соединяют действия, лайауты и т.д. воедино.
+
+`kotlin+java/org.catrobat.catroid/content/ActionFactory.java` - "Фабрика" блоков, тут берем действие, запихиваем в него введенные значения и возвращаем готовое к выполнению действие.
+
+`kotlin+java/org.catrobat.catroid/content/GlobalManager.kt` - глобальный менеджер для глобальных переменных. Сейчас там `stopSounds` и `saveScenes`.
+
+`kotlin+java/org.catrobat.catroid/raptor` - СТАРЫЙ 3D (ThreeDManager, SceneManager). Не путать с новым `neo3d/`. Legacy-брики (`SetPhysicsStateBrick`) трогать только для старых проектов.
+
+`kotlin+java/org.catrobat.catroid/neo3d` - НОВЫЙ 3D-движок (Engine, Facade, Persistence, FormulaBridge, physics-бэкенды). Активная разработка здесь.
+
+`kotlin+java/org.catrobat.catroid/twodlight` - свет 2D (модель, менеджер, рендер lightmap, тени через raycast Box2D-мира).
+
+`kotlin+java/org.catrobat.catroid/collab` - совместное редактирование (сессии, presence, локи, Sync-потоки, транспорт Firestore).
+
+`kotlin+java/org.catrobat.catroid/apkbuildV3` - сборщик игр V3 (`V3ApkAssembler`, `TemplateManagerV3`, `FirebaseConfigManager`).
+
+`kotlin+java/org.catrobat.catroid/neoscript` - модули `.neoscript` (модель, сериализация, экспорт/импорт, релинк переменных).
+
+`kotlin+java/org.catrobat.catroid/fast2d` - 2D рендер (ECS-based).
+
+`kotlin+java/org.catrobat.catroid/editor` - 3D редактор, все классы для него - тут.
+
+`kotlin+java/org.catrobat.catroid/stage` - StageActivity, рендер-луп, события.
+
+`kotlin+java/org.catrobat.catroid/formulaeditor` - FormulaElement, Functions, парсер формул.
+
+`kotlin+java/org.catrobat.catroid/utils/lunoscript` - исходники LunoScript, в Interpreter объявления всех встроенных функций.
+
+`kotlin+java/org.catrobat.catroid/ui` - Activity, Fragment'ы, адаптеры, диалоги.
+
+# Гайд на добавление какого-либо блока:
+
+О файлах проекта: в проектах есть свое отдельное хранилище - файлы проекта. Получить файл можно через `scope?.project?.getFile(String)`.
+Важно Neo: `scope.project` — это живой канонический `Project`. Мутация модели + опциональный `ProjectSaver.saveProjectAsync` = персист на диск (так работают `CreateObjectBrick` / `AssignScriptsBrick`).
+
+1. создать Action. Вот пример:
 
 ```kotlin
 class MyAction : TemporalAction() {
@@ -48,42 +87,47 @@ class MyAction : TemporalAction() {
 }
 ```
 
-### 2. Переводы (values/strings.xml + values-ru/strings.xml)
+2. добавляем переводы (английский обязательно, русский обязательно):
 
 ```xml
 <string formatted="false" name="my_block_label">Do something</string>
 ```
 
-Текст в блоке — максимально короткий.
+ВАЖНО: текст в блоке должен быть максимально коротким, иначе не влезет на экран.
 
-### 3. Layout (brick_my_block.xml)
+3. добавляем лайаут, например `brick_my_block.xml`:
 
 ```xml
 <LinearLayout ...>
+    <!-- вот этот чекбокс очень важен! без него - вылеты -->
     <CheckBox android:id="@+id/brick_checkbox" android:visibility="gone" />
-    <BrickLayout style="@style/BrickContainer.Look.Small|Medium|Big">
+    <org.catrobat.catroid.ui.BrickLayout style="@style/BrickContainer.Look.Small">
         <include layout="@layout/icon_brick_category_..." />
         <TextView style="@style/BrickText.SingleLine" android:text="@string/my_block_label" />
         <TextView android:id="@+id/brick_my_edit" style="@style/BrickEditText" />
-    </BrickLayout>
+    </org.catrobat.catroid.ui.BrickLayout>
 </LinearLayout>
 ```
 
-Размер: 1 параметр = Small, 2-3 = Medium, 4+ = Big. Каждый параметр на новой строке.
+В качестве категории и иконки используй категорию, которую скажут, а размер такой:
+1 параметр: Small, 2-3 параметра: Medium, 4 и более - Big.
+Каждый параметр советую ставить на новую строчку.
 
-### 4. ActionFactory (Java)
+Спиннеры (пример — выбор режима как в `SetPhysicsStateBrick`): `BrickSpinner<StringOption>` или обычный `Spinner` во `getView()`, дефолт спиннера в поле = 0 (наименее деструктивный), видимость зависимых полей переключать в `updateVisibility()`.
+
+4. добавляем в ActionFactory:
 
 ```java
-public Action createMyAction(Sprite sprite, SequenceAction seq, Formula param) {
+public Action createMyAction(Sprite sprite, SequenceAction sequence, Formula param) {
     MyAction action = action(MyAction.class);
-    Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, seq);
+    Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
     action.setScope(scope);
     action.setMyParam(param);
     return action;
 }
 ```
 
-### 5. Brick (Java)
+5. создаем финальный Brick:
 
 ```java
 public class MyBrick extends FormulaBrick {
@@ -93,1235 +137,153 @@ public class MyBrick extends FormulaBrick {
         addAllowedBrickField(BrickField.TEXT, R.id.brick_my_edit);
     }
     public MyBrick(String value) { this(new Formula(value)); }
-    public MyBrick(Formula f) { this(); setFormulaWithBrickField(BrickField.TEXT, f); }
+    public MyBrick(Formula formula) {
+        this();
+        setFormulaWithBrickField(BrickField.TEXT, formula);
+    }
 
     @Override public int getViewResource() { return R.layout.brick_my_block; }
-    @Override public void addActionToSequence(Sprite s, ScriptSequenceAction seq) {
-        seq.addAction(s.getActionFactory().createMyAction(s, seq,
-            getFormulaWithBrickField(BrickField.TEXT)));
+    @Override public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
+        sequence.addAction(sprite.getActionFactory()
+            .createMyAction(sprite, sequence, getFormulaWithBrickField(BrickField.TEXT)));
     }
 }
 ```
 
-Обязательно: конструктор из простых значений (String/double), не только из Formula.
+Обязательно создай конструктор, чтобы можно было создать блок из обычных строк / чисел, а не только из формул.
 
----
+6. добавляем описание блока в BrickInfo (русский + английский, тексты короткие):
 
-# Гайд: добавление формулы
-
-1. Переводы: `formula_my_func` + `formula_my_func_param`
-2. `Functions.java` — добавить `MY_FUNC` в enum + в `TEXT` сет
-3. `InternFormulaAdapter` — case в switch
-4. `InternToExternGenerator` — запись в `INTERN_EXTERN_LANGUAGE_CONVERTER_MAP`
-5. `CategoryListFragment` — в соответствующий список FUNCTIONS/PARAMS
-6. `FormulaElement.java` — основной case в switch
-
----
-
-
----
-
-# Добавленные блоки (2026-07)
-
-## 1. File category — блоки для папок
-- **CreateFolderBrick** — создать папку (уже существовал, зарегистрирован в File)
-- **DeleteFolderBrick** — удалить папку (уже существовал, зарегистрирован)
-- **CreateFolderByPathBrick** — создать по пути (уже существовал, зарегистрирован)
-- **DeleteFolderByPathBrick** — удалить по пути (уже существовал, зарегистрирован)
-- **CopyProjectFileToFolderBrick** — копировать в папку (уже существовал, зарегистрирован)
-- **CopyProjectFileToPathBrick** — копировать по пути (уже существовал, зарегистрирован)
-- **PutFileIntoFolderBrick** — положить файл в папку (NEW)
-- **PutFileIntoPathBrick** — положить файл по пути (NEW)
-
-## 2. Device category — уведомления
-- **SendNotificationBrick** — отправляет уведомление по ID (использует NOTIFICATION_ID)
-- **ShowScheduledNotificationBrick** — отправляет отложенное уведомление с заголовком, текстом и временем
-- **NotificationActionBrick** — действие при нажатии на уведомление
-- **PrepareNotificationBrick** — подготовка уведомления с заголовком, текстом, важностью и pin
-
-## 3. Motion category — направление на касание
-- **TouchDirectionBrick** — автоматически вычисляет угол от спрайта к точке касанию
-
-## 3a. Physics category — регдолл
-- **SetRagdollBrick** — включает/выключает режим регдолла (1 = вкл, 0 = выкл, **2 = регдолл со следованием**)
-- **Формула `Sprite_ragdolled`** — возвращает 1 если спрайт в регдолле (любой режим), иначе 0
-
-### Рантайм-эффект регдолла (Android)
-- **Sprite.ragdollMode** (transient int) — состояние: 0 = выкл, 1 = регдолл, 2 = регдолл-следование
-- **SetRagdollAction** — ставит режим из формулы (>= 2 → 2; != 0 → 1; иначе 0)
-- **PhysicsLook** — при `isRagdolled()` (mode > 0):
-  - `setX/setY/setPosition/setXInUserInterfaceDimensionUnit` — **НЕ пишут** в physicsObject (движение игнорируется)
-  - `setRotation` — **НЕ меняет** направление physicsObject
-  - `setScale` — **НЕ перестраивает** физическую форму
-  - `getX/getY/getRotation` — читают с physicsObject (спрайт визуально следует за телом)
-- **Режим 2 (регдолл-следование / «кукла на верёвке»)**:
-  - Сеттеры (см. выше) при mode == 2 запоминают **цель** (центр спрайта в мировых координатах) вместо игнорирования
-  - `PhysicsLook.draw()` вызывает `updateRagdollFollow()`: P-контроллер
-    `v += (dx*stiffness - v) * blend` (stiffness=6, blend=0.2, в px/с) — тело плавно
-    догоняет цель с инерцией: свисает, качается, сталкивается, но едет за скриптом
-    (goto touch, glide и т.д.)
-  - Затем draw вызывает getX/getY/getRotation — актор рисуется на позиции тела
-  - Если цель не задана скриптом — берётся текущая позиция тела (followTargetSet)
-- **Что продолжает работать** в регдолле:
-  - Гравитация и коллизии (тело DYNAMIC)
-  - `SetVelocityAction`, `ApplyForceAction` и другие physics-actions (идут напрямую в physicsObject/mинуя PhysicsLook)
-- **Формула `SPRITE_RAGDOLLED`** — читает `s.ragdollMode > 0` из FormulaElement
-
-### Файлы
-```
-content/actions/SetRagdollAction.kt     — ставит sprite.ragdollMode (0/1/2)
-content/bricks/SetRagdollBrick.java     — brick (FormulaBrick, PHYSICS_TOGGLE field)
-content/Sprite.java                     — поле ragdollMode (int)
-physics/PhysicsLook.java                — isRagdolled()/isRagdollFollow() guard в сеттерах + updateRagdollFollow()
-formulaeditor/Functions.java            — SPRITE_RAGDOLLED enum
-formulaeditor/FormulaElement.java       — case SPRITE_RAGDOLLED
-test/.../SetRagdollBrickTest.java       — 13 тестов (brick wiring, action 0/1/2, clamp, formula)
+```java
+add(MyBrick.class, "Делает что-то");
+addEn(MyBrick.class, "Does something");
 ```
 
-## 4. Control category — клоны по номеру
-- **DeleteCloneByNumberBrick** — удаляет клон по номеру (cloneIndex)
-- **ExecuteForCloneNumberBrick** — контейнерный блок (CompositeBrick + EndBrick), выполняет внутренние блоки только если cloneIndex совпадает
+7. XStreamSerializer: явная регистрация НЕ требуется. `XStreamBrickConverter` находит все Brick-классы
+по имени в пакетах `org.catrobat.catroid.content.bricks` и `org.catrobat.catroid.physics.content.bricks`,
+неизвестные типы при загрузке становятся `UnknownBrick` (проект не ломается).
+Исключение: legacy-переименования — добавлять в `LEGACY_BRICK_ALIASES` (пример: `ShowToastBlock` -> `ShowToastBrick`).
 
-## 5. Look category — привязка к камере со смещением
-- **AttachToCameraWithOffsetBrick** — привязывает 3D объект к камере с X/Y/Z смещением
+8. ну и в CategoryBricksFactory в нужный список:
 
-## 6. Sprite.java
-- Добавлено поле `cloneIndex` (int, transient) — 0 для оригинала, 1+ для клонов
-
-## 7. StageListener.java
-- Поле `cloneCounter` — счётчик номеров клонов
-- Метод `removeCloneByIndex(int)` — удаление клона по номеру
-- В `cloneSpriteAndAddToStage()` — `clone.cloneIndex = cloneCounter++`
-
-## 8. SceneManager.java
-- Метод `attachObjectToCamera(String objectId, float offsetX, float offsetY, float offsetZ)` — новая перегрузка с 4 параметрами
-
-## 9. XStream
-- `XStreamBrickConverter` автоматически обнаруживает все Brick-классы в пакете `org.catrobat.catroid.content.bricks` по имени класса, поэтому явная регистрация не требуется.
-
-## 10. Formula fixes
-- FILE_PROJECT_SIZE, FILE_SIZE_IN_DIR, FILE_SIZE_AT_PATH добавлены в TEXT EnumSet в Functions.java
-- Добавлены в DEVICE_FUNCTIONS/DEVICE_PARAMS в CategoryListFragment.java
-- Добавлена строка `formula_file_project_size_param`
-
-## 11. NeoScript — reusable script modules (.neoscript)
-
-### Summary
-Система экспорта/импорта переиспользуемых модулей скриптов в формате `.neoscript`. Позволяет сохранить выделенные скрипты в файл и импортировать их в любой объект того же или другого проекта.
-
-### Files
-```
-neoscript/
-  NeoScriptFile.java        — корневая модель (список Script + UserVariable + UserList)
-  NeoScriptSerializer.java  — XStream-сериализация с валидацией версии
-  NeoScriptExporter.java    — сборка NeoScriptFile из выбранных скриптов + референсов
-  NeoScriptImporter.java    — вливание скриптов в target Sprite с dedup
-  NeoScriptUserData.java    — сбор/перелинковка UserVariable/UserList (reflection)
-  NeoScriptException.java   — кастомное исключение
-
-content/actions/
-  ImportScriptAction.kt     — TemporalAction: runtime-импорт .neoscript в объект
-
-content/bricks/
-  ImportScriptBrick.java    — Brick (File category): objectName + filePath + overwrite Spinner
-
-res/layout/
-  brick_import_script.xml   — BrickLayout с двумя FormulaEditText + Spinner
-
-ui/recyclerview/fragment/
-  ScriptFragment.java       — SAVE_AS_SCRIPT action mode + exportScripts() + launchNeoScriptFilePicker()
-
-ui/
-  SpriteActivity.java       — importNeoScriptModule() + REQUEST_NEO_SCRIPT_FILE/IMPORT handlers
-
-test/neoscript/
-  NeoScriptModuleTest.java  — 13 тестов: round-trip, import, dedup, overwrite, version validation, large load, undo model
+```kotlin
+myBrickList.add(MyBrick("1"))
 ```
 
-### Design decisions
-- **Container root**: `NeoScriptFile` (не Project) — содержит только выбранные скрипты + необходимые переменные/списки. Без сцен, ассетов, настроек.
-- **Serialization**: переиспользует XStream-конфигурацию проекта (`XstreamSerializer.getInstance().getXstream()`), поэтому все Brick/Formula-конвертеры работают автоматически. Добавлен алиас `<neoscript>` для корня.
-- **Versioning**: `formatVersion` (int), MIN=1, MAX=1. Старые/будущие версии отклоняются с понятным сообщением.
-- **Unknown blocks**: `XStreamBrickConverter` автоматически создаёт `UnknownBrick` для неизвестных типов блоков — совместимость с будущими версиями.
-- **ID remapping**: при импорте скрипты клонируются через `Script.clone()`, который генерирует свежие scriptId и brickId (через XStream ID-генератор).
-- **Variable relinking**: `NeoScriptUserData` через reflection обходит все `UserVariable`/`UserList` поля в бриках, находит или создаёт переменные с тем же именем в целевом проекте/спрайте.
-- **Duplicate detection**: стабильная сигнатура = `ClassName(simple)#trigger(TEXT)` (для BroadcastScript — broadcastMessage). Overwrite = replace, иначе skip.
-- **Undo/redo**: редакторский импорт вызывает `copyProjectForUndoOption()` перед изменениями.
-- **Security**: XStream security deny-by-wildcard для системных пакетов. File path validation через кастомные Formula (не raw strings).
-- **Runtime brick** (`ImportScriptBrick`): Formula-поля для objectName и filePath, Spinner для overwrite. Файл открывается через `ACTION_OPEN_DOCUMENT` с `REQUEST_NEO_SCRIPT_FILE`.
-- **Save path**: `Download/NeocatroidScript/{name}.neoscript` через `Constants.DOWNLOAD_DIRECTORY`.
-- **Format**: XML с `<neoscript>` корнем, без сжатия/архивации — plain text для ручного редактирования.
+Правило палитры Neo: общие брики — строго в порядке Danveyd (эталон — NewCatroid, мышечная память),
+наши кастомы — в конец в текущем относительном порядке. Группированные ветки (SubCategoryHeader) не трогать.
+Проверка после правки: multiset `add` против HEAD (без потерь/дублей).
+Скрытые из палитры классы (8 native-диалогов + 8 story-диалогов) живы для старых проектов — не удалять.
 
-### Adding a new .neoscript brick type
-Любой новый Brick в пакете `org.catrobat.catroid.content.bricks` обнаруживается автоматически — не требуется регистрация в XStream. Для корректной сериализации достаточно конструктора без параметров и соответствия имени класса.
+# Гайд как добавлять формулы:
 
-### NeoScript brick reference (current)
+1. добавляем переводы (русский и английский):
 
-
- `ImportScriptBrick` (File→NeoScript cat.) `ImportScriptAction` | objectName, filePath, overwrite | Import .neoscript into existing object |
- `CreateObjectBrick` (NeoScript cat., NEW)  `CreateObjectAction` | objectName (Formula), scene (spinner), persist (Yes/No) | Create blank sprite in scene; if persist=Yes, save canonical project to disk
- `AssignScriptsBrick` (NeoScript cat., NEW)  `AssignScriptsAction` | filePath, objectName, scene, replace (Yes/No), save (Yes/No) | Assign .neoscript to object in scene; if save=Yes, save canonical project to disk 
-
-### Scene-aware bricks design
-- Scene stored as `String` (name): `null`/empty = Current scene, otherwise `project.getSceneByName(name)`.
-- Spinner: StringOption("Current scene") + Scene items.
-- Backward compat: missing/empty scene field → Current scene.
-- Object lookup scoped to the resolved scene (not global).
-- Inactive scene: scripts added to model only (no runtime registration).
-- Active scene: `executeConsoleScript()` starts added scripts.
-- UnknownBrick detection: `AssignScriptsAction` checks for `UnknownBrick` instances pre-import, replaces with `NoteBrick`.
-- `AssignScriptsBrick` "Replace existing scripts?" spinner [0/1]: 0 = keep existing + add imported (`ImportStrategy.APPEND_ALL`), 1 = remove ALL existing + add imported (`ImportStrategy.REPLACE_ALL`). This is SEPARATE from the `ImportScriptBrick` duplicate-overwrite (boolean → `SKIP_DUPLICATES`/`REPLACE_DUPLICATES`). Do not conflate the two.
-- `NeoScriptImporter.ImportStrategy` enum: `SKIP_DUPLICATES`, `REPLACE_DUPLICATES`, `APPEND_ALL`, `REPLACE_ALL`. `REPLACE_ALL` is atomic — all scripts are cloned+relinked first; only on full success is the target sprite's script list cleared and the new scripts added. Default serialized value MUST be 0 (least destructive).
-
-### NeoScript persistence (2026-07)
-
-`CreateObjectBrick` and `AssignScriptsBrick` have an OPTIONAL persistence flag so a runtime change can also be written to the canonical project on disk.
-
-- **Flags**: `CreateObjectBrick.persistentSelection` (0 = runtime only, 1 = persist) and `AssignScriptsBrick.savePersistentSelection` (same). Both plain `int`, serialized by XStream. Missing field on load → `0` (runtime only, least destructive). Getters: `isPersistent()` / `isSavePersistent()`.
-- **Default**: No (runtime only). Old serialized bricks without the field keep working.
-- **Mechanism**: the action mutates the live canonical `Project` (which `scope.project` already is — no clone), THEN calls `ProjectSaver(project, CatroidApplication.getAppContext()).saveProjectAsync {}`. On device this serialises the project (XstreamSerializer atomic temp+rename). The save is best-effort / fire-and-forget and is wrapped in try/catch: if the app context is unavailable the save is skipped (the in-memory model is still mutated).
-- **Scene isolation**: the resolved scene (see above) is authoritative; object lookup is scoped to it. A persisted object/script lands in that scene's model.
-- **Behaviour**: `persist`/`save` do NOT change runtime behaviour — the object/script is added to the canonical project model regardless; the flag only decides whether the canonical project is also written to disk.
-- **Tests**: `NeoScriptPersistenceTest` (catroid/src/test/.../neoscript) covers in-memory canonical mutation, scene isolation, replace semantics, unknown→Note, large import, and XStream round-trip of the flag (forward + backward-compat). Full project save/load is environment-gated (device / Robolectric) and reuses Catroid's standard `ProjectSaver`.
-
-### XStream
-- `XStreamBrickConverter` автоматически обнаруживает все Brick-классы по имени класса.
-- Пакеты поиска: `org.catrobat.catroid.content.bricks`, `org.catrobat.catroid.physics.content.bricks`.
-- Неизвестные типы → `UnknownBrick` (не ломает загрузку).
-- Явная регистрация не требуется, но для обратной совместимости в `XstreamSerializer.java` есть `xstream.alias("brick", ConcreteBrick.class)`.
-
----
-
-# AI category — единый блок «Спросить ИИ» + событие ответа (2026-08)
-
-Замена старых блоков AskGPT/AskGemini/AskGemini2/SetGeminiKey на один универсальный
-блок с выбором провайдера (OpenAI, Gemini, DeepSeek, OpenRouter, Anthropic, OpenCode):
-
-- **AskAIBrick** («Спросить ИИ», Neural → LLM) — поля: TEXT (промпт), BODY (системный
-  промпт), MODEL (модель, пусто = дефолт провайдера), спиннер провайдера, спиннер
-  переменной для ответа. Пишет ответ в UserVariable и fire `AiResponseEventId`.
-- **WhenAIResponseBrick** («Когда ИИ ответил», Events) — ScriptBrick, спиннер провайдера
-  («Любой провайдер» = пустая строка). Триггерится после завершения AskAIBrick.
-- Старые классы (`AskGPTBrick`, `AskGeminiBrick`, `AskGemini2Brick`, `SetGeminiKeyBrick`)
-  **оставлены** для десериализации старых проектов (XStream по имени класса), убраны
-  только из палитры `setupNeuralCategoryList`.
-
-## Файлы
-
-```
-content/
-  WhenAIResponseScript.java           — Script (provider: String, "" = любой)
-  eventids/AiResponseEventId.java     — equals: sprite + provider; пустой provider = wildcard
-content/actions/
-  AskAIAction.kt                      — TemporalAction: Thread + runBlocking CloudModelRuntime,
-                                        пишет ответ в переменную, fire AiResponseEventId(sprite, providerId)
-content/bricks/
-  AskAIBrick.kt                       — UserVariableBrickWithFormula + BrickSpinner<StringOption>
-  WhenAIResponseBrick.java            — ScriptBrickBaseType + BrickSpinner<StringOption>
-res/layout/
-  brick_ask_ai.xml                    — Neural.Big: prompt/system/model edit + 2 спиннера
-  brick_when_ai_response.xml          — Motion.MediumWhen: label + spinner
-ai/model/CloudModelRuntime.kt         — добавлен `generateForProvider(provider, model, system, user)`
-                                        (ключ через AiPreferences.getApiKeyForProvider(provider.id))
+```xml
+<string name="formula_my_func" formatted="false">MyFunc</string>
 ```
 
-## Регистрация
+Пробелы заменяем на нижние подчеркивания.
 
-- `XstreamSerializer`: алиасы `WhenAIResponseScript`/`WhenAIResponseBrick`/`AskAIBrick`.
-- `CategoryBricksFactory.kt`: `AskAIBrick("Hello!")` в Neural (обе ветки grouped/ungrouped);
-  `WhenAIResponseBrick()` в Events (в обеих ветках, доступен и фону).
-- `BrickInfo.java`: справка ru/en. `RecentBrickListManager`: WhenAIResponseBrick в
-  nonBackgroundSpriteClasses.
-- `strings.xml`/`values-ru`: `brick_ask_ai`, `brick_ask_ai_system`, `brick_ask_ai_model`,
-  `brick_ask_ai_provider`, `brick_when_ai_response`, `ai_provider_any`.
-- `AiProvider` (ai/model/AiProvider.kt) — единственный источник списка провайдеров
-  (id, displayName, baseUrl, defaultModels); спиннеры строятся из `AiProvider.values()`.
+2. в тех же переводах делаем строку параметров. Апострофы экранировать `\'\'`, иначе aapt падает:
 
-## Тесты
-
-- `AskAIBrickTest.java` (4): wiring через ActionFactory.createAskAIAction, дефолтный
-  провайдер, конструкторы, clone.
-- `WhenAIResponseBrickTest.java` (6): script↔brick, конструкторы, clone, createEventId,
-  wildcard-equals (пустой провайдер = любой) + hashCode-консистентность.
-- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*AskAIBrickTest*" --tests "*WhenAIResponseBrickTest*"`.
-
----
-
-# Event category — касание спрайтов (WhenTouchingSprite, 2026-08)
-
-Два блока событий, срабатывающих при перекрытии хитбоксов (AABB) БЕЗ физики:
-
-- **WhenTouchingSpriteBrick** («Когда касается другого актёра») — триггерится на касание ЛЮБОГО спрайта
-- **WhenTouchingSpriteByNameBrick** («Когда касается …») — spinner с выбором конкретного спрайта (или «любого актёра»)
-- У обоих есть CheckBox «реагировать на фон» (`reactToBackground`) — по умолчанию фон игнорируется
-
-## Файлы
-
-```
-content/
-  WhenTouchingSpriteScript.java           — Script (reactToBackground; eventId = TouchingSpriteEventId(sprite, ""))
-  WhenTouchingSpriteByNameScript.java     — Script (spriteToTouchName + reactToBackground)
-  TouchingSpriteTrigger.java              — edge-trigger: TRIGGER_NOW → fire → ALREADY_TRIGGERED → reset при расхождении
-  eventids/TouchingSpriteEventId.java     — equality: sprite + touchedSpriteName (String, "" = любой)
-content/bricks/
-  WhenTouchingSpriteBrick.java            — checkbox background (R.id.brick_when_touching_sprite_background_checkbox)
-  WhenTouchingSpriteByNameBrick.java      — BrickSpinner<Sprite> + checkbox
-res/layout/
-  brick_when_touching_sprite.xml
-  brick_when_touching_sprite_by_name.xml
+```xml
+<string name="formula_my_func_param" formatted="false">(\'value\')</string>
 ```
 
-## Рантайм (Android)
+3. добавляем в Functions.java в enum + в нужный сет (обычно TEXT):
 
-- `Sprite.touchingSpriteTriggers` (transient Set<TouchingSpriteTrigger>), инициализация в `initTouchingSpriteTriggers()` (вызывается из `StageListener` при старте сцены и при клонировании, по аналогии с condition/firebase-триггерами).
-- Проверка каждый кадр: `Look.update()` → `sprite.evaluateTouchingSpriteTriggers()`.
-- `TouchingSpriteTrigger.isTouching()`: оба спрайта видны, не фон (если не reactToBackground), имя совпадает (или любой), AABB-перекрытие через `Look.getX/Y/Width/HeightInUserInterfaceDimensionUnit()`.
-- Fire: `sprite.look.fire(new EventWrapper(new TouchingSpriteEventId(sprite, name), false))` — edge-triggered: событие шлётся один раз при ВХОДЕ в касание, статус сбрасывается когда касание пропало.
-- Клоны: `matchesTargetName` матчит и по имени оригинала (`other.myOriginal`).
-
-## Desktop (DesktopScriptEngine.kt)
-
-- `mapScriptTypeToEvent`: `WhenTouchingSpriteScript`/`WhenTouchingSpriteByNameScript` → `"touching_sprite"`.
-- Парсинг: `eventParam2 = <spriteToTouchName>` (для универсального скрипта элемента нет → пустая строка = любой).
-- `checkEvents`: `checkSpriteCollision(sprite, eventParam?.takeIf { isNotEmpty })` — пустое имя → любой спрайт.
-
-## Регистрация
-
-- `XstreamSerializer`: алиасы script/brick для обоих типов.
-- `CategoryBricksFactory.kt`: оба блока в Events (только для не-фоновых спрайтов, обе ветки grouped/ungrouped).
-- `BrickInfo.java`: справка ru/en.
-- `RecentBrickListManager`: оба в nonBackgroundSpriteClasses.
-- `strings.xml`/`values-ru`: `brick_when_touching_sprite`, `brick_when_touching_sprite_by_name`, `touching_sprite_anything`, `brick_when_touching_sprite_background`.
-
-## Тесты
-
-- `WhenTouchingSpriteBrickTest.java` (4) + `WhenTouchingSpriteByNameBrickTest.java` (3) — brick↔script linkage, clone, конструкторы.
-- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*WhenTouchingSprite*"`.
-
----
-
-# Backpack — портфель скриптов/объектов
-
-## Обзор
-
-Backpack («портфель»/«рюкзак») — система копирования скриптов, объектов, сцен, звуков и образов между проектами без экспорта в файл. Данные хранятся в директории приложения как JSON + файлы.
-
-## Файлы
-
-```
-common/Backpack.java                                  — модель данных (списки для каждого типа)
-io/BackpackSerializer.java                            — JSON-сериализация/десериализация
-io/BackpackScriptSerializerAndDeserializer.java       — Gson-адаптер для Script
-io/BackpackFormulaFieldSerializerAndDeserializer.java — Gson-адаптер для формул
-io/BackpackInterfaceSerializerAndDeserializer.java    — базовый адаптер
-ui/controller/BackpackListManager.java                — singleton, доступ к рюкзау + сохранение/загрузка
-ui/recyclerview/backpack/
-  BackpackActivity.java                               — Activity с ViewPager (вкладки Scripts/Sounds/Looks/Sprites/Scenes)
-  BackpackScriptFragment.java                         — список скрипт-групп, unpack/delete
-  BackpackSoundFragment.java                          — список звуков в рюкзаке
-  BackpackLookFragment.java                           — список образов
-  BackpackSpriteFragment.java                         — список спрайтов
-  BackpackSceneFragment.java                          — список сцен
-ui/recyclerview/fragment/
-  ScriptFragment.java                                 — action mode "Pack", диалоги упаковки/распаковки
-  SoundFragment.java                                  — action mode "Pack" для звуков
-ui/recyclerview/controller/
-  ScriptController.java                               — pack()/unpack() — упаковка/распаковка скриптов
-  SoundController.java                                — pack()/unpack()/copy() — упаковка/распаковка звуков
-  LookController.java                                 — pack()/unpack()/copy() — упаковка/распаковка образов
-layout/
-  dialog_pack_options.xml                             — диалог с чекбоксами (звуки + значения)
+```java
+MY_FUNC,
 ```
 
-## Модель данных (Backpack.java)
+4. добавляем в InternFormulaKeyboardAdapter (там огромный switch case):
 
-
- `backpackedScripts` | `HashMap<String, List<Script>>` | Скрипт-группы по имени |
- `backpackedUserDefinedBricks` | `HashMap<String, List<UserDefinedBrick>>` | UserDefined брики по группе |
- `backpackedUserVariables` | `HashMap<String, HashMap<String, Int>>` | Имена переменных + тип (GLOBAL/LOCAL/MULTIPLAYER) по группе |
- `backpackedUserLists` | `HashMap<String, HashMap<String, Int>>` | Имена списков + тип по группе |
-`backpackedSounds` | `List<SoundInfo>` | Звуки в рюкзаке (отдельно от скриптов) |
- `backpackedLooks` | `List<LookData>` | Образы в рюкзаке |
-`backpackedScriptSounds` | `HashMap<String, List<SoundInfo>>` | Звуки ВНУТРИ скрипт-групп (NEW) |
- `backpackedVariableValues` | `HashMap<String, HashMap<String, String>>` | Значения переменных по группе (NEW) |
- `backpackedListValues` | `HashMap<String, HashMap<String, String>>` | Значения списков (CSV) по группе (NEW) |
-
-## Упаковка скриптов (2026-08)
-
-### Диалог выбора
-
-При упаковке скрипта через `ScriptFragment.showNewScriptGroupAlert()`:
-1. Пользователь вводит имя группы
-2. Если скрипт содержит звуки или переменные — показывается `dialog_pack_options.xml`:
-   - ☑ «Скрипт содержит звуки. Сохранить их вместе со скриптом?»
-   - ☑ «Сохранить текущие значения переменных и списков?»
-3. Чекбоксы скрываются если соответствующих данных нет в скрипте
-
-### ScriptController.pack()
-
-```
-pack(groupName, bricksToPack, includeSounds, includeValues)
+```java
+case R.string.formula_my_func:
+    return buildSingleParameterFunction(Functions.MY_FUNC, STRING, "value");
 ```
 
-- Клонирует скрипты и UserDefined брики
-- `includeSounds=true` → собирает `SoundInfo` из `PlaySoundBrick`/`PlaySoundAndWaitBrick` (dedup по имя)
-- `includeValues=true` → собирает значения `UserVariable`/`UserList` из бриков и формул (рекурсивный обход `FormulaElement`)
-- Сохраняет всё в `BackpackListManager`
+5. в InternToExternGenerator:
 
-### Хранение звуков в скрипт-группе
-
-Звуки хранятся отдельно от глобального списка `backpackedSounds`:
-- `backpackedScriptSounds[groupName]` → список `SoundInfo` (файлы в `backpackSoundDirectory`)
-- При удалении группы звуки тоже удаляются (`removeItemFromScriptBackPack`)
-
-## Распаковка скриптов (2026-08)
-
-### ScriptController.unpack()
-
-```
-unpack(scriptName, scriptToUnpack, destinationSprite)
+```java
+INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.MY_FUNC.name(), R.string.formula_my_func);
 ```
 
-- Клонирует скрипт
-- **Звуки:** для каждого `PlaySoundBrick`:
-  - Если звук с таким именем уже есть в спрайте → использовать существующий
-  - Если есть в рюкзаке (`backpackedScriptSounds[scriptName]`) → копировать через `SoundController.copy()`
-  - Иначе оставить как есть (звук не привязан)
-- **Значения:** для `UserVariableBrickInterface`/`UserListBrick`:
-  - Если есть сохранённое значение в `backpackedVariableValues`/`backpackedListValues` → восстановить
-  - Числа парсятся как `Double`, остальное как `String`
-  - Списки хранятся как CSV (comma-separated)
-
-### Dedup по имя
-
-При распаковке звуков поиск сначала по имя файла (не по UUID), что позволяет корректно резолвить звуки после упаковки.
-
----
-
-##  Чистка мусора
-- `catroid/src/main/libs/test/` (382 файла) — удалён
-- `catroid/src/main/libs/__prebuilt_aar_backup/` — удалён
-- `assets/ababuy.txt` — удалён
-
-\
-## Сборка/зависимости (обновлено 2026-07)
-- Coroutines unified to 1.7.3 → 1.9.0
-- material:1.2.1 → 1.13.0 → 1.14.0, removed resolutionStrategy force
-- Gradle: `-Xmx6g` → `-Xmx4g`
-- Удалён дублирующийся `apksig:7.0.0`
-- Дубликаты `configurations { pluginLibs }` → объединены
-- Дубликаты `packagingOptions` → объединены (pickFirsts, excludes)
-- `ext.useAndroidLocales` → исправлен синтаксис (closure вместо сломанного)
-- `testCoverageEnabled` → `enableUnitTestCoverage` (deprecation)
-- Дублирующийся `kotlin-stdlib` и мёртвый код удалены
-
-
-##  Тесты (21 файл для 11 новых блоков)
-### Brick tests (верификация addActionToSequence):
-1. `PutFileIntoFolderBrickTest.java`
-2. `PutFileIntoPathBrickTest.java`
-3. `SendNotificationBrickTest.java`
-4. `ShowScheduledNotificationBrickTest.java`
-5. `NotificationActionBrickTest.java`
-6. `PrepareNotificationBrickTest.java`
-6a. `SetRagdollBrickTest.java` — 12 тестов (brick wiring, action, formula)
-7. `TouchDirectionBrickTest.java`
-8. `DeleteCloneByNumberBrickTest.java`
-9. `ExecuteForCloneNumberBrickTest.java` (+ composite brick тесты)
-10. `AttachToCameraWithOffsetBrickTest.java`
-
-### Action tests (unit + PowerMock):
-1. `PrepareNotificationActionTest.kt` — проверка NotificationStorage
-2. `NotificationActionActionTest.kt` — проверка addAction/execution guard
-3. `ExecuteForCloneNumberActionTest.java` — cloneIndex matching/restart
-4. `TouchDirectionActionTest.java` — PowerMock(TouchUtil), 8 тестов
-5. `DeleteCloneByNumberActionTest.kt` — PowerMock(StageActivity)
-6. `AttachToCameraWithOffsetActionTest.java` — PowerMock(StageActivity, SceneManager)
-7. `PutFileIntoFolderActionTest.java` — PowerMock(Environment, TemporaryFolder)
-8. `PutFileIntoPathActionTest.java` — PowerMock(Environment, TemporaryFolder + path traversal)
-9. `SendNotificationActionTest.kt` — PowerMock(StageActivity, NotificationStorage)
-10. `ShowScheduledNotificationActionTest.kt` — PowerMock(StageActivity, NotificationStorage)
-
-##  Исправление pre-existing ошибок компиляции
-### Java (main):
-- `ShowColorPickerFormulaEditorStrategy.java` — добавлен импорт `FragmentManager`, `value -> { ... return null; }` для Kotlin `Unit`
-- `FormulaEditorFragment.java` — то же исправление lambda return
-- `UiUtils.java` — добавлен `R.string.menu_rate_us` (отсутствовал)
-### Kotlin (tests):
-- `ObjectDetectorOnSuccessListener` — создан недостающий класс в `camera/mlkitdetectors/`
-- `DetectedObject` stub — добавлены конструкторы `(Rect, Int, List<Label>)` + `Label(String, Float, Int)`
-- Мои 20 тестов — исправлены: `ScriptSequenceAction(null)` → mock, missing imports, `SequenceAction` → `ScriptSequenceAction`
-
-## Stage/Actors
-- **StageActivity.onDestroy()**: `super.onDestroy()` moved to end, `messageHandler` nulled
-- **StageActivity.setupAskHandler()**: changed to `WeakReference<StageActivity>`
-- **ShowTextActor.drawText()**: added texture caching (skip per-frame Bitmap/Texture allocation when text unchanged)
-- **StageListener**: `cloneCounter` changed to `AtomicInteger`, removed unused `accumulator`/`TIME_STEP`
-
-## Null safety
-- Added `if (scope == null) return;` to 19 Java action files (TouchDirectionAction, etc.)
-- LookPostRequestAction/LookRequestAction: replaced `!!` with local `val ec = errorCode`
-- PrepareNotificationBrick: removed `transient` from `importanceLevel` and `isPinned`
-
-## XStream serialization
-- Added 5 brick aliases to XstreamSerializer.java (PutFileIntoFolder, PutFileIntoPath, ExecuteForCloneNumber, DeleteCloneByNumber, TouchDirection)
-- XStreamBrickConverter: fixed `result = new UnknownBrick(type)` (was creating unused local)
-- XStreamFormulaElementConverter: fixed SECOND_FACE_Y_POSITION → FACE_Y sensor mapping
-
-## Прочее
-- ActionFactory: `RunShellAction()` → `runShellAction()` (Java naming convention)
-- PanoramicConverter: uncommented `fbo.dispose()`
-- ErrorInterceptor.kt: `response.body?.toString()` → `response.body?.string()`
-- Removed duplicate commented `package` lines from 14 action files
-- Removed duplicate `createDeleteCloneByNumberAction` from ActionFactory
-- Добавлены missing resources: `cancel_button_text`, `import_step_prepare`, `menu_rate_us`, `ic_pocketpaint_tool_resize_adjust`
-
-##  Обновление зависимостей (2026-07)
-| Зависимость | Было | Стало |
-|---|---|---|
-| AGP | 8.3.0 | 8.7.3 |
-| Kotlin | 1.9.22 | 2.0.21 |
-| KSP | 1.9.22-1.0.16 | 2.0.21-1.0.28 |
-| compileSdk / targetSdk | 34 | 35 |
-| Lifecycle | 2.2.0 | 2.8.7 |
-| Room | 2.3.0 | 2.6.1 |
-| Core KTX | 1.3.2 | 1.15.0 |
-| Coroutines | 1.7.3 | 1.9.0 |
-| WorkManager | 2.7.1 | 2.10.0 |
-| Robolectric | 4.7.3 | 4.14.1 |
-| Espresso | 3.1.0 | 3.6.1 |
-| AndroidX Test JUnit | 1.1.5 | 1.2.1 |
-| Material | 1.13.0 | 1.14.0 |
-| Glide | 4.11.0 | 4.16.0 |
-| Gson | 2.8.7 | 2.11.0 |
-| OkHttp | 4.9.3 | 4.12.0 |
-| Guava | 28.2-android | 33.4.0-android |
-| Browser | 1.2.0 | 1.8.0 |
-| **Не обновлено** (high risk): Koin 2.1.6, CameraX 1.0.0-beta07, Mockito 3.12.4 (заблокирован PowerMock)
-
----
-
-
-
-
-## APK Builder V3 — полная замена имени пакета (2026-07)
-V3 собирает автономный APK из 	emplate_runtime.apk с переименованием пакета на выбранный пользователем.
-
-- **Реализация**: catroid/.../apkbuildV3/V3ApkAssembler.kt
-  - pplyPackageRename(manifest, newPackage): manifest.packageName = newPackage + manifest.ensureFullClassNames() (квалифицирует относительные имена компонентов против СТАРОГО пакета ДО смены) + 
-eplacePackageInAuthority (authority provider через searchAttributeByResourceId(0x01010018)).
-  - makeRuntimeLoaderLauncher(manifest) (internal) — делает RuntimeLoaderActivityV3 единственным launcher.
-  - doSign(input, output, keystore, alias, password) (internal) — подпись apksig v1+v2+v3.
-- **Runtime пакет-независим**: FileProvider authority, content URI, PendingIntent, getPackageInfo/getPackageName, reflection (BRICKS_PACKAGE_NAMES — FQN) — всё строится динамически из getPackageName(); хардкод-строк org.catrobat.catroid в манифест-зависимом коде НЕТ. ProjectFilesFragment/ProjectLibsFragment: BuildConfig.APPLICATION_ID → 
-equireContext().packageName.
-- **Верификация**: catroid/src/test/java/org/catrobat/catroid/apkbuildV3/V3PackageRenameTest.kt (5 тестов, все зелёные), в т.ч. exportTwoGames_coexistAndVerify — реальный репак 	emplate_runtime.apk (188 МБ) ×2 → org.test.game1/org.test.game2, reandroid-репарс + apksig verify (package, <pkg>.fileProvider authority, RuntimeLoaderActivityV3 launcher, payload project.ncv3, отсутствие ${...} плейсхолдеров и старого пакета вне 
-ame). test heap -Xmx4g в catroid/build.gradle.
-- **Ограничение среды**: нет устройства/SDK ⇒ реальный db install не проверялся; сосуществование доказано логически (разные applicationId + authorities) и тестом.
-- **Локатор шаблона**: catroid/.../apkbuildV3/TemplateManagerV3.kt — prepareBaseApk теперь: 1) кэш `filesDir/v3_template/template_runtime_v3.apk` используется как есть (без HEAD-проверки — свежесть отвечает визард, сборка кэш не перекачивает); 2) скачивание с GitHub при пустом кэше (`raw.githubusercontent.com/Ivproduction-dev/Neocatroid-Template` → LFS-детект по префиксу `version https://git-lfs.github.com/spec/v1` → media.githubusercontent.com), OkHttp (connect 15s, read 300s, buffer 64КБ, текущий прогресс в onProgress); 3) fallback assets (legacy); 4) fallback на собственный APK (applicationInfo.sourceDir); бросает IllegalStateException с причинами отказа вместо null. Прогресс скачивания маппится в 0..0.15f окна assemble (locateBaseApk передаёт p*0.15f). `ensureCachedTemplate()` возвращает `TemplateOutcome.Ready(file, updated)` / `Failed(failure, detail, cachedFile)` (failure = NO_SPACE/NETWORK/BAD_FILE); отсутствие ETag у ответа больше не считается ошибкой (сравнение по ETag+размеру только для детекта «уже актуально», `.etag` рядом с кэшем); ошибка Refresh при живом кэше не сносит ready-статус. Диалог показывает причину (строки `v3_template_error_*`, `v3_template_uptodate`, en+ru). V3ApkAssembler.assemble пробрасывает исключение, поэтому ApkBuilderV3Engine показывает реальную причину, а не обобщённое «проверьте template_runtime.apk». Пайплайн inject→patch→sign проверен headless на обеих базах (runtime-шаблон 188 МБ и self-APK 624 МБ) — работает; значит сбой на устройстве = prepareBaseApk вернул null (нет файла в установленном APK, не хватает места в cacheDir либо офлайн без кэша). `catroid/src/main/assets/template_runtime.apk` больше не лежит в assets игры V3 (гитигнорирован, гит не трекит) — при тесте V3PackageRenameTest.exportTwoGames_coexistAndVerify репак берётся из src/main/assets/template_runtime.apk с assumeTrue и равно скипается.
-- **Подпись (исправлено 2026-07)**: `V3ApkAssembler.doSign` НЕ должен ссылаться на провайдер по имени `BouncyCastleProvider.PROVIDER_NAME` (= "BC") — на Android под именем "BC" уже зарегистрирован урезанный платформенный провайдер (Conscrypt), который не реализует BC content-signer, отсюда `NoSuchAlgorithmException: SHA256WithRSA for provider BC`. Используется ЭКЗЕМПЛЯР `BouncyCastleProvider()` (`.setProvider(bc)`) и генерация ключа `KeyPairGenerator.getInstance("RSA", bc)`. На JVM-тесте "BC" — полный BC, поэтому тест проходил, а устройство падало.
-- **СТАЛЫЙ template_runtime.apk (исправлено 2026-07)**: закоммиченный `catroid/src/main/assets/template_runtime.apk` был СТАРЫМ (собран до появления V3-runtime) и НЕ содержал классов `RuntimeLoaderActivityV3`/`ProjectLoaderV3`. Игра собиралась и ставилась, но падала сразу при запуске (ClassNotFoundException на launcher). Перегенерирован через `./gradlew copyTemplateApk` (собирает `assembleRuntimeTemplate` = flavor `runtime` + buildType `template`, minify с `proguard-runtime.pro`, который держит `org.catrobat.catroid.apkbuildV3.**` и `apkbuildV3.runtime.**`). Результат 171 МБ и содержит V3-runtime (проверено dex-сканом).   `copyTemplateApk` падает на задаче `uploadCrashlyticsMappingFileRuntimeTemplate` (нет Firebase appId для runtime-флейвора) — обход: `./gradlew copyTemplateApk -x uploadCrashlyticsMappingFileRuntimeTemplate`. Рекомендация: перегенерировать template при любом изменении V3-runtime; желательно зашить `copyTemplateApk` в mergeAssets редактора, чтобы ассет не протухал.
-- **Дедупликация пейлоада (2026-09)**: `stageProjectPayload` пакует стейджинг через `ZipArchiver.zipDedup` (MD5-дедуп одинаковых байтов + `dedup_manifest.json` в корне zip, медиа — STORED, остальное — DEFLATED level 9). `ProjectLoaderV3` (`loadFull`/`loadLight`) после распаковки применяет манифест через `DedupManifestApplier` (восстанавливает дубли копированием, манифест удаляет; без манифеста — no-op). Без дедупа пейлоад ≈ размеру папки проекта с дублями (1 ГБ → ~700 МБ в APK), с дедупом ≈ размеру `.catrobat`. ВАЖНО: `ProjectLoaderV3` — код темплейта, после правок лоадера **обязательно** перегенерировать `template_runtime.apk` (и обновить шаблон на GitHub), иначе старый лоадер не восстановит дубли из нового пейлоада и игра потеряет файлы.
-- **V3 build settings fixes (2026-09)**:
-  - Permissions: `patchManifest` → `syncPermissions()` — сначала удаляет ВСЕ `uses-permission` темплейта, затем добавляет только выбранные (`distinct()`). Раньше выбор только добавлял поверх ~20 разрешений редактора.
-  - Firebase: чистая `FirebaseConfigManager.matchClient()` (тесты); mismatch-ошибка показывает найденные в json пакеты (`%1$s`/`%2$s`, en+ru); диалог перепроверяет json с ФИНАЛЬНЫМ package в момент Build.
-  - Icon: стейдж `injectAppIcon()` (firebase→icon→sign; фейл = template-иконка, сборка живёт). Механика как `ApkToolboxManager.replaceIconInApk`, но только `ic_launcher*.png` — скомпилированные `mipmap-anydpi-v26/*.xml` не трогаются (PNG в .xml = битая adaptive-иконка на API 26+). Следствие: на API 26+ лаунчер пока показывает adaptive-иконку темплейта — нужна генерация adaptive-иконки (отдельная задача).
-  - Тесты: `V3PermissionsTest` (3, без ассета), `FirebaseClientMatchTest` (5), `V3IconInjectionTest` (2, позитивный через `assumeTrue(template_runtime.apk)`).
-- **V3 wizard (2026-09)**: диалог сборки переделан в 4-шаговый визард как в оригинале (`ApkBuilderV3ExportDialog` + `dialog_apk_builder_v3_export.xml`): сверху подзаголовок `v3_step_format` + анимированный ProgressBar (`ObjectAnimator`, 25/50/75/100), внизу Cancel/Back/Next (на 4-м шаге Next=Build), переходы через `AutoTransition`. Шаг 1 Template: статус кэша (`TemplateManagerV3.getCacheStatus()`), кнопка Download/Refresh → `ensureCachedTemplate()` с прогрессом; дальше без готового шаблона не пускает. Шаг 2 App (+иконка), шаг 3 Permissions, шаг 4 Firebase. Валидация package переехала на переход 2→3 (в Build оставлена как страховка). Факты в прогрессе сборки: берутся из `R.array.loading_facts` (локализованы), ротация по таймеру 10с через `Handler.postDelayed` независимо от колбэков прогресса (раньше менялись на каждый файл = мелькание).
-
----
-
-#
-
-Аудит `PathfindingManager.kt` + `MoveToObjectAction`/`HasPathAction` после правок динамических препятствий и стратегий пути. Исправлено:
-
-- **Data race (CRITICAL)**: A* (`findPath`/`smoothPath`/`hasLineOfSight`) читал `navGrid.walkable` из `pathExecutor`-потока, пока render-поток мутировал его в `updateObstaclesDynamic` → «рваные» пути. Фикс: `snapshotGrid()` копирует `walkable` в начале `findPath`/`smoothPath`, все проверки внутри работают со снапшотом; `hasLineOfSight(from,to,grid,scm,sw,sh)` теперь принимает grid параметром (вызовы из render-контекста передают свежий снапшот).
-- **addObstacle без сетки (HIGH)**: `step = navGrid?.cellSize ?: 1f` → до 100 000 точек на препятствие (вызывалось до проверки `navGrid == null` в `MoveToObjectAction`). Фикс: ранний `return` при `navGrid == null` + очередь `pendingObstacleNames`; `createGrid()` после построения пересканирует отложенные имена.
-- **HasPathAction (HIGH)**: синхронный A* (до 50 000 итераций) на render-потоке в каждом кадре. Фикс: `findPathToObjectAsync` + колбэк; блок завершается сразу, результат пишется в переменную по приходу (на кадр позже).
-- **update() (MEDIUM)**: линейный поиск спрайта по имени на каждый фолловер каждый кадр → `HashMap<name, Sprite>` строится один раз за кадр.
-- **Вечный replan (MEDIUM)**: при недостижимой цели и `enableDynamicReplanning` фолловер перепланировал путь до конца времен — цикл не сходился. Фикс: stalePath-проверка во всех трёх replan-колбэках — если последняя точка нового пути совпадает со старой (< 1f), путь не обновляется; фолловер завершается (REACHED для end-replan, onPathBlocked+IDLE для waypoint-replan).
-- **MAX_ITERATIONS**: 50000 → 200000 (пути на больших сетках не находились; A* работает на executor-потоке).
-- **Мёртвый код удалён**: `updateObstacles()`, `createObstaclesFromBackground()`, `rebuildGrid()`, `findPathToObject()` (sync), `findPathWithSmoothing()`, `findPathToObjectWithSmoothing()`, `setPathForFollowerWithSmoothing()`, `getGridInfo()`, `getObstacleCount()`, `getFollowerCount()`, `getFollowerInfo()`, `isPathWalkable()`, `getNearestWalkablePoint()`, `debugPrintGrid()`, `getWalkableAreaPercentage()` — нигде не вызывались (проверено grep по всему репо).
-
-## Редакторы: инвентаризация + подключение ParticleEditor (2026-08)
-
-В проекте 9 редакторов. 4 были «спящими» (в манифесте, но без точек входа): TilemapEditor, DialogueEditor, ParticleEditor, NeoPaint. Подключён **ParticleEditor** (полноэкранный редактор 3D-частиц, Unity-стиль, `editor/ParticleEditorActivity.kt`):
-
-- **Точка входа**: кнопка `btn_quick_particles` в quick-actions панели 3D-редактора (`editor_activity.xml`, иконка `drawable/ic_particles.xml`, между инспектором и разделителем).
-- `EditorActivity.setupUI()`: если у выбранного объекта есть `ParticleSystem3DComponent` → `ParticleEditorActivity.Companion.launch(this, id, false)`; иначе AlertDialog «Добавить Particle System 3D?» → `go.addComponent(ps3d)` + `sceneManager.engine.createParticleProxy(id)` + `updateParticleEffect3D(...)` (тот же код, что case 8 в `InspectorManager.showAddComponentDialog`) → launch.
-- Из Java companion-методы Kotlin вызываются как `Companion.launch(context, id, false)` (3 аргумента, есть дефолтный `useUi2`).
-- Строки: `editor_3d_particles`, `editor_3d_particles_add_prompt` (en + ru).
-
-Не подключены (осталось на потом): TilemapEditor (рантайм есть: `SetTilemapSolidBrick`, формулы `tilemap_width/height`; строки `look_new_tilemap`/`look_edit_tilemap` уже есть), DialogueEditor (рантайм есть: `DialogueRunner`, `StartDialogueBrick`), NeoPaint (основной флоу идёт в PocketPaint).
-
-Идеи новых редакторов (компоненты для переиспользования): Level Designer (`TilemapEditorView`+`SceneEditorView`+`writePosition`), Animation/Keyframe (`CurveEditorView`), Physics Shape Editor (расширение `HitboxEditorView` до полигонов/окружностей), UI/HUD Editor (ShowText + WhenTouchDown с якорями), Path Editor (GlideTo waypoints), Atlas Cutter (нарезка спрайт-листов), Skeleton/Bone Editor (фундамент — ragdoll-режим 2 `PhysicsLook.updateRagdollFollow`), Game State Editor (UserVariable/UserList), AI/Behavior FSM Editor (как DialogueEditor, но для ИИ: состояния+переходы → WhenCondition/Switch), Input Mapper (геймпад/клавиши → WhenGamepadButton/KeyEvent), Variable Watch (отладка значений переменных в рантайме).
-
-## Physics collision fix — Desktop + Android (2026-07-19)
-
-
-### Android (PhysicsObject.java)
-- **Баг**: `setType(Type.FIXED)` и `setType(Type.NONE)` использовали `BodyType.KinematicBody`. FIXED-объекты (стены, пол) должны быть `StaticBody` — truly immovable. KinematicBody может проталкивать динамические тела иначе, чем StaticBody, что приводит к некорректной коллизии при наклонных ударах.
-- **Фикс**:
-  - `FIXED` → `BodyType.StaticBody` + `gravityScale(0.0f)`
-  - `NONE` → `BodyType.StaticBody` + `gravityScale(0.0f)`
-  - `body.setBullet(false)` при выходе из DYNAMIC (CCD не нужен на статике)
-- **PhysicsBoundaryBox**: уже `StaticBody` + `PolygonShape` — трогать не пришлось.
-- **Тесты**: `PhysicsObjectTest` — обновлён `testSetType()` (KinematicBody→StaticBody), добавлен `testSetTypeBulletTransitions()` (7 переходов bullet=true/false).
-
----
-
-# 3D-модели: устойчивость загрузки GLB/GLTF (2026-08)
-
-Проблема: некоторые GLB-модели (напр. Sketchfab) давали «синий экран» в 3D-редакторе и ломали 3D-игру.
-
-## Анализ проблемной модели (vanessa_-_fnaf_security_breach.glb, Sketchfab)
-
-- 9.5 МБ, glTF 2.0, БЕЗ extensionsUsed/Required (нет Draco) — структурно валидна для gdx-gltf.
-- 12 узлов, 10 мешей, 10 материалов, 19 текстур (JPEG+PNG), 0 анимаций/скинов.
-- Индексы UNSIGNED_INT (componentType 5125), до 57К индексов на меш; TEXCOORD_0..4 (gdx-gltf читает только texcoord0, лишние игнорирует).
-- Материалы: alphaMode=BLEND (ресницы/волосы/стекло), normal/emissive текстуры, doubleSided.
-- Недочёт модели: `emissiveFactor: [1,0,1,0,1,0]` (6 значений вместо 3) у `MI_GregFlashlight_00` — gdx-gltf читает первые 3, не падает.
-- Реальные причины «синего экрана» могут быть: OOM/GL-OOM при декодировании 19 текстур (Error, не Exception — раньше НЕ ловился), нативный GL-краш при upload (текстуры > maxTextureSize), либо исключение рендера сцены (realisticMode → gdx-gltf SceneManager).
-
-## Что исправлено
-
-- **`ThreeDManager.createObject()`** и **`replaceModel()`**: `catch (Exception)` → `catch (Throwable)` (OOM/Error больше не убивают приложение), в лог пишется полный стектрейс с путём модели.
-- **Preflight-проверка GLB**: `hasUnsupportedGltfExtensions(FileHandle)` — читает JSON-chunk бинарного GLB (`readGltfJsonChunk`, magic glTF + chunk0) и отклоняет модели с `KHR_draco_mesh_compression` / `EXT_meshopt_compression` / `KHR_texture_basisu` (gdx-gltf 2.2.1 их не умеет) с понятным сообщением в логе.
-- **Защита рендер-цикла** `renderColorsOnly()`:
-  - non-realistic: `modelBatch.render()` каждого объекта обёрнут в try/catch(Throwable); упавший инстанс удаляется из `sceneObjects`/`gltfObjectIds`/`animationControllers` после `modelBatch.end()` (без ConcurrentModificationException) — игра продолжает работать.
-  - realistic: `sceneManager.renderMirror()/renderTransmission()/renderColors()` каждый в своём try/catch(Throwable) с логом.
-- **`SceneManager.rebuildGameObject_internal()`**: если `engine.createObject()` вернул false — вместо «пустого» объекта ставится куб-примитив (`engine.createCube`) + лог с причиной; редактор больше не показывает пустоту («синий экран»). Существующий объект при этом не трогается (guard `containsKey` в createCube).
-
-## Проверка
-
-`./gradlew :catroid:compileCatroidDebugJavaWithJavac --offline -q` — BUILD SUCCESSFUL (только стандартные Note).
-Диагностика причины у пользователя: logcat-теги `3DManager_PBR` / `3DManager` / `SceneManager` — там теперь стектрейс причины отказа.
----
-
-# Перенос функций и регистрации из оригинала (2026-08)
-
-## Новые формулы (перенесены из Danveyd/NewCatroid)
-
-- **FILE_TO_BASE64** («файл_в_base64») — файл из проекта -> Base64 (NO_WRAP).
-- **MD5** («md5») — MD5-хеш строки (HashUtils.hashString).
-- **NOTIFICATION_REPLY** («ввод_из_уведомления») — ответ, сохранённый в уведомлении
-  (NewCatroidNotificationManager.getSavedReplies по cleanStringId).
-- **READ_FILE** («прочитать_файл») — чтение файла проекта (лимит 2 МБ, UTF-8).
-- Оператор **CONCAT** уже был у нас (не переименован в STRING_CONCAT ради совместимости проектов).
-
-### Файлы правок
-- `formulaeditor/Functions.java` — enum + TEXT-сет (после LIST_MAX).
-- `formulaeditor/FormulaElement.java` — 4 case после case FILE; импорт NewCatroidNotificationManager.
-- `formulaeditor/InternFormulaKeyboardAdapter.java` — case'ы formula_read_file/file_to_base64/md5/notification_reply.
-- `formulaeditor/InternToExternGenerator.java` — маппинги в INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.
-- `ui/recyclerview/fragment/CategoryListFragment.java` — STRING_FUNCTIONS/STRING_PARAMS
-  (после formula_file_read_string*).
-- `strings.xml` + `values-ru` — formula_read_file(+_param), formula_file_to_base64(+_param),
-  formula_md5(+_param), formula_notification_reply(+_param). ВАЖНО: апострофы в параметрах
-  экранируются `\'\'` (aapt падает «Invalid unicode escape sequence» на голых кавычках).
-
-## Регистрация Pen/Pt/ML бриков (2026-08)
-
-- **CategoryBricksFactory.kt** (ui/fragment): penBrickList += SetPenPropertyBrick(0,"1"),
-  PenDrawLineBrick, PenDrawTriangleBrick, PenDrawRectBrick, PenDrawCircleBrick, PenFlushBrick,
-  PenClearColorBrick; setupPocketensorCategoryList += PtCreateNormalTensorBrick, MLStepAdamWBrick,
-  PtSliceBrick, PtDropoutBrick, PtZeroGradBrick, PtClipGradBrick, PtLayerLinearBrick, PtConv2DBrick,
-  PtMaxPool2DBrick, PtGruCellBrick, PtLstmCellBrick, PtEmbeddingBrick, PtAttentionBrick;
-  dataBrickList += SetTextPropertyBrick("myText", 0, "100") (2 места).
-- **XstreamSerializer.java** — 21 xstream.alias("brick", ...) после DeleteFirebaseFileBrick.class.
-- **BrickInfo.java** — описания ru (add) + en (addEn) для 8 Pen/Text бриков (тексты из оригинала)
-  и 13 Pt/ML (свои краткие); вставлены перед закрывающей "}" ru-секции (после addEn(VisualPlacementBrick)).
-- **ActionFactory.java** — 21 create-метод (createPtLayerLinearAction ... createPenDrawCircleAction).
-- **StageListener.java** — setActorZIndexSafely(actor, zIndex).
-
-## ShowTextActor (float-позиции, 2026-08)
-
-- xPosition/yPosition int -> float; сеттеры setPositionX/Y(float), setScaleX/Y, setAlphaValue,
-  setRotationDegrees, setRelativeSize, setColorStr, setRawText, setAlignment, setFontFromFile.
-- В drawText применены scaleX/scaleY/alpha/rotation (обе ветки: кэш и пересоздание).
-- drawVariables использует rawText при isText. Kotlin-вызовы (ShowTextAction.kt) через .toFloat().
-
----
-
-### Перенос формул из оригинала, часть 2 (2026-09)
-Сверка с оригиналом показала 21 недостающую функцию + 5 сенсоров. Проверка на дубликаты: точные аналоги уже были только у `SHA256` (=`SHA_256`), `CLIPBOARD_TEXT` (=`CLIPBOARD_PASTE`), `ARCH` (=`CPU_ARCHITECTURE`), `BATTARY` (=`BATTERY_PERCENT`) — для совместимости старых проектов добавлены как отдельные константы с тем же поведением. Остальное портировано: `CAMERA_X/Y/ROTATION/ZOOM` (+4 геттера в `StageListener`), `CHAR_TO_UNICODE/UNICODE_TO_CHAR/UNESCAPE_UTF`, `FILE_LAST_MODIFIED/FILE_MD5/FILE_SHA256`, `HTTP_RESPONSE_TEXT/CODE/HEADER` (бэкенд `NewCatroidHttpManager` уже был), `MQTT_MESSAGE` (бэкенд уже был), `MEDIA_DURATION/IMAGE_WIDTH/IMAGE_HEIGHT`, `JOINNUMBER` (+`interpretFunctionJoinNumber`), `PT_SAMPLE` (бэкенд `MLBridge` уже был). Сенсоры: `ARCH/BATTARY/CLIPBOARD_TEXT` в `SensorHandler`, `KEYBOARD_HEIGHT` (+статики `isKeyboardVisible/realKeyboardHeight` и insets-listener в `StageActivity`), `OBJECT_NAME(true)` (→`sprite.name` в `FormulaElementOperations`). Палитра/адаптер/extern/строки en+ru заведены. Заодно: `NewCatroidBackgroundService` объявлен в манифесте (был только класс, фоновый тик не стартовал).
-
-# Crash-обработка (2026-08)
-
-- **BaseExceptionHandler.kt**: глобальный UncaughtExceptionHandler ставится в CatroidApplication.onCreate\n  (ранний перехват) И повторно в MainMenuActivity.onCreate (последняя установка — никем не перетирается,\n  как в оригинале; НЕ делегирует default-хендлеру, чтобы системный kill не помешал CrashActivity).
-  Собирает отчёт (CrashReporter: logcat 1000 строк E/F + стектрейс, до 200КБ), сохраняет в
-  `cacheDir/crashReports/crash_<uuid>.txt` **и** в `cacheDir/last_crash_log.txt`, ставит
-  RECOVERED_FROM_CRASH=true, запускает CrashActivity (NEW_TASK|CLEAR_TASK).
-- **CrashActivity**: диалог «Something went wrong» -> OK -> главное меню; в фоне отправка
-  отчёта в Firestore (коллекция `crashes`, TelemetryManager.getTelemetryFirestore), после
-  успеха файл удаляется; удаляет и last_crash_log.txt.
-- **MainMenuActivity**: при старте читает/удаляет last_crash_log.txt -> если есть, показывает
-  AlertDialog со стектрейсом (fallback на случай, когда CrashActivity не успела показаться —
-  краши на GL-потоке/OOM) + sendPendingReports() донасылает неотправленные отчёты.
-- **RECOVERED_FROM_CRASH**: BaseActivity закрывает все активити кроме MainMenuActivity.
-- **EditorActivity**: свой handler (emergency-save сцены в AUTOSAVE_FILE_NAME JSON), затем
-  делегирует дефолтному.
-- Настройка: `setting_enable_crash_reports` (по умолчанию true).
-- Отличие от оригинала (Danveyd/NewCatroid): у них нет отправки — только last_crash_log.txt +
-  диалог в главном меню при следующем запуске (MainMenuActivity.onCreate); их глобальный
-  BaseExceptionHandler в BaseActivity закомментирован.
-
-# Scene-переменные (2026-08)
-
-Scene-локальные переменные: видны только внутри своей сцены, сбрасываются при выходе из сцены. Сценных списков (UserList) НЕТ.
-
-## Порядок поиска переменной (UserDataWrapper.getUserVariable)
-sprite -> scene -> project -> multiplayer. Scene-переменная с тем же именем, что project-переменная, выигрывает (testSceneVariableHidesGlobalVariable).
-
-## Модель и сброс
-- Scene.java: поле @XStreamAlias("sceneVariables") (List<UserVariable>, transient getter, updateUserDataReferences), методы getSceneVariable(s)/addSceneVariable/removeSceneVariable/resetSceneVariables; sceneVariables добавлен в XStreamFieldKeyOrder.
-- UserDataWrapper.getUserVariable — scene-lookup; UserDataWrapper.resetAllUserData — цикл по project.getSceneList() c scene.resetSceneVariables() (при старте проекта).
-- StageListener.resetLeavingSceneVariables() вызывается до смены 	his.scene в 4 точках: doSceneSwitch, transitionToScene (2-arg), applySceneSwitch, applyStartScene.
-
-## UI
-- Спиннеры с scene-переменными (после sprite-vars, до project vars): UserVariableBrickWithFormula, UserVariableBrickWithVisualPlacement, UserDataBrick (только ветка variables), WhenVariableChangedBrick, UserVariableBrick.
-- UserVariableBrickTextInputDialogBuilder — radio «Scene» показывается только если editedScene != null && !editedScene.isGlobalScene(); создание через editedScene.addSceneVariable().
-- DataListAdapter VAR_SCENE=4, DataListFragment.kt (спиннеры/секции), ListSelectorFragment.kt:142.
-- ShowTextActor.draw — отрисовка scene-переменных: Scene currentScene = ProjectManager.getInstance().getCurrentlyPlayingScene(); if (currentScene != null) drawVariables(currentScene.getSceneVariables(), batch);
-- Строки: 7 новых en+ru.
-
-## Тесты
-- 	est/formulaeditor/SceneUserVariableTest.java — 9 тестов (add/get/remove/reset, lookup-порядок, изоляция сцен, сброс через resetAllUserData). Все зелёные.
-- Факты: UserDataWrapper — final, приватный конструктор, статические методы getUserVariable(String, Scope)/getUserList(String, Scope)/resetAllUserData(Project); 
-ew Scope(project, sprite, null) валиден; в plain-JUnit обязателен MockUtil.mockContextForProject() (Project.<init> зовёт context.getString — мок возвращает null для незаглушенных ключей).
-- XStream: сериализация работает автоматически (алиас userVariable уже есть в XstreamSerializer:268).
-
-## Известная хрупкость (НЕ наша)
-- SceneTransitionActionTest (2 теста) падает в пачке (GlobalSceneTest/NeoScriptSceneTest + др. в одном процессе): NPE «Scene.getName() is null» в SceneTransitionAction.update (~:45) — другой тест ставит currentlyPlayingScene = defaultScene с null-именем (мок getString(R.string.default_scene_name)). В изоляции тест проходит, на чистом HEAD в изоляции тоже проходит — pre-existing, не регрессия.
-## Crash fix: NPE в hasUserDataChanged / hasSameValue (2026-08)
-
-Причина: правка формулы из FormulaEditor (SpriteActivity.onBackPressed > ScriptFragment.checkVariables):
-`UserVariable.hasSameValue` падал с NPE, т.к. `value`/`list` у UserVariable/UserList — **transient**
-(не восстанавливаются при загрузке проекта = null). Любой вызов (List.size() on null) валил сравнение,
-что блокировало выход и передавало null в `hasUserDataChanged`.
-
-- `UserVariable.java`: `hasSameValue`/`equals`/`hashCode` — null-safe (value и name).
-- `UserList.java`: `hasSameListSize`/`equals`/`hashCode` — null-safe (list и name).
-- `Project.java` + `Sprite.java`: `hasUserDataChanged` — null-список = пустой список
-  (size 0); `checkEquality`/`checkUserData` — guard на null oldUserData.
-- Тест: `test/formulaeditor/UserVariableNullSafetyTest.java` (6 тестов).
-
-# Fix: старые блоки и alias ShowToastBlock (2026-08)
-
-Проблема: проекты, созданные до переименования `ShowToastBlock` > `ShowToastBrick` (2026-07-08),
-падали при загрузке: `<brick type="ShowToastBlock">` не находил класс и заменялся на `UnknownBrick`
-(данные блока терялись).
-
-- `XStreamBrickConverter`: добавлена карта `LEGACY_BRICK_ALIASES`
-  (`ShowToastBlock` > `ShowToastBrick`) + remap в `doUnmarshal`. Старые проекты загружаются корректно.
-- `ShowToastAction.kt`: null-guard на `StageActivity.messageHandler` + fallback-тост через
-  `CatroidApplication.getAppContext()` на main-looper (защита от NPE, если handler null),
-  удалён неиспользуемый `contextt`.
-- Тест: `test/formulaeditor/ShowToastLegacyAliasTest.java` (2 теста: legacy remap при
-  десериализации + round-trip сохранения).
-
-# Фиксы редактора и скриптов (2026-08)
-
-## 3D-редактор (editor/)
-- UndoManager: synchronized + исполнение команд на GL-потоке; clear() в onEngineReset.
-- Commands: Delete/AddCommand сериализуют всё поддерево (undo/redo не теряет детей композитов).
-- Crash-handler: identity-check перед restore в onDestroy; catch Throwable; атомарная tmp+rename запись.
-- onCreate guard: savedInstanceState != null или нет проекта -> finish (process-death).
-- Все мутации сцены из UI (delete/duplicate/add/focus/particles) обёрнуты в Gdx.app.postRunnable;
-  то же для InspectorManager delete-object/prefab-remove и remove{Render,Physics,Light}Component,
-  renameGameObject(engine), setObjectActive, setFriction/setRestitution.
-- Autosave сцены на диск (tmp+rename) в onPause + дебаунс 3с от pushCommand; чистый выход/Clear Scene
-  инвалидирует _recovery_autosave.rscene; EditorStateManager удалён (write-only кэш).
-- Recovery: JSON-валидация до диалога, восстановление через resetEngine (GL-поток).
-- Save scene: санитизация имени, сериализация GL + запись в фоне, compact-json.
-- requireEngineReady() для save/load/clear/skybox; ACTION_CANCEL у камерных кнопок.
-- bulk-duplicate клонирует источник каждый раз (был O(2^n)); TransformCommand создаётся после мутации.
-- SpriteActivity.saveProject debounce 800мс; getCurrentSceneData deep-copy только при PrefabComponent.
-
-## Вьюпорт
-- Тап по хэндлу без движения вызывает gizmo.touchUp(); setCurrentTool завершает драг;
-  мультитач-guard в touchDown; rotate детей конвертируется в пространство родителя.
-- Камера: pitch-clamp ±89°, resetMotion() в onPause, pinch-dolly zoom, quick-focus через postRunnable.
-- PS3D-объекты выделяемы тапом; прокси из worldTransform; dispose снимает InputProcessor.
-- Кейфреймы: Play-guard пустого списка, scale clamp >=0.01, debugDrawer begin/end один на кадр,
-  драг удалённого объекта прерывается. applyTransformToEngine: tmpQuaternion вместо new на объект.
-- FALSE POSITIVE (не чинить): «двойной mul bbox гизмо» — calculateBoundingBox возвращает локальный bbox,
-  один .mul корректен (проверено исходниками libGDX).
-
-## Инспектор
-- editor_3d_physics_states = 5 значений в порядке PhysicsState (en+ru) + clamp — был IOOBE и запись NONE.
-- Новый editor_3d_easing_types (33 = enum EasingType) en+ru; brick_easing_types не тронут (для кирпичей).
-- Preview анимации: previewingOwner + cancelStalePreview (поза возвращается правильному объекту).
-- Rename guard selectedObject == go; DelayedTextWatcher = реальный debounce 300мс.
-- Спиннеры physics/light/animation/fog/shape: post{} attach + clamp (нет фантомного первого fire).
-- Collider/camera watcher'ы hasFocus-guard; EyeAdaptation updatePP; PS3D debounce проверяет живость GO.
-- Удаление CameraComponent -> findAndSetMainCamera; setMaterialComponent null-guard; keyframes под
-  synchronized(anim.keyframes); updateKeyframeAnimations итерирует снапшот; Play пустых keyframes -> тост.
-
-## Скрипты (legacy)
-- AI-таймер не дёргает updateItems во время drag/action mode; code analysis: снапшоты списков +
-  toList() в CodeAnalyzer + try/catch + generation-counter (GlobalScope CME).
-- Выделение: bounds-guard позиций (-1 свёрнутых детей) в setSelectionTo/selectedItems.
-- copyProjectForUndoOption(2000ms): await снапшота ДО мутации (delete/cut/paste).
-- handleContextualAction return после finish(); одиночный DELETE/COPY через полный путь guards.
-- pasteBricksBelow: resolveBrickReferences перелинковывает Look/Sound/UserVariable/UserList на целевой
-  спрайт (рекурсивно по композитам).
-- exportScripts клонирует скрипты на main до Thread; backpack.json атомарно; unpack по flat-list;
-  CSV-escape значений списков; повторный pack мержит звуки; пустой pack -> тост ошибки.
-- ACTION_CANCEL в BrickListView = отмена переноса; onBackPressed проверяет isCurrentlyMoving до workspace.
-- addItem -> Boolean (нет фантомного startMoving); showUndo(false) только в мутирующих ветках;
-  Log.d удалены из getView; O(n^2) indexOf -> indices loop.
-
-## Формульный редактор (+совместимость со старыми проектами)
-- InternToExternGenerator: context==null -> fallback intern-имя (NPE в EventId.hashCode на stage-потоке);
-  parseDouble в trim-пути -> try/catch.
-- InternFormulaParser: парс строго на копии токенов; bracket-correction пишется обратно только при успехе.
-- FormulaEditorFragment: null-guard полей в onCreateView (process-death); refreshFormulaPreviewString
-  реинфлейтит brick-view только при смене кирпича/поля; hasFileChanged потоково сравнивает файлы;
-  onActivityResult requestCode-guard; ACTION_CANCEL останавливает автоповтор Backspace.
-- Formula.java: ensureInternFormula() во всех update*-методах (rename спрайта/переменной после загрузки
-  старого проекта; миграции v<=0.993).
-- WorkspaceLayout: окно формулы закрывается только при успешном сохранении формулы.
-- ExternalIpFetcher: main-thread guard + негативный кэш 30с.
-- Ui2: saveProjectToDisk в фоновом потоке.
-- DEVICE_PARAMS генерируется размером DEVICE_FUNCTIONS (54<->54, хинты выровнены).
-- Guard'ы: handleDeletion(RIGHT) null-check; DISTANCE null->0; Operators.getOperatorByValue null-check.
-
-## Совместимость со старыми проектами
-Форматы не менялись: XStream-поля, порядок Functions/Sensors/Operators, INTERN_EXTERN_MAP, .rscene,
-backpack.json (CSV-escape обратно совместим). Автоскобки парсера попадают в кирпич при успешном OK.
-
-## Отложено (требует рефакторинга)
-RecyclerView-миграция BrickAdapter; объектное выделение кирпичей; command-дифы FormulaEditorHistory;
-явный Cancel в формулах; утечки SensorHandler/FormulaEditorClipboard/IntroDialog; project-undo формул;
-OBB/ray-triangle пикинг; dirty-flag трансформов; кэш bbox raycast; listFiles-кэш пикеров; Fog-ветка.
-
-## Сборка
-`./gradlew :catroid:compileCatroidDebugKotlin :catroid:compileCatroidDebugJavaWithJavac --offline` — OK.
-Формула-тесты formulaeditor.*: 72 фейла pre-existing (stash-бисекция InternFormulaParser: те же на HEAD).
-
----
-
-# Совместное редактирование P0 (presence + scriptId-локи, 2026-09)
-
-## Архитектура (зафиксировано; своего сервера нет)
-- **RTDB — НЕ используется** (не provisioned: в google-services.json нет firebase_url).
-  Presence/heartbeat идут через Firestore (heartbeat 5с, TTL-фильтр 20с на клиенте).
-- **Firestore (проект privacy-neocatroid, отдельный FirebaseApp "collab",
-  координаты в `collab/CollabFirebase.kt`)** — `collabSessions/{sid}/`:
-  `meta/meta`, `members/{uid}`, `invites/{code}`, `requests/{uid}`,
-  `presence/{uid}`, `locks/{scriptId}`. Compound-индексов не нужно
-  (только get/doc-слушатели коллекций без where/orderBy).
-  Дефолтный `catroid-b0d71` из google-services.json — заглушка оригинала,
-  коллаб его не использует. Anonymous Auth должен быть включён именно
-  в privacy-neocatroid.
-- **Telemetry-Firestore (privacy-neocatroid, отдельный FirebaseApp) — не трогать**,
-  коллаб туда ничего не пишет. Настройки Firestore default-инстанса не меняем
-  (иначе заденем Firestore-брики).
-- **GitHub/JGit — только P1+, модель «хост-шлюз»** (решение 2026-09):
-  Git-доступ есть ТОЛЬКО у хоста (его PAT, только на его устройстве).
-  Гости заходят по коду комнаты без GitHub: шлют патчи/медиа хосту,
-  хост применяет, коммитит с author=гость и пушит. JGit уже в зависимостях
-  (`GitController`, `ProjectMerger` — переиспользовать).
-
-## Файлы
-```
-collab/
-  CollabModels.kt / CollabPure.kt (BorderSegments, PresenceFreshness, CollabAccess, CollabCodes, HsvColor)
-  CollabSession.kt (сессии, heartbeat, PERMISSION_DENIED -> локальный leave, persist sid для reconnect)
-  PresenceReporter.kt / PresenceRenderer.kt / PresenceBorderDrawable.kt / PresenceColors.kt
-  ScriptLocks.kt (policy + менеджер + Firestore/Fake бэкенды, heartbeat 10с, TTL 30с)
-  CollabGuards.kt (@JvmStatic гарды для Java-соседей) / CollabAuth.kt / CollabDialog.kt
-test/collab/ — 47 JVM-тестов (models, policy, manager+fake, pure, access)
-collab-firestore.rules — правила для консоли; collab-rules.test.js — emulator-suite
+6. в CategoryListFragment в соответствующий список FUNCTIONS/PARAMS (списки идут парами, размеры должны совпадать):
+
+```java
+private static final List<Integer> MY_FUNCTIONS = asList(R.string.formula_my_func);
+private static final List<Integer> MY_PARAMS = asList(R.string.formula_my_func_param);
 ```
 
-## Швы enforcement (view-only чужого события)
-- drag: `BrickListView.startMoving`; формулы: `FormulaEditorFragment.showFragment` +
-  `WorkspaceLayout.openFormulaEditorWindow`; меню брика: `ScriptFragment.onBrickClick`;
-  action-mode: `showDeleteAlert`, `toggleComments`, `pasteBricksBelow` (ScriptBrick-вставки
-  в новый скрипт разрешены); дим чужих строк в `BrickAdapter.getView`.
-- Claim своего: те же точки входа; release в `ScriptFragment.onPause`
-  (`stop()` сначала релизит, потом null'ит sessionId — порядок важен, покрыто тестом).
-- Offline = fail-open локально (координировать не с кем); арбитр — git-merge в P2.
-- Известные обходы P0 (не чинить здесь): CatBlocks (`useCatBlocks`, default off),
-  SceneEditor (`isSceneEditorModeEnabled`, default off), project-undo (модельный снапшот),
-  модифицированный клиент (угроза вне модели: серверный enforcement только GitHub из P1).
+7. основной кейс в FormulaElement:
 
-## Правила безопасности (идея)
-- members пишут только owner (`meta.ownerUid`); presence — только свой doc;
-  invite claim — одноразовый через транзакцию (`usedBy==''`, часы сервера);
-  локи привязаны к uid (TTL advisory, проверяется клиентом).
-- Никогда: общий PAT, PAT в QR (там только `SID-CODE`), удаление репо при закрытии.
-
-## P1 — хост-шлюз синхронизация (2026-09)
-
-Гость шлёт состояние (`code.xml` + мелкая медиа inline ≤700КБ/патч, чанки
-400К символов), хост мёржит через `ProjectMerger`, коммитит с author=гость,
-пушит и публикует состояние обратно. Манифест покрывает файлы любого размера
-(streaming-md5 + mtime-кэш в `DirSyncFiles`, без чтения целиком в память);
-inline — только мелочь. Проект >64МБ целиком — только файлом вручную,
-дальше работают дельты по md5.
-
-```
-collab/
-  SyncModels.kt (SyncPayload/ManifestEntry/SyncChunk + лимиты)
-  SyncChunks.kt (split/join, base64, md5, inline-план, changedFiles)
-  SyncFiles.kt (интерфейс + DirSyncFiles + MemSyncFiles для тестов)
-  SyncDescriber.kt (дифф моделей -> строки коммитов, кап 8)
-  SyncFlows.kt (guestUpload/hostApplyPatch/guestApplyState — чистые, все зависимости параметрами)
-  SyncWorker.kt (таймер 5с idle, слушатели, workTree filesDir/collab-git, reload-политика)
-  SyncTransportFirestore.kt (patches/{id}/chunks + states/{id}/chunks, consume через delete)
-  GitOpsJGit (commitAndPush; токен только хоста через TokenManager)
-test/collab/ — 86 JVM-тестов (P0 47 + SyncChunks/Engine/Flows/Describer)
+```java
+case MY_FUNC: {
+    return interpretMyFunc(arguments);
+}
 ```
 
-- Хуки: `markDirty()` в `saveProject()` обеих Activity; применение — только вне
-  редактора (`isInsideSprite`), иначе pending + тост; `ProjectActivity.onResume`
-  добирает pending; reload = `ProjectLoader` + `recreate()`.
-- `.git` живёт только в `filesDir/collab-git/{sid}` — в папку проекта не лезем
-  (иначе отравим zip-экспорт и сборщики мусора).
-- Вьювер не аплоадит (клиент) + хост игнорит его патчи (авторитетно).
-- Гость с чужим проектом не аплоадит (сверка `projectName`, mismatch-статус).
-- **Голый гость (нет проекта)**: при старте воркера шлёт `snapshotRequests/{uid}`,
-  хост публикует полный state (`full=true`, вся медиа inline до 64МБ),
-  гость материализует проект (`SyncFlows.materialize`: unique-имя как
-  `ProjectUnZipperAndImporter`, `encodeSpecialCharsForFileSystem`, traversal-guard)
-  и дальше работает как обычно. Проект >64МБ — только файлом вручную.
-- **Большие проекты (стриминг, 2026-09)**: отдача/закачка идут слайсами
-  (`SyncFiles.readMediaSlice` через RandomAccessFile, батчи чанков, страницы
-  по 100 доков в порядке zero-pad docId), память ограничена одним чанком.
-  Докачка — с границы последнего проверенного файла (прогресс в
-  `filesDir/collab/{sid}/dl_{stid}.json`), md5 проверяется потоково по мере
-  записи, `code.xml` пишется последним. После сборки — автооткрытие проекта
-  (`pendingOpen`). Дальше только дельты по md5. Лимит снапшота 2ГБ;
-  оборванный broadcast чинится перезапросом гостя (хост не удаляет full-state
-  при обычных публикациях; гость удаляет скачанное — rules разрешают
-  удаление states участникам).
-- UI-гейт: `CollabUi.ENABLED` (сейчас true); хост-секция диалога: PAT + init repo + статусы.
+Neo-раздел «Neo3D» в OBJECT_TAG — пример массовой регистрации: `NEO3D_X/Y/Z`, `NEO3D_YAW/PITCH/ROLL`,
+`NEO3D_SCALE_X/Y/Z`, `NEO3D_BODY_COUNT`, `NEO3D_DISTANCE`, `NEO3D_SPEED`, `NEO3D_EXISTS` через `Neo3DFormulaBridge`
+(нет движка/объекта → 0.0, масштаб → 1.0, без побочных эффектов).
 
-# Свет 2D — категория «Свет (2D)» (Point Light, 2026-09)
+# Neo-специфика (то, чего нет в оригинале, коротко):
 
-Overlay-освещение классической 2D-сцены через lightmap 1/4 + один multiply-проход.
-Без новых зависимостей (box2dlights НЕ используется), тени — raycast существующего
-Box2D-мира, отдельного реестра препятствий нет.
+*   **V3 шаблон:** игры собираются из `template_runtime.apk`. Кэш `filesDir/v3_template/template_runtime_v3.apk`
+    используется как есть, при пустом — скачивание с GitHub (`Neocatroid-Template`, LFS-детект). Регенерация:
+    `./gradlew copyTemplateApk -x uploadCrashlyticsMappingFileRuntimeTemplate`. После правок лоадера/света
+    (`ProjectLoaderV3`, `twodlight`) template ОБЯЗАТЕЛЬНО перегенерить, иначе игра потеряет файлы (дедуп-манифест).
+    Переименование пакета: сначала `ensureFullClassNames()` против СТАРОГО пакета, потом смена + замена authority
+    провайдера. Подпись: экземпляр `BouncyCastleProvider()`, НЕ имя "BC" (на Android там урезанный провайдер).
+    `syncPermissions()` сначала удаляет ВСЕ permissions темплейта, потом добавляет выбранные. Иконка: только
+    `ic_launcher*.png`, `mipmap-anydpi-v26/*.xml` не трогать (иначе битая adaptive-иконка на API 26+).
+*   **Neo3D/Jolt:** Jolt v5.2.0 из исходников (`catroid/src/main/cpp/jolt/`), т.к. AAR требует minSdk 33 (нам надо 31).
+    Ordinal в натив: motion 0=None/1=Static/2=Kinematic/3=Dynamic, shape 0=Auto/1=Box/2=Sphere/3=Capsule/4=Cylinder.
+    `BoxShape` — от `Vec3(halfExtent)`, `MapObjectToBroadPhaseLayer` — явный `BroadPhaseLayer(0)`.
+    Камера от пальца: `StageListener.touchDragged` → `facadeDragCameraLook`, FPS-кламп min/max, free без клампа.
+    Событие касания: `WhenNeo3DCollidesScript` (NAME+TARGET, пустой TARGET = любой), edge-trigger в `StageListener`.
+*   **Свет 2D:** без box2dlights, тени — raycast существующего Box2D-мира. Без светов проходов нет (старые проекты
+    не меняются). Proxy-тела: `categoryBits=0/maskBits=0`, `userData=Sprite`. Диагностика: logcat `Light2D`
+    (`pass active` → `multiply pass` → `shader=false`). После правок `twodlight` — реген template (proguard держит пакет).
+*   **Collab:** RTDB НЕ используется (нет `firebase_url`). Firestore-проект `privacy-neocatroid`, отдельный
+    FirebaseApp `collab` (`collab/CollabFirebase.kt`). Telemetry-Firestore не трогать. Модель «хост-шлюз»: PAT
+    только у хоста, гости по коду комнаты, `.git` только в `filesDir/collab-git/{sid}` (не в папке проекта).
+    Локи: heartbeat 10с, TTL 30с; presence: heartbeat 5с, TTL 20с на клиенте. Offline = fail-open.
+*   **NeoScript:** scene хранится именем (`null`/empty = Current scene), поиск объекта — в резолвленной сцене.
+    `ImportStrategy`: 0 = least destructive по дефолту; `REPLACE_ALL` — атомарный. `ImportScriptBrick`
+    (overwrite дубликатов) не путать с `AssignScriptsBrick` (replace всех скриптов). Persist-флаг: только решает,
+    писать ли канонический проект на диск (`saveProjectAsync`, best-effort), рантайм одинаковый. `UnknownBrick`
+    при импорте → замена на `NoteBrick`.
+*   **Scene-переменные:** порядок `UserDataWrapper.getUserVariable`: sprite → scene → project → multiplayer.
+    Сценных списков нет. Сброс при старте проекта (`resetAllUserData`) и при смене сцены (`resetLeavingSceneVariables`).
+*   **AI:** один `AskAIBrick` (провайдер + промпт + системный + модель + переменная ответа) + событие
+    `WhenAIResponseBrick` (пустой provider = любой). Старые `AskGPT/AskGemini/SetGeminiKey` оставлены для
+    десериализации, убраны только из палитры. `AiProvider` — единственный источник списка провайдеров.
+*   **Касание спрайтов:** AABB без физики, edge-trigger (fire при ВХОДЕ, reset при расхождении).
+    `reactToBackground=false` по дефолту. Desktop: `DesktopScriptEngine` → `"touching_sprite"`.
+*   **Регдолл:** `Sprite.ragdollMode` 0=выкл/1=регдолл/2=следование. При `>0` сеттеры позиции/вращения/масштаба
+    не пишут в тело, геттеры читают с тела; режим 2 — P-контроллер догона цели в `PhysicsLook.draw()`.
+    Формула `SPRITE_RAGDOLLED` = `ragdollMode > 0`.
+*   **GLB/GLTF:** `ThreeDManager.createObject/replaceModel` ловят `Throwable` (OOM тоже), preflight отклоняет
+    `KHR_draco_mesh_compression` / `EXT_meshopt_compression` / `KHR_texture_basisu`, при отказе — куб-примитив,
+    рендер-цикл упавший инстанс удаляет после `modelBatch.end()`. Логкаты: `3DManager_PBR` / `3DManager`.
+*   **Crash:** `BaseExceptionHandler` в `CatroidApplication.onCreate` + повторно в `MainMenuActivity.onCreate`,
+    отчет в `cacheDir/crashReports/` + `last_crash_log.txt`, отправка в Firestore `crashes`. `EditorActivity` —
+    свой handler с emergency-save сцены. Настройка `setting_enable_crash_reports` (default true).
+*   **Backpack:** JSON + файлы, звуки/значения внутри скрипт-группы (`backpackedScriptSounds`,
+    `backpackedVariableValues/ListValues`), dedup звуков по имени при unpack.
+*   **Paintroid:** сейв из Catroid-режима копируется в `Download/Paintroid` (MediaStore), возвращаемый URI не меняется.
 
-## Файлы
+# Сборка / проверка:
 
-```
-twodlight/
-  Light2D.java            — модель (id, x/y, radius, intensity, color 0xRRGGBB,
-                            enabled, shadows, followSpriteName, static-трекинг)
-  LightManager2D.java     — реестр, скоринг, static/dynamic, grid, кэш активного
-                            набора, ambient, noShadow-имена. Чистая Java
-                            (без gdx/android) + forActiveStage() для actions
-  LightRaycaster.java     — интерфейс трассировки (координаты normal units)
-  ShadowCaster.java       — веер shadow-fan (64 луча), full-circle при world==null
-  LightmapRenderer.java   — FBO 1/4 + ShapeRenderer-веера + multiply-батч
-                            (DST_COLOR/ZERO, alpha=1 в шейдере)
-content/actions/
-  CreateLight2DAction.java   — создание (сбрасывает follow, включает)
-  ControlLight2DAction.java  — 13 действий (константы ACTION_*; порядок = порядок
-                               R.array.light2d_control_actions)
-  ShadowCasting2DAction.java — тень вкл/выкл для спрайта по имени
-content/bricks/
-  CreateLight2DBrick.java    — VisualPlacementBrick (имя, X, Y, радиус,
-                               интенсивность, цвет int)
-  Light2DControlBrick.java   — спиннер действия + имя + значение + спиннер спрайта
-                               (для привязки)
-  ShadowCasting2DBrick.java  — спиннер спрайта + спиннер режима, без формул
-physics/PhysicsWorld.java  — castLightRay() (публичный) + shouldIgnoreLightRayFixture()
-                               (публичный static): скип сенсоров и noShadow-имён
-stage/StageListener.java   — поля lightManager2D/lightmapRenderer, render2DLights()
-                               после stage.draw() (до transition overlay и uiStage),
-                               clear() при смене сцены, dispose()
-```
-
-## Отбор активных (вместо sort-all-каждый-кадр)
-
-- Culling: `dist > radius + viewRadius` — мимо.
-- Скоринг: `intensity*radius^2/(1+d^2)` (вклад, не дистанция).
-- Static определяется автоматически (позиция стабильна 30 кадров, без follow);
-  динамики — follow-лайты и недавно двигавшиеся.
-- Grid (cell 256, порог 64 света) только для статиков; динамики — линейно.
-- Пересчёт НЕ каждый кадр: dirty-флаг, сдвиг камеры > 5% вьюпорта, fallback
-  каждые 15 кадров; обновление окружения только по diff (кэш активного набора).
-- Капы одновременно активных: Android 8/тени 2, Desktop 16/4
-  (`setMaxActiveLights`/`setMaxShadowLights` — no-op при том же значении).
-- Теневые веера пересчитываются каждый кадр, но только для топ-K по скору.
-
-## Рендер
-
-- Без светов (`lightManager2D == null` или пуст) проходов нет — старые проекты
-  не меняются.
-- Тени от Box2D-тел + shadow-proxy (2026-09): тела есть только у физических
-  спрайтов (`Sprite.resetSprite`: `PHYSICS` в ресурсах → `PhysicsLook`), поэтому
-  `ShadowProxyBodies` держит в СУЩЕСТВУЮЩЕМ мире static-тела без коллизий
-  (`categoryBits=0/maskBits=0`, `userData=Sprite`) для видимых спрайтов без
-  реальных тел. Без отдельного реестра препятствий. Фон, невидимые,
-  нулевого размера и спрайты с реальными телами скипаются; stale удаляются,
-  на смене сцены — `dropProxies()`, в `dispose()` — `destroyAll()`.
-  Позиция/поворот телепортируются каждый кадр (только если есть теневые света).
-  `noShadow`-имена работают и для proxy (userData=Sprite).
-- `PhysicsWorld.hasPhysicsObject()` (публичный, без создания) + `getWorld()`
-  публичный для proxy; raycast идёт через `castLightRay()`.
-- Цвет — packed int `0xRRGGBB` (альфа маскируется), совместим с color picker.
-- `twodlight.**` добавлен в `proguard-runtime.pro`; после правок лоадера/света
-  перегенерировать `template_runtime.apk`.
-
-## Регистрация
-
-- `CategoryBricksFactory.setupLight2DCategoryList` + ветка `category_light2d`
-  (без grouping-pref — `getPreferenceKeyForCategory` возвращает null → пропуск).
-- `BrickCategoryListBuilder` (безусловный inflate), `CategoryDocs`,
-  `XstreamSerializer` (3 алиаса), `BrickInfo` ru/en.
-- `RecentBrickListManager` НЕ тронут — брики доступны и фону.
-- Поиск (`BrickSearchFragment`) не покрывает и 3D-категорию — пропущен так же.
-- Desktop-движка в репозитории нет; actions null-safe (как 3D).
-
-## Тесты
-
-- `test/twodlight/LightManager2DTest.java` (12): CRUD, вкл/выкл, culling,
-  вклад большого дальнего против малого ближнего, кэш, static/dynamic,
-  grid-путь (300 светов), кап теней, noShadow, проперти, clear.
-- `test/twodlight/ShadowCasterTest.java` (5): full-circle, стена, zero-radius,
-  падающий raycaster, покрытие лучей — fake `LightRaycaster`, без нативок.
-- `test/twodlight/ShadowProxyBodiesTest.java` (5): создание/скипы/телепорт/
-  удаление, maskBits=0 + userData=Sprite, луч упирается в proxy — реальный
-  `new World()` (нативки есть в тестах).
-- `test/twodlight/LightRayFilterTest.java` (3): сенсоры/noShadow через
-  `PhysicsWorld.shouldIgnoreLightRayFixture`.
-- `CreateLight2DBrickTest` (3) + `Light2DControlBrickTest` (2) +
-  `ShadowCasting2DBrickTest` (2): wiring через ActionFactory.
-- `test/twodlight/Light2DActionsTest.java` (6): end-to-end действие→менеджер
-  (create/control/shadow + ambient + no-op без стейджа) через реальный
-  `LightManager2D` и мок `StageActivity.activeStageActivity`; закрывает
-  непокрытый раньше слой `forActiveStage()`.
-- Проверка: `./gradlew :catroid:testCatroidDebugUnitTest --tests "*twodlight*" --tests "*Light2DBrick*" --tests "*ShadowCasting2D*" (38 тестов).
-- На устройстве остались: реальный веер теней от тел, привязка к спрайту,
-  multiply со скриншотами, перфоманс на слабом GPU.
-
-## Свет 2D — диагностика «нет визуального эффекта» (2026-09)
-
-Цепочка палитра→brick→ActionFactory→action→`LightManager2D`→culling
-доказана тестами (`Light2DActionsTest`, все зелёные). Если на устройстве
-эффекта нет, причина ниже по пайплайну — смотреть logcat-теги `Light2D`:
-- нет `pass active` (`StageListener.render2DLights`, one-time) → свет не дошёл
-  до менеджера (скрипт не выполнился / пустое имя света);
-- есть `pass active`, нет `multiply pass` (`LightmapRenderer`, one-time) →
-  `update()` вернул пустой active (свет вне камеры) или исключение;
-- `multiply pass ... shader=false` или `Light render failed` → GL-причина,
-  стектрейс и есть первопричина.
-- `LightmapRenderer` после любого исключения сносит GL-ресурсы
-  (`recoverGlResources()`: FBO/shapes/batch/shader в null + дефолтный blend),
-  следующий кадр пересоздаёт их чисто — разовый сбой больше не убивает проход
-  навсегда через залипшие begin/end. `ShaderProgram.pedantic` сохраняется/
-  восстанавливается вокруг компиляции multiply-шейдера.
-- Убран per-execution `Log.i` из `CreateLight2DAction` (в цикле спамил каждый
-  кадр); разовая диагностика осталась в `StageListener`/`LightmapRenderer`.
-
-# Палитра: порядок как в Danveyd + скрытие диалогов (2026-09)
-
-Эталон раскладки — `C:\Users\ivanp\ньюкатриод\NewCatroid` (Danveyd, мышечная
-память), НЕ upstream Catrobat (у него свой порядок). Правило для плоских
-(ungrouped) списков `CategoryBricksFactory.kt`: общие брики — строго в порядке
-Danveyd, наши кастомы — в конец в текущем относительном порядке.
-Группированные ветки (SubCategoryHeader) — тематические, не тронуты.
-
-- Скрыты из палитры (обе ветки Looks, классы живы для старых проектов):
-  8 native-диалогов (CreateDialog/SetPositive/SetNeutral/SetNegative/AddEdit/
-  AddRadio/SetCallback/ShowDialog) + 8 story-диалогов (StartDialogue/JumpToNode/
-  SelectedChoice/CurrentDialogueText/CurrentNodeID/CurrentSpeaker/
-  DialogueRunning/CloseDialogue). Ask/Say/ShowText/SetText/LocalizeSprites остались.
-- Event/Control/Motion/Sound/Data/Device (ungrouped) — переупорядочены под Danveyd.
-- Возвращены в палитру пропущенные брики Danveyd (классы были, показа не было):
-  Control — `UpdateScreenBrick()`, `OpenAppBrick(com.android.settings)`;
-  Data — `ShowTextRotationBrick()`, `ZipProjectFilesBrick`, `UnzipProjectFilesBrick`;
-  Device — `TestBrick()`, `OpenAppBrick`, Java*×3 (Compile/LoadAndRun/DownloadDep),
-  `ShowNotificationBrick`, `Enable/DisableBackgroundModeBrick`, NativeView-кластер,
-  `LookRequest/BackgroundRequest`, `ShareBrick` (grouped).
-- Не портированы (классов нет в репо, в палитру не вернуть): upstream
-  `ArcBrick`, `GoThroughBrick` (Motion).
-- Проверка целостности после каждой категории: multiset `XxxBrickList.add`
-  против HEAD (потерь/дублей нет) + порядковый чек Danveyd-подпоследовательности.
-
-# Jolt Physics из исходников — нативный бэкенд Neo3D (2026-09)
-
-AAR `com.github.stephengold:jolt-jni-Android:6.1.1` требует minSdk 33 и тянет
-готовые `libjoltjni.so` — не подошёл (цель: minSdk 31, контроль над сборкой).
-Вместо него Jolt v5.2.0 собран из исходников (`git clone --depth 1 --branch v5.2.0`,
-лежит в `catroid/src/main/cpp/jolt/`) как часть существующего CMake-проекта.
-
-## Файлы
-
-```
-catroid/src/main/cpp/CMakeLists.txt   — PHYSICS_REPO_ROOT=jolt, CROSS_PLATFORM_DETERMINISTIC=ON,
-                                        BUILD_SHARED_LIBS=OFF, include(Jolt/Jolt.cmake),
-                                        add_library(neo3d_jolt SHARED neo3d_jolt.cpp) → Jolt
-catroid/src/main/cpp/neo3d_jolt.cpp   — компактный JNI-мост: World на сцену
-                                        (PhysicsSystem 5000 тел, 2 object-слоя, TempAllocatorMalloc,
-                                        общий JobSystemThreadPool ≤3 потоков), Box/Sphere/Capsule/Cylinder,
-                                        fixed-step 60 Гц ×5, epsilon поз 1e-5, возврат changed-поз
-                                        плоским float-массивом (index + pos + quat)
-neo3d/physics/JoltNativeBridge.java   — package-private native-сигнатуры (nCreateWorld/…/nUpdate)
-neo3d/physics/JoltPhysicsBackend.java — INeo3DPhysicsBackend поверх моста (миры по sceneId,
-                                        signature пересоздания тела, кинематика через target,
-                                        System.loadLibrary("neo3d_jolt"))
-neo3d/physics/INeo3DPhysicsBackend.java / Neo3DNullPhysicsBackend.java — интерфейс и Null (без изменений API)
+```bash
+./gradlew copyTemplateApk -x uploadCrashlyticsMappingFileRuntimeTemplate  # реген template_runtime.apk
+./gradlew :catroid:compileCatroidDebugKotlin :catroid:compileCatroidDebugJavaWithJavac --offline  # быстрая проверка
+./gradlew :catroid:testCatroidDebugUnitTest --tests "*AskAIBrickTest*" --tests "*WhenAIResponseBrickTest*"
+./gradlew :catroid:testCatroidDebugUnitTest --tests "*twodlight*" --tests "*Light2DBrick*" --tests "*ShadowCasting2D*"
 ```
 
-## Проводка в движке
-
-- `Neo3DEngine`: `syncPhysicsObject()` (создание/удаление тел по signature),
-  `syncObject()` дополнительно делает `setObjectTransform` (телепорт скриптовых
-  сдвигов в тело); `update()` степает `physicsBackend.update()` и раскладывает позы
-  в `Neo3DTransform` (position + quaternion) + досинхронизация рендера;
-  `removeObject`/`dispose` чистят тела/миры.
-- `Neo3DFacade`: `facadeSetPhysicsBody` (copy), `facadeSetLinearVelocity`,
-  `facadeAddImpulse`, `facadeSetGravity`, `facadeGetPhysicsBodyCount`.
-- `Neo3DPersistence`: save/restore полей `physics*` из `Neo3DPersistedObject`
-  (motionType -1 = без тела); restore ставит тело до `engine.syncObject`.
-- MotionType.ordinal идёт в натив как 1=STATIC/2=KINEMATIC/3=DYNAMIC (0=NONE =
-  тела нет); ShapeType как 1=BOX/2=SPHERE/3=CAPSULE/4=CYLINDER.
-
-## Нюансы сборки
-
-- `BoxShape` в v5.2.0 конструируется от `Vec3(halfExtent)` (не 3 float);
-  второй аргумент `MapObjectToBroadPhaseLayer` — явный `BroadPhaseLayer(0)`.
-- В Java нет `Math.max(a,b,c)` — только вложенные двухаргументные.
-- `BUILD_SHARED_LIBS=OFF` делает libJolt статикой, линкуемой в `libneo3d_jolt.so`
-  (~30 МБ); ex. `build/intermediates/cxx/Debug/*/obj/<abi>/libneo3d_jolt.so`.
-- abiFilters: armeabi-v7a + arm64-v8a + x86_64 — Jolt собирается на всех трёх,
-  проверять каждым `:catroid:buildCMakeDebug[<abi>]`.
-- Известный шум: протухший инкрементальный kapt (`cannot find symbol` на ровном
-  месте) лечится `./gradlew --stop` + удалить `catroid/build/tmp/kapt3`.
-- ProGuard: stale-keep `com.github.stephengold.joltjni.**` удалён;
-  `neo3d.**` и `native <methods>` уже покрывают мост.
-
-## Брик физики Neo3D (проверка Jolt без инструментального теста)
-
-- `NeoSetPhysicsStateBrick` (+ `NeoSetPhysicsStateAction`, палитра 3D после
-  Set position, дефолт Dynamic/Auto/1.0) — задаёт `Neo3DPhysicsBody` объекту
-  по имени через `facadeSetPhysicsBody`. Спиннер motion = ordinal MotionType
-  (0=None/1=Static/2=Kinematic/3=Dynamic), shape = ordinal ShapeType
-  (0=Auto/1=Box/2=Sphere/3=Capsule/4=Cylinder); shape/spinner-visibility как
-  в legacy (`brick_set_physics_state`): shape скрыт при None, масса только
-  при Dynamic. Дефолт поля 0 (None, least destructive), в палитре — Dynamic.
-- Ресурсы: `brick_neo_set_physics_state.xml` (иконка neo3d),
-  `brick_neo_set_physics_state*` en+ru, массивы `brick_neo_physics_states/shapes`
-  en+ru. Регистрация: ActionFactory + XStream + CategoryBricksFactory + BrickInfo.
-- Ручная проверка на устройстве: сцена с полом (Static/Box) и кубом выше
-  (Dynamic/Auto) → куб падает на пол (лог `Neo3D-Jolt`, поза едет через
-  `Neo3DEngine.applyPhysicsPoses`). Тест: `NeoSetPhysicsStateBrickTest` (2, wiring).
-- Legacy `SetPhysicsStateBrick`/`ThreeDManager` (raptor) не тронут — это старый
-  движок, к Neo3D/Jolt отношения не имеет.
-
-## Камера Neo3D от пальца + поворот (2026-09)
-
-- Режимы (`Neo3DEngine.CameraTouchMode`, ordinal = спиннер): 0 = от первого лица
-  (наклон клампится min/max), 1 = свободная (без клампа), 2 = выключено.
-- Брики (палитра 3D после позиции камеры): `NeoSetCameraRotationBrick`
-  (yaw/pitch/roll) + `NeoCameraTouchLookBrick` (спиннер режима + чувствительность
-  + min/max наклона; лимиты скрываются вне FPS). Чувствительность 0.3, лимиты
-  ±60 по дефолту; NaN/Inf из формул заменяются дефолтами.
-- Поворот хранится в `Neo3DTransform` (yaw/pitch/roll, roll сохраняется при драге);
-  `Neo3DCamera.useTransformOrientation` переключает Filament с `lookAt` на
-  `setModelMatrix(world)` и пикер на forward/up из матрицы (старые сцены без флага
-  работают как раньше). Включают флаг: драг, `facadeSetMainCameraRotation`,
-  restore persisted-камеры.
-- Драг: `StageListener` (`touchDown` запоминает точку, `touchDragged` шлёт дельту в
-  `facadeDragCameraLook` и возвращает handled — съедает событие, 2D-камера не едет;
-  `touchUp/Cancel` сбрасывают). Кламп наклона в FPS + нормализация углов в ±180.
-- Персистентность: `Neo3DPersistedObject.cameraUsesTransformOrientation`, restore
-  ставит флаг + Эйлер. Регистрация: ActionFactory + XStream + палитра + BrickInfo,
-  строки/массивы en+ru (`brick_neo_camera_*`, `brick_neo_camera_touch_modes`).
-- Тесты: `Neo3DEngineNullBackendTest` +3 (FPS-кламп, free без клампа, disabled no-op),
-  `Neo3DPickerTest` +1 (разворот 180° уводит объект из центра — пикер читает поворот),
-  `NeoCameraBricksTest` 2 (wiring обоих бриков).
-- `NeoSetObjectRotationBrick` (+ `NeoSetObjectRotationAction`, палитра 3D между
-  позицией и масштабом) — рыскание/наклон/крен объекту по имени через
-  `facadeSetRotation`. Тест: `NeoSetObjectRotationBrickTest` (1, wiring).
-
-## Формулы Neo3D в свойствах (2026-09)
-
-- Раздел «Neo3D» в OBJECT_TAG (`CategoryListFragment`: `NEO3D_FUNCTIONS/PARAMS`):
-  9 функций с параметром-строкой (имя объекта): `NEO3D_X/Y/Z` (позиция),
-  `NEO3D_YAW/PITCH/ROLL` (поворот), `NEO3D_SCALE_X/Y/Z` (масштаб).
-- `Neo3DFormulaBridge` (новый, `neo3d`): читает активную сцену через фасад
-  без побочных эффектов (не создаёт сцену); нет движка/объекта → 0.0 (масштаб 1.0).
-- Точки как у F2D: `Functions` (enum в конце + TEXT-сет), `FormulaElement` 9 case,
-  `InternFormulaKeyboardAdapter` (`'name'`), `InternToExternGenerator`,
-  строки en (`Neo3D_x/yaw/scaleX`…) + ru (`Neo3D_X/рыскание/масштаб_X`…).
-- Тест: `Neo3DFormulaBridgeTest` (2: чтение всех 9 + дефолты).
-
-## Физика Neo3D: скорость/импульс/гравитация + счётчик тел (2026-09)
-
-- 3 брика после `NeoSetPhysicsStateBrick`: `NeoSetObjectVelocityBrick`
-  (имя + X/Y/Z → `facadeSetLinearVelocity`), `NeoApplyObjectImpulseBrick`
-  (имя + X/Y/Z → `facadeAddImpulse`, дефолт 0/5/0 — толчок вверх),
-  `NeoSetGravityBrick` (X/Y/Z → `facadeSetGravity`, дефолт 0/-9.81/0).
-- Формула `NEO3D_BODY_COUNT` (`Neo3D_bodyCount()` / `Neo3D_число_тел()`, без
-  параметров, в том же разделе Neo3D) → `Neo3DFormulaBridge.getBodyCount()`.
-- Регистрация: ActionFactory + XStream + палитра + BrickInfo, строки en+ru.
-- Тесты: `NeoPhysicsBricksTest` (3, wiring), `Neo3DFormulaBridgeTest` +1
-  (0 без тел → 1 после Dynamic-тела на Null-бэкенде).
-
-## Геймплей Neo3D: фолов/наведение/движение/видимость/очистка/событие (2026-09)
-
-- Движок (`Neo3DEngine`, `Neo3DMath.yawPitchToTarget`, `distance3`):
-  `setCameraFollow/clearCameraFollow` (цель + смещение + lookAt, применяется в
-  `update()` после физики), `pointMainCameraAt`, `moveObjectForward` (по -Z),
-  `turnObjectToward`, `setObjectVisible`, `clearObjects` (всех кроме главной
-  камеры, возвращает число). Фасад: 8 методов `facade*`.
-- 6 бриков: `NeoCameraFollowBrick` (имя + X/Y/Z + спиннер keep/lookAt, пустое имя
-  останавливает), `NeoCameraLookAtBrick` (имя), `NeoMoveObjectForwardBrick`
-  (имя + DISTANCE), `NeoTurnObjectTowardBrick` (имя + TARGET), visible brick —
-  `NeoSetObjectVisibleBrick` (спиннер Показать/Скрыть + имя),
-  `NeoClearObjectsBrick` (без полей, `BrickBaseType`). Палитра 3D после гравитации.
-- Формулы: `NEO3D_DISTANCE('a','b')`, `NEO3D_SPEED('name')` (модуль скорости тела,
-  `INeo3DPhysicsBackend.getLinearVelocity` + Null-реализация нулями),
-  `NEO3D_EXISTS('name')` (в BOOLEAN-сете).
-- Натив (`neo3d_jolt.cpp`): `ContactTracker` (`JPH::ContactListener`: Added/
-  Persisted → insert, Removed → erase, mutex, purge при DestroyBody) +
-  `SetContactListener` в конструкторе мира; `GetLinearVelocity`;
-  JNI `nGetLinearVelocity` / `nGetActiveContacts` (снапшот пар bodyId).
-  Java: `JoltNativeBridge` 2 сигнатуры, `JoltPhysicsBackend.getLinearVelocity`
-  (UnsatisfiedLinkError-safe) + `getActiveContacts` (bodyId→objectId),
-  интерфейс + Null-реализации.
-- Нюанс Jolt v5.2.0: `OnContactAdded/Persisted` принимают
-  `(Body, Body, ContactManifold, ContactSettings)` — БЕЗ `SubShapeIDPair`
-  (он только в `OnContactRemoved`); `Vec3::IsFinite` нет — проверять
-  компоненты через `std::isfinite`.
-- Событие «Когда 3D-объект касается»: `WhenNeo3DCollidesScript` (formulaMap
-  NAME+TARGET как у WhenCondition) + `WhenNeo3DCollidesBrick`
-  (`FormulaBrick implements ScriptBrick`) + `Neo3DCollisionEventId`
-  (sprite + 2 Formula, равенство как у Touching). Оценка в `StageListener`
-  после `facadeUpdate`: контакты → имена, формулы → строки (`Scope(project,
-  sprite, null)`), edge-trigger на скрипт, fire `createEventId` в look хоста.
-  Пустой TARGET = любой объект. Палитра Events (обе ветки, включая фон).
-- Регистрация: ActionFactory (6) + XStream (6 бриков + script/brick события) +
-  BrickInfo (7×2). Тесты: `NeoGameplayBricksTest` (6, wiring),
-  `WhenNeo3DCollidesBrickTest` (4: linkage/clone/eventId), движок +3
-  (фолов, фолов+lookAt −36.87°, point/forward/turn/visible/clear),
-  мост +1 (дистанция 5, скорость 0, exists).
-
-## Paintroid: сейв из Catroid-режима теперь копируется в Downloads (2026-09)
-
-Баг: рисунок, сохранённый из Paintroid, открытого из Catroid (образ),
-писался только обратно в URI образа внутри проекта (`FileIO.saveBitmapToUri`)
-и возвращался в редактор — ни галерея, ни файловый менеджер его не видели.
-
-- `FileIO.saveBitmapToUri`: после успешного сейва, если `catroidFlag`,
-  пишет копию битмапа в MediaStore Downloads (`Download/Paintroid`,
-  MIME по compressFormat) + тост `saved_to` с путём (runOnUiThread).
-  Флаг one-shot: сбрасывается после успеха (ретрай при ошибке сохраняет флаг).
-- `FileIO.saveBitmapToFile` (путь Export-диалога): при `catroidFlag` пишет
-  сразу в `Download/Paintroid` вместо Pictures.
-- `MainActivityNavigator.showSaveImageInformationDialogWhenStandalone`:
-  `catroidFlag = isOpenedFromCatroid` на входе (покрывает и Export).
-  Стендалон-режим не тронут.
-- Пре-Q fallback: `DOWNLOADS_DIRECTORY/Paintroid` напрямую (minSdk 31 —
-  фактически мёртвая ветка, оставлена для симметрии).
-- Возвращаемый URI не меняется — Catroid по-прежнему получает образ в проект.
-- Тестов на FileIO в репо нет; проверка — вручную на устройстве.
-
-
+Протухший инкрементальный kapt (`cannot find symbol` на ровном месте): `./gradlew --stop` + удалить `catroid/build/tmp/kapt3`.
+Jolt abi: `armeabi-v7a` + `arm64-v8a` + `x86_64`, проверять `:catroid:buildCMakeDebug[<abi>]`.

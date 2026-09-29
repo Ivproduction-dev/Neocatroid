@@ -84,7 +84,6 @@ import org.catrobat.catroid.common.ScreenValues;
 import org.catrobat.catroid.common.ThreadScheduler;
 import org.catrobat.catroid.common.TilemapLookData;
 import org.catrobat.catroid.neo3d.Neo3DFacade;
-import org.catrobat.catroid.neo3d.Neo3DPersistence;
 import org.catrobat.catroid.content.EventWrapper;
 import org.catrobat.catroid.content.ExitProjectScript;
 import org.catrobat.catroid.content.GlobalManager;
@@ -117,6 +116,8 @@ import org.catrobat.catroid.io.SoundCacheManager;
 import org.catrobat.catroid.io.SoundManager;
 import org.catrobat.catroid.physics.PhysicsDebugSettings;
 import org.catrobat.catroid.physics.PhysicsLook;
+import org.catrobat.catroid.physics.IPhysicsObject;
+import org.catrobat.catroid.physics.IPhysicsWorld;
 import org.catrobat.catroid.physics.PhysicsObject;
 import org.catrobat.catroid.physics.PhysicsWorld;
 import org.catrobat.catroid.physics.shapebuilder.PhysicsShapeBuilder;
@@ -200,7 +201,7 @@ public class StageListener implements ApplicationListener {
 	private Project project;
 	private Scene scene;
 
-	private PhysicsWorld physicsWorld;
+	private IPhysicsWorld physicsWorld;
 
 	private OrthographicCamera camera;
 	private OrthographicCamera uiCamera;
@@ -428,6 +429,10 @@ public class StageListener implements ApplicationListener {
 	private float neo3DLastDragX;
 	private float neo3DLastDragY;
 	private boolean neo3DHasDragPosition;
+	private final java.util.Map<org.catrobat.catroid.content.Script, Boolean> neo3DTouchFired =
+			new java.util.HashMap<>();
+	private final java.util.Map<org.catrobat.catroid.content.Script, Boolean> neo3DRayHitFired =
+			new java.util.HashMap<>();
 	private final java.util.Map<org.catrobat.catroid.content.Script, Boolean> neo3DCollisionFired =
 			new java.util.HashMap<>();
 
@@ -1397,8 +1402,8 @@ public class StageListener implements ApplicationListener {
 		if (!(sprite.look instanceof PhysicsLook)) {
 			return;
 		}
-		PhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
-		PhysicsObject physicsObject = physicsWorld.getPhysicsObject(sprite);
+		IPhysicsWorld physicsWorld = ProjectManager.getInstance().getCurrentlyPlayingScene().getPhysicsWorld();
+		IPhysicsObject physicsObject = physicsWorld.getPhysicsObject(sprite);
 		PhysicsObject.Type currentType = physicsObject.getType();
 		physicsObject.setType(PhysicsObject.Type.NONE);
 		physicsObject.setType(currentType);
@@ -1747,6 +1752,196 @@ public class StageListener implements ApplicationListener {
 		resume();
 	}
 
+	private void evaluateNeo3DTouchTriggers() {
+		org.catrobat.catroid.neo3d.Neo3DEngine engine;
+		org.catrobat.catroid.neo3d.Neo3DScene neoScene;
+		try {
+			engine = org.catrobat.catroid.neo3d.Neo3DFacade.getEngineForTest();
+			if (engine == null) {
+				return;
+			}
+			neoScene = engine.getScene(neo3DSceneId);
+			if (neoScene == null) {
+				return;
+			}
+		} catch (Throwable t) {
+			android.util.Log.e("StageListener", "neo3D touch lookup failed", t);
+			return;
+		}
+		org.catrobat.catroid.content.Scene scene =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentlyPlayingScene();
+		if (scene == null) {
+			return;
+		}
+		org.catrobat.catroid.content.Project project =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
+		for (org.catrobat.catroid.content.Sprite sprite : scene.getSpriteList()) {
+			if (sprite == null) {
+				continue;
+			}
+			for (org.catrobat.catroid.content.Script script : sprite.getScriptList()) {
+				if (!(script instanceof org.catrobat.catroid.content.WhenNeo3DTouchScript)) {
+					continue;
+				}
+				org.catrobat.catroid.content.WhenNeo3DTouchScript touchScript =
+						(org.catrobat.catroid.content.WhenNeo3DTouchScript) script;
+				String name;
+				float distance;
+				try {
+					org.catrobat.catroid.content.Scope scope =
+							new org.catrobat.catroid.content.Scope(project, sprite, null);
+					org.catrobat.catroid.formulaeditor.Formula nameFormula =
+							touchScript.getFormulaMap().get(
+									org.catrobat.catroid.content.bricks.Brick.BrickField.NAME);
+					org.catrobat.catroid.formulaeditor.Formula distanceFormula =
+							touchScript.getFormulaMap().get(
+									org.catrobat.catroid.content.bricks.Brick.BrickField.DISTANCE);
+					if (nameFormula == null) {
+						continue;
+					}
+					name = nameFormula.interpretString(scope);
+					distance = distanceFormula != null ? distanceFormula.interpretFloat(scope)
+							: 1f;
+				} catch (Throwable t) {
+					continue;
+				}
+				if (name == null || name.isEmpty()) {
+					neo3DTouchFired.put(script, false);
+					continue;
+				}
+				String touchedName = findNeo3DObjectWithin(neoScene, name, distance);
+				boolean nowTouching = touchedName != null;
+				boolean wasFired = Boolean.TRUE.equals(neo3DTouchFired.get(script));
+				if (nowTouching && !wasFired) {
+					try {
+						org.catrobat.catroid.formulaeditor.UserVariable variable =
+								touchScript.getTouchedVariable();
+						if (variable != null) {
+							variable.setValue(touchedName);
+						}
+						if (sprite.look != null) {
+							sprite.look.fire(new org.catrobat.catroid.content.EventWrapper(
+									touchScript.createEventId(sprite), false));
+						}
+					} catch (Throwable t) {
+						android.util.Log.e("StageListener", "neo3D touch fire failed", t);
+					}
+					neo3DTouchFired.put(script, true);
+				} else if (!nowTouching) {
+					neo3DTouchFired.put(script, false);
+				}
+			}
+		}
+	}
+
+	private static String findNeo3DObjectWithin(
+			org.catrobat.catroid.neo3d.Neo3DScene neoScene, String name, float distance) {
+		org.catrobat.catroid.neo3d.Neo3DGameObject self = neoScene.findByName(name);
+		if (self == null) {
+			return null;
+		}
+		float[] selfPos = self.getTransform().getPosition();
+		String bestName = null;
+		float bestDist = distance;
+		for (org.catrobat.catroid.neo3d.Neo3DGameObject other : neoScene.getAllObjects()) {
+			if (other == null || other == self || !other.isActive() || !other.isVisible()) {
+				continue;
+			}
+			float[] otherPos = other.getTransform().getPosition();
+			float dx = otherPos[0] - selfPos[0];
+			float dy = otherPos[1] - selfPos[1];
+			float dz = otherPos[2] - selfPos[2];
+			float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (dist <= distance && (bestName == null || dist < bestDist)) {
+				bestName = other.getName();
+				bestDist = dist;
+			}
+		}
+		return bestName;
+	}
+
+	private void evaluateNeo3DRayHitTriggers() {
+		org.catrobat.catroid.neo3d.Neo3DEngine engine;
+		try {
+			engine = org.catrobat.catroid.neo3d.Neo3DFacade.getEngineForTest();
+			if (engine == null) {
+				return;
+			}
+		} catch (Throwable t) {
+			android.util.Log.e("StageListener", "neo3D ray lookup failed", t);
+			return;
+		}
+		org.catrobat.catroid.content.Scene scene =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentlyPlayingScene();
+		if (scene == null) {
+			return;
+		}
+		org.catrobat.catroid.content.Project project =
+				org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
+		for (org.catrobat.catroid.content.Sprite sprite : scene.getSpriteList()) {
+			if (sprite == null) {
+				continue;
+			}
+			for (org.catrobat.catroid.content.Script script : sprite.getScriptList()) {
+				if (!(script instanceof org.catrobat.catroid.content.WhenNeo3DRayHitScript)) {
+					continue;
+				}
+				org.catrobat.catroid.content.WhenNeo3DRayHitScript hitScript =
+						(org.catrobat.catroid.content.WhenNeo3DRayHitScript) script;
+				String rayName;
+				try {
+					org.catrobat.catroid.content.Scope scope =
+							new org.catrobat.catroid.content.Scope(project, sprite, null);
+					org.catrobat.catroid.formulaeditor.Formula nameFormula =
+							hitScript.getFormulaMap().get(
+									org.catrobat.catroid.content.bricks.Brick.BrickField.NAME);
+					if (nameFormula == null) {
+						continue;
+					}
+					rayName = nameFormula.interpretString(scope);
+				} catch (Throwable t) {
+					continue;
+				}
+				if (rayName == null || rayName.isEmpty()) {
+					neo3DRayHitFired.put(script, false);
+					continue;
+				}
+				java.util.List<org.catrobat.catroid.neo3d.Neo3DRaycaster.Hit> hits;
+				try {
+					hits = engine.castRay(neo3DSceneId, rayName);
+				} catch (Throwable t) {
+					continue;
+				}
+				if (hits == null || hits.isEmpty()) {
+					neo3DRayHitFired.put(script, false);
+					continue;
+				}
+				boolean wasFired = Boolean.TRUE.equals(neo3DRayHitFired.get(script));
+				if (!wasFired) {
+					try {
+						java.util.List<org.catrobat.catroid.formulaeditor.UserVariable> vars =
+								hitScript.getVariables();
+						for (int i = 0; i < vars.size() && i < hits.size(); i++) {
+							org.catrobat.catroid.formulaeditor.UserVariable variable =
+									vars.get(i);
+							org.catrobat.catroid.neo3d.Neo3DRaycaster.Hit hit = hits.get(i);
+							if (variable != null && hit != null && hit.name != null) {
+								variable.setValue(hit.name);
+							}
+						}
+						if (sprite.look != null) {
+							sprite.look.fire(new org.catrobat.catroid.content.EventWrapper(
+									hitScript.createEventId(sprite), false));
+						}
+					} catch (Throwable t) {
+						android.util.Log.e("StageListener", "neo3D ray fire failed", t);
+					}
+					neo3DRayHitFired.put(script, true);
+				}
+			}
+		}
+	}
+
 	private void evaluateNeo3DCollisionTriggers() {
 		org.catrobat.catroid.neo3d.Neo3DEngine engine;
 		org.catrobat.catroid.neo3d.Neo3DScene neoScene;
@@ -1863,11 +2058,6 @@ public class StageListener implements ApplicationListener {
 	private void setupNeo3DEngine() {
 		try {
 			if (neo3DSceneId != null && Neo3DFacade.isReady()) {
-				Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
-				if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
-					Neo3DPersistence.saveToScene(catroidScene,
-							Neo3DFacade.getEngineForTest(), neo3DSceneId);
-				}
 				Neo3DFacade.facadeDeleteScene(neo3DSceneId);
 			}
 		} catch (Throwable t) {
@@ -1875,16 +2065,18 @@ public class StageListener implements ApplicationListener {
 		}
 		neo3DSceneId = null;
 		neo3DCollisionFired.clear();
+		neo3DTouchFired.clear();
+		neo3DRayHitFired.clear();
+		try {
+			org.catrobat.catroid.neo3d.Neo3DSoundEngine.stopAll();
+		} catch (Throwable t) {
+			android.util.Log.e("StageListener", "neo3D sound stop failed", t);
+		}
 		try {
 			if (!Neo3DFacade.isReady()) {
 				return;
 			}
 			neo3DSceneId = Neo3DFacade.facadeCreateScene("Scene");
-			Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
-			if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
-				Neo3DPersistence.restoreToEngine(catroidScene,
-						Neo3DFacade.getEngineForTest(), neo3DSceneId);
-			}
 		} catch (Throwable t) {
 			Log.e("StageListener", "neo3D init failed", t);
 			neo3DSceneId = null;
@@ -1894,11 +2086,6 @@ public class StageListener implements ApplicationListener {
 	private void teardownNeo3DEngine() {
 		try {
 			if (neo3DSceneId != null && Neo3DFacade.isReady()) {
-				Scene catroidScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
-				if (catroidScene != null && Neo3DFacade.getEngineForTest() != null) {
-					Neo3DPersistence.saveToScene(catroidScene,
-							Neo3DFacade.getEngineForTest(), neo3DSceneId);
-				}
 				Neo3DFacade.facadeDeleteScene(neo3DSceneId);
 			}
 		} catch (Throwable t) {
@@ -1906,6 +2093,13 @@ public class StageListener implements ApplicationListener {
 		}
 		neo3DSceneId = null;
 		neo3DCollisionFired.clear();
+		neo3DTouchFired.clear();
+		neo3DRayHitFired.clear();
+		try {
+			org.catrobat.catroid.neo3d.Neo3DSoundEngine.stopAll();
+		} catch (Throwable t) {
+			android.util.Log.e("StageListener", "neo3D sound stop failed", t);
+		}
 	}
 
 	private void resetLeavingSceneVariables() {
@@ -2356,6 +2550,15 @@ public class StageListener implements ApplicationListener {
                             Log.e("StageListener", "neo3D update failed", t);
                         }
                         evaluateNeo3DCollisionTriggers();
+                        evaluateNeo3DTouchTriggers();
+                        evaluateNeo3DRayHitTriggers();
+                        try {
+                            org.catrobat.catroid.neo3d.Neo3DSoundEngine.update(
+                                    org.catrobat.catroid.neo3d.Neo3DFacade.getEngineForTest(),
+                                    neo3DSceneId);
+                        } catch (Throwable t) {
+                            android.util.Log.e("StageListener", "neo3D sound update failed", t);
+                        }
                     }
                     StageActivity activeActivity = StageActivity.activeStageActivity.get();
                     if (activeActivity != null) {
@@ -2473,7 +2676,7 @@ public class StageListener implements ApplicationListener {
 	}
 
     private void printPhysicsLabelOnScreen() {
-        PhysicsObject tempPhysicsObject;
+        IPhysicsObject tempPhysicsObject;
         final int fontOffset = 5;
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
@@ -3103,7 +3306,7 @@ public class StageListener implements ApplicationListener {
 		boolean flashState;
 		long timeToVibrate;
 
-		PhysicsWorld physicsWorld;
+		IPhysicsWorld physicsWorld;
 		OrthographicCamera camera;
 		Sprite spriteToFocusOn;
 		Batch batch;

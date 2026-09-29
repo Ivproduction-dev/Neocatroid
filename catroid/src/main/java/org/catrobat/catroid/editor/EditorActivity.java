@@ -3,6 +3,8 @@ package org.catrobat.catroid.editor;
 import android.annotation.SuppressLint;
 import androidx.appcompat.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -1225,14 +1227,18 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                 .setMessage(R.string.editor_3d_crash_recovery_msg)
                 .setCancelable(false)
                 .setPositiveButton(R.string.editor_3d_recover_btn, (dialog, which) -> {
-                    recoveryFile.delete();
-                    if (editorListener != null) {
-                        editorListener.resetEngine(
-                                Gdx.files.absolute(recoveryFile.getAbsolutePath()));
-                        updateHierarchy();
-                        onObjectSelected(null, false);
-                        Toast.makeText(this, R.string.editor_3d_recovered_success, Toast.LENGTH_LONG).show();
+                    if (editorListener == null) {
+                        recoveryFile.delete();
+                        return;
                     }
+                    editorListener.resetEngine(
+                            Gdx.files.absolute(recoveryFile.getAbsolutePath()));
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        recoveryFile.delete();
+                    }, 5000L);
+                    updateHierarchy();
+                    onObjectSelected(null, false);
+                    Toast.makeText(this, R.string.editor_3d_recovered_success, Toast.LENGTH_LONG).show();
                 })
                 .setNegativeButton(R.string.editor_3d_discard_btn, (dialog, which) ->
                         recoveryFile.delete())

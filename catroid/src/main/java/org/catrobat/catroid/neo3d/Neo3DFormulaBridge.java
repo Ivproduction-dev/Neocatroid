@@ -117,6 +117,69 @@ public final class Neo3DFormulaBridge {
         return findObject(name) != null ? 1.0 : 0.0;
     }
 
+    public static String getParentName(String name) {
+        Neo3DGameObject obj = findObject(name);
+        if (obj == null) {
+            return "";
+        }
+        Neo3DTransform parent = obj.getTransform().getParent();
+        if (parent == null || parent.getOwner() == null
+                || parent.getOwner().getName() == null) {
+            return "";
+        }
+        return parent.getOwner().getName();
+    }
+
+    public static String getRayHit(String rayName, int index) {
+        if (!Neo3DFacade.isReady() || rayName == null) {
+            return "";
+        }
+        try {
+            Neo3DEngine engine = Neo3DFacade.getEngineForTest();
+            String sceneId = engine == null ? null : engine.getActiveSceneId();
+            if (sceneId == null) {
+                return "";
+            }
+            engine.castRay(sceneId, rayName);
+            return Neo3DFacade.facadeGetRayHitName(sceneId, rayName, index);
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
+    public static Double getRayHitCount(String rayName) {
+        if (!Neo3DFacade.isReady() || rayName == null) {
+            return 0.0;
+        }
+        try {
+            Neo3DEngine engine = Neo3DFacade.getEngineForTest();
+            String sceneId = engine == null ? null : engine.getActiveSceneId();
+            if (sceneId == null) {
+                return 0.0;
+            }
+            engine.castRay(sceneId, rayName);
+            return (double) Neo3DFacade.facadeGetRayHitCount(sceneId, rayName);
+        } catch (RuntimeException e) {
+            return 0.0;
+        }
+    }
+
+    public static Object getVariable(String name, String key) {
+        if (!Neo3DFacade.isReady() || name == null || key == null) {
+            return 0.0;
+        }
+        try {
+            Neo3DEngine engine = Neo3DFacade.getEngineForTest();
+            String sceneId = engine == null ? null : engine.getActiveSceneId();
+            if (sceneId == null) {
+                return 0.0;
+            }
+            return Neo3DFacade.facadeGetObjectVariable(sceneId, name, key);
+        } catch (RuntimeException e) {
+            return 0.0;
+        }
+    }
+
     public static Double getBodyCount() {
         if (!Neo3DFacade.isReady()) {
             return 0.0;

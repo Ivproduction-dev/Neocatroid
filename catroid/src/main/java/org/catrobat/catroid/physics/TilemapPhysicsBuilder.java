@@ -39,22 +39,27 @@ public final class TilemapPhysicsBuilder {
 	private TilemapPhysicsBuilder() {
 	}
 
-	public static void destroy(PhysicsWorld physicsWorld, Body body) {
-		if (body == null) {
+	public static void destroy(IPhysicsWorld physicsWorld, Object bodyToken) {
+		if (!(bodyToken instanceof Body)) {
 			return;
 		}
-		World world = physicsWorld.getWorld();
+		Body body = (Body) bodyToken;
+		Object nativeWorld = physicsWorld == null ? null : physicsWorld.getNativeWorld();
+		if (!(nativeWorld instanceof World)) {
+			return;
+		}
+		World world = (World) nativeWorld;
 		if (body.getWorld() != null) {
 			world.destroyBody(body);
 		}
 	}
 
-	public static Body build(PhysicsWorld physicsWorld, float bottomLeftX, float bottomLeftY,
+	public static Object build(IPhysicsWorld physicsWorld, float bottomLeftX, float bottomLeftY,
 			TilemapLookData data) {
 		return build(physicsWorld, bottomLeftX, bottomLeftY, data, null);
 	}
 
-	public static Body build(PhysicsWorld physicsWorld, float bottomLeftX, float bottomLeftY,
+	public static Object build(IPhysicsWorld physicsWorld, float bottomLeftX, float bottomLeftY,
 			TilemapLookData data, Sprite sprite) {
 		int columns = data.getMapColumns();
 		int rows = data.getMapRows();
@@ -74,7 +79,11 @@ public final class TilemapPhysicsBuilder {
 			return null;
 		}
 
-		World world = physicsWorld.getWorld();
+		Object nativeWorld = physicsWorld == null ? null : physicsWorld.getNativeWorld();
+		if (!(nativeWorld instanceof World)) {
+			return null;
+		}
+		World world = (World) nativeWorld;
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.StaticBody;
 		bodyDef.allowSleep = true;

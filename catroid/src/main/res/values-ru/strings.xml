@@ -166,6 +166,66 @@
     <string formatted="false" name="brick_neo_turn_object_toward">Повернуть 3D-объект</string>
     <string formatted="false" name="brick_neo_toward">к:</string>
     <string formatted="false" name="brick_neo_clear_objects">Удалить все 3D-объекты</string>
+    <string name="listen_tcp_mode_always">Всегда</string>
+    <string name="listen_tcp_mode_once">Один раз</string>
+    <string name="formula_android_id" formatted="false">AndroidID</string>
+    <string name="formula_device_rooted" formatted="false">Рутован</string>
+    <string name="formula_device_bootloader" formatted="false">ЗагрузчикРазблокирован</string>
+    <string name="formula_device_emulator" formatted="false">Эмулятор</string>
+    <string name="formula_device_gms_installed" formatted="false">GMSУстановлены</string>
+    <string name="formula_device_gms_system" formatted="false">GMSСистемные</string>
+    <string name="formula_device_play_status" formatted="false">СтатусPlayServices</string>
+    <string formatted="false" name="brick_neo_rename_object">Переименовать 3D-объект</string>
+    <string formatted="false" name="brick_neo_new_name">в:</string>
+    <string formatted="false" name="brick_neo_copy_object_position">Скопировать 3D-позицию</string>
+    <string formatted="false" name="brick_neo_from_object">из:</string>
+    <string formatted="false" name="brick_neo_object_position_to_camera">Двинуть 3D-объект к камере</string>
+    <string formatted="false" name="brick_neo_camera_position_to_object">Двинуть 3D-камеру к объекту</string>
+    <string formatted="false" name="brick_neo_turn_object_to_camera">Повернуть 3D-объект к камере</string>
+    <string formatted="false" name="brick_neo_move_object_steps">Шаги 3D-объекта</string>
+    <string formatted="false" name="brick_neo_steps">шагов:</string>
+    <string formatted="false" name="brick_neo_set_object_step_size">Задать 3D-шаг</string>
+    <string formatted="false" name="brick_neo_set_object_variable">Задать переменную 3D-объекта</string>
+    <string formatted="false" name="brick_neo_glide_object">Скользить 3D-объектом</string>
+    <string formatted="false" name="brick_neo_seconds">секунд:</string>
+    <string formatted="false" name="brick_neo_glide_camera_to_object">Плыть 3D-камерой к</string>
+    <string formatted="false" name="brick_neo_glide_camera_to_position">Плыть 3D-камерой</string>
+    <string formatted="false" name="brick_neo_object_velocity_toward">Скорость 3D-объекта к</string>
+    <string formatted="false" name="brick_neo_speed">скорость:</string>
+    <string formatted="false" name="brick_neo_object_velocity_camera">Скорость 3D-объекта к камере</string>
+    <string formatted="false" name="brick_neo_debris">Удалить 3D-объект через</string>
+    <string formatted="false" name="brick_when_neo3d_touch">Когда 3D-объект коснулся</string>
+    <string formatted="false" name="brick_neo_cast_ray">Выпустить 3D-луч</string>
+    <string formatted="false" name="brick_neo_clear_ray">Удалить 3D-луч</string>
+    <string formatted="false" name="brick_neo_max_hits">макс. попаданий:</string>
+    <string formatted="false" name="brick_when_neo3d_ray_hit">Когда 3D-луч попал</string>
+    <string formatted="false" name="brick_neo_play_3d_sound">Проиграть 3D-звук</string>
+    <string formatted="false" name="brick_neo_play_3d_sound_at_camera">Проиграть 3D-звук у камеры</string>
+    <string formatted="false" name="brick_neo_stop_3d_sound">Остановить 3D-звук</string>
+    <string formatted="false" name="brick_neo_volume">громкость %:</string>
+    <string formatted="false" name="brick_neo_tone">тон %:</string>
+    <string formatted="false" name="brick_neo_max_distance">макс. дистанция:</string>
+    <string name="brick_neo_loop_no">Нет</string>
+    <string name="brick_neo_loop_yes">Да</string>
+    <string name="formula_neo3d_ray_hit" formatted="false">Neo3D_лучПопал</string>
+    <string name="formula_neo3d_ray_hit_param" formatted="false">(\'ray\', 0)</string>
+    <string name="formula_neo3d_ray_count" formatted="false">Neo3D_лучСчёт</string>
+    <string name="formula_neo3d_parent" formatted="false">Neo3D_родитель</string>
+    <string name="formula_neo3d_var" formatted="false">Neo3D_переменная</string>
+    <string name="formula_neo3d_var_param" formatted="false">(\'name\', \'var\')</string>
+    <string name="formula_session_get" formatted="false">ПеремСессии</string>
+    <string name="formula_session_get_param" formatted="false">(\'name\')</string>
+    <string formatted="false" name="brick_show_sprites_by_prefix">Показать спрайты по префиксу</string>
+    <string formatted="false" name="brick_hide_sprites_by_prefix">Скрыть спрайты по префиксу</string>
+    <string formatted="false" name="brick_set_step_size">Задать размер шага</string>
+    <string formatted="false" name="brick_create_session_variable">Создать сессионную переменную</string>
+    <string formatted="false" name="brick_set_session_variable">Задать сессионную переменную</string>
+    <string formatted="false" name="brick_change_session_variable">Изменить сессионную переменную</string>
+    <string formatted="false" name="brick_delete_session_variable">Удалить сессионную переменную</string>
+    <string formatted="false" name="brick_session_variable_value">значение:</string>
+    <string name="project_physics_engine_label">Движок физики</string>
+    <string name="project_physics_engine_v1">Box2D 2.x (совместимая)</string>
+    <string name="project_physics_engine_v2">Box2D 3.x (новая)</string>
     <string name="formula_neo3d_distance" formatted="false">Neo3D_дистанция</string>
     <string name="formula_neo3d_distance_param" formatted="false">(\'name1\', \'name2\')</string>
     <string name="formula_neo3d_speed" formatted="false">Neo3D_скорость</string>
@@ -4683,6 +4743,10 @@
     <string formatted="false" name="formula_editor_function_join_parameter">(\'hello\',\' world\')</string>
     <string formatted="false" name="formula_editor_function_join3">соединить</string>
     <string formatted="false" name="formula_editor_function_join3_parameter">(\'hello\',\' world\',\'!\')</string>
+    <string formatted="false" name="formula_editor_function_word">слово</string>
+    <string formatted="false" name="formula_editor_function_word_parameter">(1,\'hello world\')</string>
+    <string formatted="false" name="formula_editor_function_split">разделить</string>
+    <string formatted="false" name="formula_editor_function_split_parameter">(1,\'a,b\',\',\')</string>
     <string formatted="false" name="formula_editor_function_regex">регулярное_выражение</string>
     <string formatted="false" name="formula_editor_function_regex_parameter">(\' an? ([^ .]+)\',\'I am a panda.\')</string>
     <string formatted="false" name="formula_editor_function_regex_assistant">Помощник по

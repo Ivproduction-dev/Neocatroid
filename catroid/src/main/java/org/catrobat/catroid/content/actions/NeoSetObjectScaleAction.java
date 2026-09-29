@@ -44,6 +44,7 @@ public class NeoSetObjectScaleAction extends TemporalAction {
             String sceneId = Neo3DFacade.facadeEnsureDefaultScene();
             String objectId = Neo3DFacade.facadeFindObjectIdByName(sceneId, name);
             if (objectId == null) {
+                android.util.Log.w("Neo3D", "SetScale: object not found: '" + name + "'");
                 return;
             }
             Neo3DFacade.facadeSetScale(sceneId, objectId, x, y, z);

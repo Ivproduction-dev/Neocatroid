@@ -42,15 +42,17 @@ import org.catrobat.catroid.content.actions.SetVelocityAction
 import org.catrobat.catroid.content.actions.TurnLeftSpeedAction
 import org.catrobat.catroid.content.actions.TurnRightSpeedAction
 import org.catrobat.catroid.formulaeditor.Formula
+import org.catrobat.catroid.physics.IPhysicsObject
+import org.catrobat.catroid.physics.IPhysicsWorld
 import org.catrobat.catroid.physics.PhysicsLook
 import org.catrobat.catroid.physics.PhysicsObject
 import org.catrobat.catroid.physics.PhysicsWorld
 
 class ActionPhysicsFactory : ActionFactory() {
-    private val physicsWorld: PhysicsWorld
+    private val physicsWorld: IPhysicsWorld
         get() = ProjectManager.getInstance().currentlyPlayingScene.physicsWorld
 
-    private fun getPhysicsObject(sprite: Sprite): PhysicsObject = physicsWorld.getPhysicsObject(sprite)
+    private fun getPhysicsObject(sprite: Sprite): IPhysicsObject = physicsWorld.getPhysicsObject(sprite)
 
     override fun createIfOnEdgeBounceAction(sprite: Sprite): Action {
         val action = Actions.action(IfOnEdgeBouncePhysicsAction::class.java)

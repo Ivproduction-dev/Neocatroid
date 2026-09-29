@@ -60,7 +60,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @LunoClass
-public class PhysicsWorld {
+public class PhysicsWorld implements IPhysicsWorld {
 	static {
 		GdxNativesLoader.load();
 	}
@@ -530,7 +530,8 @@ public class PhysicsWorld {
 		return world.getGravity();
 	}
 
-	public void changeLook(PhysicsObject physicsObject, Look look) {
+	@Override
+	public void changeLook(IPhysicsObject physicsObject, Look look) {
 		Shape[] shapes = null;
 		if (look.getLookData() != null && look.getLookData().getFile() != null) {
 			shapes = PhysicsShapeBuilder.getInstance().getScaledShapes(look.getLookData(),
@@ -549,6 +550,11 @@ public class PhysicsWorld {
 	}
 
 	public World getWorld() {
+		return world;
+	}
+
+	@Override
+	public Object getNativeWorld() {
 		return world;
 	}
 

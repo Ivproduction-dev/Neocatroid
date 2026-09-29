@@ -32,6 +32,9 @@ object NeoThemeParser {
         var background = ThemePalette.DEFAULT_BACKGROUND
         var button = ThemePalette.DEFAULT_BUTTON
         var accent = ThemePalette.DEFAULT_ACCENT
+        var surface = ThemePalette.DEFAULT_SURFACE
+        var textPrimary = ThemePalette.DEFAULT_TEXT_PRIMARY
+        var textSecondary = ThemePalette.DEFAULT_TEXT_SECONDARY
 
         text.lineSequence().forEach { rawLine ->
             val line = rawLine.trim()
@@ -51,6 +54,9 @@ object NeoThemeParser {
                 "background" -> background = parseHexColor(value)
                 "button" -> button = parseHexColor(value)
                 "accent" -> accent = parseHexColor(value)
+                "surface" -> surface = parseHexColor(value)
+                "textprimary", "text_primary", "text" -> textPrimary = parseHexColor(value)
+                "textsecondary", "text_secondary" -> textSecondary = parseHexColor(value)
                 else -> Unit
             }
         }
@@ -61,7 +67,10 @@ object NeoThemeParser {
             toolbar = toolbar,
             background = background,
             button = button,
-            accent = accent
+            accent = accent,
+            surface = surface,
+            textPrimary = textPrimary,
+            textSecondary = textSecondary
         )
     }
 
@@ -72,6 +81,9 @@ object NeoThemeParser {
         append("background=").append(toHex(palette.background)).append('\n')
         append("button=").append(toHex(palette.button)).append('\n')
         append("accent=").append(toHex(palette.accent)).append('\n')
+        append("surface=").append(toHex(palette.surface)).append('\n')
+        append("textPrimary=").append(toHex(palette.textPrimary)).append('\n')
+        append("textSecondary=").append(toHex(palette.textSecondary)).append('\n')
     }
 
     fun parseHexColor(raw: String): Int {

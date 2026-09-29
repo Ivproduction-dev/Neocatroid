@@ -196,28 +196,28 @@ public final class BackpackListManager {
 	}
 
 	private void setLookFileReferences(List<LookData> looks, File parentDir) {
-		for (Iterator<LookData> iterator = looks.iterator(); iterator.hasNext(); ) {
-			LookData lookData = iterator.next();
+		looks.removeIf(lookData -> {
 			File lookFile = new File(parentDir, lookData.getXstreamFileName());
 
 			if (lookFile.exists()) {
 				lookData.setFile(lookFile);
+				return false;
 			} else {
-				iterator.remove();
+				return true;
 			}
-		}
+		});
 	}
 
 	private void setSoundFileReferences(List<SoundInfo> sounds, File parentDir) {
-		for (Iterator<SoundInfo> iterator = sounds.iterator(); iterator.hasNext(); ) {
-			SoundInfo soundInfo = iterator.next();
+		sounds.removeIf(soundInfo -> {
 			File soundFile = new File(parentDir, soundInfo.getXstreamFileName());
 
 			if (soundFile.exists()) {
 				soundInfo.setFile(soundFile);
+				return false;
 			} else {
-				iterator.remove();
+				return true;
 			}
-		}
+		});
 	}
 }

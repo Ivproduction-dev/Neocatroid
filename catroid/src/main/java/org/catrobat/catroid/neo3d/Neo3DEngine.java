@@ -44,6 +44,7 @@ public class Neo3DEngine {
     private final Map<String, Neo3DScene> scenes = new LinkedHashMap<>();
     private final Map<String, TouchLookState> touchLookByScene = new LinkedHashMap<>();
     private final Map<String, FollowState> followByScene = new LinkedHashMap<>();
+    private final Map<String, RayState> raysByScene = new LinkedHashMap<>();
     private boolean disposed;
     private String activeSceneId;
 
@@ -176,6 +177,7 @@ public class Neo3DEngine {
         }
         touchLookByScene.remove(sceneId);
         followByScene.remove(sceneId);
+        raysByScene.remove(sceneId);
         physicsBackend.unregisterScene(sceneId);
         for (Neo3DGameObject obj : scene.getAllObjects()) {
             releaseObjectAssets(obj);
@@ -211,6 +213,7 @@ public class Neo3DEngine {
         Neo3DGameObject obj = scene.createObject(uniqueName);
         syncPhysicsObject(sceneId, obj);
         dispatcher.dispatch(() -> backend.syncObject(sceneId, obj));
+        Log.i(TAG, "created object '" + uniqueName + "'");
         return obj;
     }
 
@@ -548,6 +551,109 @@ public class Neo3DEngine {
         return true;
     }
 
+    public void setObjectScale(String sceneId, String objectId, float x, float y, float z) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            return;
+        }
+        obj.getTransform().setScale(x, y, z);
+        syncObject(sceneId, objectId);
+        Log.i(TAG, "scale applied: '" + obj.getName() + "' -> " + x + "," + y + "," + z);
+    }
+
+    public String renameObject(String sceneId, String objectId, String newName) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null || newName == null || newName.isEmpty()) {
+            return null;
+        }
+        if (newName.equals(obj.getName())) {
+            return newName;
+        }
+        String uniqueName = newName;
+        int counter = 2;
+        while (scene.findByName(uniqueName) != null) {
+            uniqueName = newName + " (" + counter + ")";
+            counter++;
+        }
+        obj.setName(uniqueName);
+        syncObject(sceneId, objectId);
+        Log.i(TAG, "renamed object to '" + uniqueName + "'");
+        return uniqueName;
+    }
+
+    public String getObjectParentName(String sceneId, String objectId) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        if (obj == null) {
+            return "";
+        }
+        Neo3DTransform parent = obj.getTransform().getParent();
+        if (parent == null || parent.getOwner() == null) {
+            return "";
+        }
+        String name = parent.getOwner().getName();
+        return name == null ? "" : name;
+    }
+
+    public boolean copyObjectPosition(String sceneId, String objectId, String sourceName) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        Neo3DGameObject source = scene == null || sourceName == null ? null
+                : scene.findByName(sourceName);
+        if (obj == null || source == null) {
+            return false;
+        }
+        float[] pos = source.getTransform().getPosition();
+        obj.getTransform().setPosition(pos[0], pos[1], pos[2]);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
+    public boolean setObjectPositionToCamera(String sceneId, String objectId) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        Neo3DGameObject cameraObject = scene == null ? null : findMainCameraObject(scene);
+        if (obj == null || cameraObject == null) {
+            return false;
+        }
+        float[] pos = cameraObject.getTransform().getPosition();
+        obj.getTransform().setPosition(pos[0], pos[1], pos[2]);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
+    public boolean setCameraPositionToObject(String sceneId, String targetName) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject cameraObject = scene == null ? null : findMainCameraObject(scene);
+        Neo3DGameObject target = scene == null || targetName == null ? null
+                : scene.findByName(targetName);
+        if (cameraObject == null || target == null) {
+            return false;
+        }
+        float[] pos = target.getTransform().getPosition();
+        cameraObject.getTransform().setPosition(pos[0], pos[1], pos[2]);
+        syncObject(sceneId, cameraObject.getId());
+        return true;
+    }
+
+    public boolean turnObjectToCamera(String sceneId, String objectId) {
+        Neo3DScene scene = scenes.get(sceneId);
+        Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
+        Neo3DGameObject cameraObject = scene == null ? null : findMainCameraObject(scene);
+        if (obj == null || cameraObject == null) {
+            return false;
+        }
+        float[] eye = worldPosition(obj);
+        float[] aim = worldPosition(cameraObject);
+        float[] yawPitch = Neo3DMath.yawPitchToTarget(eye, aim);
+        float[] euler = obj.getTransform().getEulerDeg();
+        obj.getTransform().setRotationEulerDeg(yawPitch[0], yawPitch[1], euler[2]);
+        syncObject(sceneId, objectId);
+        return true;
+    }
+
     public boolean setObjectVisible(String sceneId, String objectId, boolean visible) {
         Neo3DScene scene = scenes.get(sceneId);
         Neo3DGameObject obj = scene == null ? null : scene.getObject(objectId);
@@ -556,6 +662,8 @@ public class Neo3DEngine {
         }
         obj.setVisible(visible);
         syncObject(sceneId, objectId);
+        Log.i(TAG, "visibility applied: '" + obj.getName() + "' -> "
+                + (visible ? "visible" : "hidden"));
         return true;
     }
 
@@ -602,6 +710,83 @@ public class Neo3DEngine {
     private static float[] worldPosition(Neo3DGameObject obj) {
         float[] world = obj.getTransform().getWorldMatrix();
         return new float[]{world[12], world[13], world[14]};
+    }
+
+    public void setRay(String sceneId, String rayName, String fromName, String towardName,
+            float distance, int maxHits) {
+        if (rayName == null || rayName.isEmpty()) {
+            return;
+        }
+        Neo3DScene scene = scenes.get(sceneId);
+        if (scene == null) {
+            return;
+        }
+        RayState state = raysByScene.get(sceneId);
+        if (state == null) {
+            state = new RayState();
+            raysByScene.put(sceneId, state);
+        }
+        state.defs.put(rayName, new RayDef(fromName, towardName, distance, maxHits));
+    }
+
+    public void clearRay(String sceneId, String rayName) {
+        RayState state = raysByScene.get(sceneId);
+        if (state == null) {
+            return;
+        }
+        if (rayName == null || rayName.isEmpty()) {
+            state.defs.clear();
+            state.lastHits.clear();
+        } else {
+            state.defs.remove(rayName);
+            state.lastHits.remove(rayName);
+        }
+    }
+
+    public java.util.List<Neo3DRaycaster.Hit> castRay(String sceneId, String rayName) {
+        RayState state = raysByScene.get(sceneId);
+        Neo3DScene scene = scenes.get(sceneId);
+        java.util.List<Neo3DRaycaster.Hit> empty = java.util.Collections.emptyList();
+        if (state == null || scene == null || rayName == null) {
+            return empty;
+        }
+        RayDef def = state.defs.get(rayName);
+        if (def == null) {
+            return empty;
+        }
+        Neo3DGameObject from = def.fromName == null ? null : scene.findByName(def.fromName);
+        Neo3DGameObject toward = def.towardName == null ? null
+                : scene.findByName(def.towardName);
+        if (from == null || toward == null || from == toward) {
+            state.lastHits.put(rayName, empty);
+            return empty;
+        }
+        float[] origin = from.getTransform().getPosition();
+        float[] aim = toward.getTransform().getPosition();
+        java.util.List<Neo3DRaycaster.Target> targets = new java.util.ArrayList<>();
+        for (Neo3DGameObject obj : scene.getAllObjects()) {
+            if (obj == null || obj == from || !obj.isActive() || !obj.isVisible()) {
+                continue;
+            }
+            float[] pos = obj.getTransform().getPosition();
+            float[] scale = obj.getTransform().getScale();
+            targets.add(new Neo3DRaycaster.Target(obj.getName(), pos[0], pos[1], pos[2],
+                    Neo3DRaycaster.boundingRadius(scale[0], scale[1], scale[2])));
+        }
+        java.util.List<Neo3DRaycaster.Hit> hits = Neo3DRaycaster.cast(origin[0], origin[1],
+                origin[2], aim[0] - origin[0], aim[1] - origin[1], aim[2] - origin[2],
+                def.distance, targets, def.maxHits);
+        state.lastHits.put(rayName, hits);
+        return hits;
+    }
+
+    public java.util.List<Neo3DRaycaster.Hit> getRayHits(String sceneId, String rayName) {
+        RayState state = raysByScene.get(sceneId);
+        if (state == null || rayName == null) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.List<Neo3DRaycaster.Hit> hits = state.lastHits.get(rayName);
+        return hits == null ? java.util.Collections.<Neo3DRaycaster.Hit>emptyList() : hits;
     }
 
     private Neo3DGameObject findMainCameraObject(Neo3DScene scene) {
@@ -671,6 +856,27 @@ public class Neo3DEngine {
             throw new IllegalArgumentException("Unknown scene: " + sceneId);
         }
         return scene;
+    }
+
+    private static final class RayDef {
+        private final String fromName;
+        private final String towardName;
+        private final float distance;
+        private final int maxHits;
+
+        private RayDef(String fromName, String towardName, float distance, int maxHits) {
+            this.fromName = fromName;
+            this.towardName = towardName;
+            this.distance = distance <= 0f || Float.isNaN(distance)
+                    || Float.isInfinite(distance) ? 200f : distance;
+            this.maxHits = maxHits <= 0 ? 1 : Math.min(maxHits, 50);
+        }
+    }
+
+    private static final class RayState {
+        private final Map<String, RayDef> defs = new LinkedHashMap<>();
+        private final Map<String, java.util.List<Neo3DRaycaster.Hit>> lastHits =
+                new LinkedHashMap<>();
     }
 
     private static final class FollowState {

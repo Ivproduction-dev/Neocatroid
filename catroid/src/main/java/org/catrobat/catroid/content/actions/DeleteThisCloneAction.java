@@ -55,4 +55,10 @@ public class DeleteThisCloneAction extends TemporalAction {
 	public void setSprite(Sprite sprite) {
 		this.sprite = sprite;
 	}
+
+	@Override
+	public void restart() {
+		super.restart();
+		started = false;
+	}
 }

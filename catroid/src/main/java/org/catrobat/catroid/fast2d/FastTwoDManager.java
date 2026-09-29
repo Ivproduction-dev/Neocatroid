@@ -146,6 +146,8 @@ public class FastTwoDManager implements Disposable {
         fdef.density = phys.density;
         fdef.friction = phys.friction;
         fdef.restitution = phys.bounce;
+        fdef.isSensor = phys.isSensor;
+        fdef.filter.groupIndex = phys.groupIndex;
 
         phys.body.createFixture(fdef);
         box2dShape.dispose();
@@ -327,8 +329,13 @@ public class FastTwoDManager implements Disposable {
         Gdx.app.postRunnable(() -> {
             try {
                 int e = getOrCreateEntity(id);
-                if (mPhysics.has(e) && mPhysics.get(e).body != null) {
-                    com.badlogic.gdx.physics.box2d.Body body = mPhysics.get(e).body;
+                if (mPhysics.has(e)) {
+                    PhysicsComponent phys = mPhysics.get(e);
+                    phys.isSensor = isSensor;
+                    phys.groupIndex = (short) groupIndex;
+                    if (phys.body == null) return;
+
+                    com.badlogic.gdx.physics.box2d.Body body = phys.body;
                     com.badlogic.gdx.utils.Array<com.badlogic.gdx.physics.box2d.Fixture> fixtures = body.getFixtureList();
 
                     for (int i = 0; i < fixtures.size; i++) {

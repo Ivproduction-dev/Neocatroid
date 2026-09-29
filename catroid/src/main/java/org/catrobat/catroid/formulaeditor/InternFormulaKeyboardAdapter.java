@@ -325,6 +325,32 @@ case R.string.formula_editor_function_state_time:
                 return buildSingleParameterFunction(Functions.NEO3D_SCALE_Z, STRING, "name");
             case R.string.formula_neo3d_body_count:
                 return buildFunctionWithoutParametersAndBrackets(Functions.NEO3D_BODY_COUNT);
+            case R.string.formula_android_id:
+                return buildFunctionWithoutParametersAndBrackets(Functions.ANDROID_ID);
+            case R.string.formula_session_get:
+                return buildSingleParameterFunction(Functions.SESSION_GET, STRING, "name");
+            case R.string.formula_device_rooted:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_ROOTED);
+            case R.string.formula_device_bootloader:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_BOOTLOADER_UNLOCKED);
+            case R.string.formula_device_emulator:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_EMULATOR);
+            case R.string.formula_device_gms_installed:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_GMS_INSTALLED);
+            case R.string.formula_device_gms_system:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_GMS_SYSTEM);
+            case R.string.formula_device_play_status:
+                return buildFunctionWithoutParametersAndBrackets(Functions.DEVICE_PLAY_STATUS);
+            case R.string.formula_neo3d_parent:
+                return buildSingleParameterFunction(Functions.NEO3D_PARENT, STRING, "name");
+            case R.string.formula_neo3d_var:
+                return buildDoubleParameterFunction(Functions.NEO3D_VAR, STRING, "name",
+                        STRING, "var");
+            case R.string.formula_neo3d_ray_hit:
+                return buildDoubleParameterFunction(Functions.NEO3D_RAY_HIT, STRING, "ray",
+                        NUMBER, "0");
+            case R.string.formula_neo3d_ray_count:
+                return buildSingleParameterFunction(Functions.NEO3D_RAY_COUNT, STRING, "ray");
             case R.string.formula_neo3d_distance:
                 return buildDoubleParameterFunction(Functions.NEO3D_DISTANCE, STRING, "name1",
                         STRING, "name2");
@@ -421,6 +447,12 @@ case R.string.formula_editor_function_state_time:
 			case R.string.formula_editor_function_join3:
 				return buildTripleParameterFunction(Functions.JOIN3, STRING, "hello",
 						STRING, " world", STRING, "!");
+			case R.string.formula_editor_function_word:
+				return buildDoubleParameterFunction(Functions.WORD, NUMBER, "1",
+						STRING, "hello world");
+			case R.string.formula_editor_function_split:
+				return buildTripleParameterFunction(Functions.SPLIT, NUMBER, "1",
+						STRING, "a,b", STRING, ",");
 			case R.string.formula_editor_function_distance:
 				return buildDoubleParameterFunction(Functions.DISTANCE, STRING, "panda",
 						STRING, "lavanda");

@@ -61,9 +61,23 @@ public class BrickSpinner<T extends Nameable> implements AdapterView.OnItemSelec
 
 	public BrickSpinner(Integer spinnerId, @NonNull View parent, int spinnerLayout, List<Nameable> items) {
 		spinnerid = spinnerId;
-		adapter = new BrickSpinnerAdapter(parent.getContext(), spinnerLayout, items);
+		boolean scratch = org.catrobat.catroid.ui.BrickLayout.isScratchMode(parent.getContext());
+		int layout = spinnerLayout;
+		if (scratch && spinnerLayout == android.R.layout.simple_spinner_item) {
+			layout = org.catrobat.catroid.R.layout.scratch_spinner_item;
+		}
+		adapter = new BrickSpinnerAdapter(parent.getContext(), layout, items);
 		spinner = parent.findViewById(spinnerId);
 		spinner.setAdapter(adapter);
+		if (scratch) {
+			adapter.setDropDownViewResource(org.catrobat.catroid.R.layout.scratch_spinner_dropdown_item);
+			try {
+				android.graphics.drawable.ColorDrawable popup = new android.graphics.drawable.ColorDrawable(
+						parent.getResources().getColor(org.catrobat.catroid.R.color.scratch_dropdown_background));
+				spinner.setPopupBackgroundDrawable(popup);
+			} catch (android.content.res.Resources.NotFoundException ignored) {
+			}
+		}
 		spinner.setSelection(0);
 		spinner.setOnTouchListener((v, event) -> {
 			if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
@@ -269,8 +283,12 @@ public class BrickSpinner<T extends Nameable> implements AdapterView.OnItemSelec
 		@Override
 		public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
 			if (convertView == null) {
+				int dropdownLayout = android.R.layout.simple_spinner_dropdown_item;
+				if (org.catrobat.catroid.ui.BrickLayout.isScratchMode(parent.getContext())) {
+					dropdownLayout = org.catrobat.catroid.R.layout.scratch_spinner_dropdown_item;
+				}
 				convertView = LayoutInflater.from(parent.getContext())
-						.inflate(android.R.layout.simple_spinner_dropdown_item, parent, false);
+						.inflate(dropdownLayout, parent, false);
 			}
 
 			final Nameable item = getItem(position);

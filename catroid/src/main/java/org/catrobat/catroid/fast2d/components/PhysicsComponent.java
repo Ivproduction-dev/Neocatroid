@@ -11,6 +11,8 @@ public class PhysicsComponent extends PooledComponent {
     public float density = 1f;
     public float friction = 0.5f;
     public float bounce = 0f;
+    public boolean isSensor = false;
+    public short groupIndex = 0;
 
     @Override
     protected void reset() {
@@ -20,5 +22,7 @@ public class PhysicsComponent extends PooledComponent {
         density = 1f;
         friction = 0.5f;
         bounce = 0f;
+        isSensor = false;
+        groupIndex = 0;
     }
 }

@@ -89,6 +89,40 @@
     <!-- Scratch Converter Colors -->
     <color name="beta_label_color">#FFAB08</color>
 
+    <!-- Scratch brick mode category fills -->
+    <color name="scratch_brick_motion">#4C97FF</color>
+    <color name="scratch_brick_sound">#CF63CF</color>
+    <color name="scratch_brick_look">#9966FF</color>
+    <color name="scratch_brick_device">#FFBF00</color>
+    <color name="scratch_brick_embroidery">#F15695</color>
+    <color name="scratch_brick_data">#FF8C1A</color>
+    <color name="scratch_brick_event">#FFD500</color>
+    <color name="scratch_brick_control">#FFAB19</color>
+    <color name="scratch_brick_threed">#5CB1D6</color>
+    <color name="scratch_brick_libs">#E14E9A</color>
+    <color name="scratch_brick_internet">#0288D1</color>
+    <color name="scratch_brick_pen">#59C059</color>
+    <color name="scratch_brick_user_variables">#FF6680</color>
+    <color name="scratch_brick_user_list">#FF6680</color>
+    <color name="scratch_brick_script">#90A4AE</color>
+    <color name="scratch_brick_admob">#34A853</color>
+    <color name="scratch_brick_plot">#0FBD8C</color>
+    <color name="scratch_brick_pocketensor">#7E57C2</color>
+    <color name="scratch_brick_transition">#BA68C8</color>
+    <color name="scratch_brick_pathfinder">#4DD0E1</color>
+    <color name="scratch_brick_file">#78909C</color>
+    <color name="scratch_brick_neoscript">#26A69A</color>
+    <color name="scratch_brick_dialogue">#AB47BC</color>
+    <color name="scratch_brick_neural">#B388EB</color>
+    <color name="scratch_brick_preload">#546E7A</color>
+    <color name="scratch_brick_phiro">#8D6E63</color>
+    <color name="scratch_brick_arduino">#0097A7</color>
+    <color name="scratch_brick_lego">#E53935</color>
+    <color name="scratch_input_pill">#FFFFFF</color>
+    <color name="scratch_input_text">#212121</color>
+    <color name="scratch_dropdown_background">#212121</color>
+    <color name="scratch_dropdown_text">#FFFFFF</color>
+
     <!-- Pocket Music Colors -->
     <color name="turquoise_play_line">#FF48484A</color>
     <color name="pocketmusic_odd_bright">#FAFAFA</color>

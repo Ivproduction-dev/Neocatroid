@@ -60,6 +60,9 @@ public final class NeoScriptImporter {
 		if (file == null || file.getScripts() == null || file.getScripts().isEmpty()) {
 			throw new NeoScriptException("No scripts to import");
 		}
+		if (targetSprite == null) {
+			throw new NeoScriptException("No target object to import into");
+		}
 
 		ImportResult result = new ImportResult();
 

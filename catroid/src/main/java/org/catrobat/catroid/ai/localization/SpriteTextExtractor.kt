@@ -56,7 +56,9 @@ object SpriteTextExtractor {
                 waited += 100
             }
 
-            bitmap.recycle()
+            if (done) {
+                bitmap.recycle()
+            }
             regions
         } catch (e: Exception) {
             emptyList()

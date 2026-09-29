@@ -1,0 +1,32 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "com.badlogicgames.gdx:gdx:1.13.1"
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:1.13.1"
+    implementation "com.badlogicgames.gdx:gdx-freetype:1.13.1"
+    implementation "com.badlogicgames.gdx:gdx-freetype-platform:1.13.1:natives-desktop"
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "com.thoughtworks.xstream:xstream:1.4.20"
+    implementation "io.github.x-stream:mxparser:1.2.2"
+    implementation "xmlpull:xmlpull:1.1.3.1"
+    implementation files("${System.getProperty('user.home')}/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/33.4.0-android/b19b82d0a09dd29efb86e51954558e5db34972e/guava-33.4.0-android.jar")
+    implementation project(':core')
+    compileOnly files(
+        "$rootDir/catroid/build/intermediates/javac/chatDebug/compileChatDebugJavaWithJavac/classes",
+        "$rootDir/catroid/build/tmp/kotlin-classes/chatDebug",
+        "$rootDir/catroid/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/chatDebug/processChatDebugResources/R.jar"
+    )
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.catrobat.catroid.desktop.DesktopMainKt'
+    }
+}

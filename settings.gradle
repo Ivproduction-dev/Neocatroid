@@ -23,6 +23,7 @@
 
 include ':catroid'
 include ':core'
+include ':desktop'
 include ':lunoscript-processor'
 include ':lunoscript-annotations'
 include ':vncclient'

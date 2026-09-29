@@ -61,6 +61,9 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
     private val previewUseCase = Preview.Builder().build()
     private val analysisUseCase = ImageAnalysis.Builder().build()
 
+    private val cameraExecutor: java.util.concurrent.ExecutorService =
+        Executors.newSingleThreadExecutor()
+
     private val imageCaptureUseCase = ImageCapture.Builder().build()
 
     private var isFirst: Boolean = true
@@ -173,9 +176,9 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
             val mobileServiceAvailability = get(MobileServiceAvailability::class.java)
             if (mobileServiceAvailability.isGmsAvailable(stageActivity)) {
                 CatdroidImageAnalyzer.setActiveDetectorsWithContext(this.stageActivity.context)
-                analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), CatdroidImageAnalyzer)
+                analysisUseCase.setAnalyzer(cameraExecutor, CatdroidImageAnalyzer)
             } else if (mobileServiceAvailability.isHmsAvailable(stageActivity)) {
-                analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), FaceTextPoseDetectorHuawei)
+                analysisUseCase.setAnalyzer(cameraExecutor, FaceTextPoseDetectorHuawei)
             }
         }
 
@@ -284,7 +287,7 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
 
         imageCaptureUseCase.takePicture(
             outputOptions,
-            Executors.newSingleThreadExecutor(),
+            cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     stageActivity.runOnUiThread {
@@ -327,7 +330,7 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
 
         imageCaptureUseCase.takePicture(
             outputOptions,
-            Executors.newSingleThreadExecutor(),
+            cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     stageActivity.runOnUiThread {
@@ -362,9 +365,9 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
             val mobileServiceAvailability = get(MobileServiceAvailability::class.java)
             if (mobileServiceAvailability.isGmsAvailable(stageActivity)) {
                 CatdroidImageAnalyzer.setActiveDetectorsWithContext(this.stageActivity.context)
-                analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), CatdroidImageAnalyzer)
+                analysisUseCase.setAnalyzer(cameraExecutor, CatdroidImageAnalyzer)
             } else if (mobileServiceAvailability.isHmsAvailable(stageActivity)) {
-                analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), FaceTextPoseDetectorHuawei)
+                analysisUseCase.setAnalyzer(cameraExecutor, FaceTextPoseDetectorHuawei)
             }
             useCaseList.add(analysisUseCase)
         }
@@ -392,9 +395,9 @@ class CameraManager(private val stageActivity: StageActivity) : LifecycleOwner {
         val mobileServiceAvailability = get(MobileServiceAvailability::class.java)
         if (mobileServiceAvailability.isGmsAvailable(stageActivity)) {
             CatdroidImageAnalyzer.setActiveDetectorsWithContext(this.stageActivity.context)
-            analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), CatdroidImageAnalyzer)
+            analysisUseCase.setAnalyzer(cameraExecutor, CatdroidImageAnalyzer)
         } else if (mobileServiceAvailability.isHmsAvailable(stageActivity)) {
-            analysisUseCase.setAnalyzer(Executors.newSingleThreadExecutor(), FaceTextPoseDetectorHuawei)
+            analysisUseCase.setAnalyzer(cameraExecutor, FaceTextPoseDetectorHuawei)
         }
     }
 

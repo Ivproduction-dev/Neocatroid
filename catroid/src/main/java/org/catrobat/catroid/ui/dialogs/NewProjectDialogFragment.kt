@@ -28,7 +28,9 @@ import org.catrobat.catroid.R
 import org.catrobat.catroid.common.DefaultProjectHandler
 import org.catrobat.catroid.common.FlavoredConstants
 import org.catrobat.catroid.common.Nameable
+import org.catrobat.catroid.content.Project
 import org.catrobat.catroid.databinding.DialogNewProjectBinding
+import org.catrobat.catroid.io.asynctask.saveProjectSerial
 import org.catrobat.catroid.merge.NewProjectNameTextWatcher
 import org.catrobat.catroid.ui.ProjectActivity
 import org.catrobat.catroid.ui.recyclerview.dialog.ReplaceExistingProjectDialogFragment.projectExistsInDirectory
@@ -168,11 +170,22 @@ class NewProjectDialogFragment : DialogFragment() {
         val projectName = binding.inputEditText.text.toString().trim()
         val landscapeMode = binding.orientationToggleGroup.checkedButtonId == R.id.btn_landscape
         val projectCreatorType = DefaultProjectHandler.ProjectCreatorType.PROJECT_CREATOR_DEFAULT
+        val physicsVersion = if (binding.physicsToggleGroup.checkedButtonId == R.id.btn_physics_v2) {
+            Project.PHYSICS_BOX2D_3X
+        } else {
+            Project.PHYSICS_BOX2D_2X
+        }
 
         try {
             when (binding.exampleProjectSwitch.isChecked) {
                 true -> projectManager.createNewExampleProject(projectName, projectCreatorType, landscapeMode)
                 false -> projectManager.createNewEmptyProject(projectName, landscapeMode, false)
+            }
+            projectManager.currentProject?.let { project ->
+                if (project.physicsVersion != physicsVersion) {
+                    project.physicsVersion = physicsVersion
+                    saveProjectSerial(project, requireContext())
+                }
             }
             activity?.startActivity(Intent(activity, ProjectActivity::class.java))
         } catch (_: IOException) {

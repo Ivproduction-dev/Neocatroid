@@ -24,6 +24,13 @@
             android:text="@string/brick_listen_tcp_server" />
 
         <Spinner
+            android:id="@+id/listen_tcp_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale"
+            app:layout_newLine="true" />
+
+        <Spinner
             android:id="@+id/listen_tcp_spinner1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

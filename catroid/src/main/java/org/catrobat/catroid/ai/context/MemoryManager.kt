@@ -6,6 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
 
 object MemoryManager {
 
@@ -14,7 +15,7 @@ object MemoryManager {
     private var memoryFile: File? = null
 
     private val memories: MutableList<MemoryEntry> =
-        Collections.synchronizedList(mutableListOf())
+        CopyOnWriteArrayList()
 
     data class MemoryEntry(
         val key: String,

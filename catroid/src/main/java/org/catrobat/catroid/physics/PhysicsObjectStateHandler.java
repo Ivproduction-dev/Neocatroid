@@ -31,8 +31,8 @@ import java.util.LinkedList;
 public class PhysicsObjectStateHandler {
 
 	private PhysicsLook physicsLook;
-	private PhysicsObject physicsObject;
-	private PhysicsWorld physicsWorld;
+	private IPhysicsObject physicsObject;
+	private IPhysicsWorld physicsWorld;
 
 	private LinkedList<PhysicsObjectStateCondition> hangupConditions = new LinkedList<>();
 	private LinkedList<PhysicsObjectStateCondition> nonCollidingConditions = new LinkedList<>();
@@ -48,7 +48,7 @@ public class PhysicsObjectStateHandler {
 	private boolean fixed = false;
 	private boolean nonColliding = false;
 
-	PhysicsObjectStateHandler(PhysicsLook physicsLook, PhysicsObject physicsObject, PhysicsWorld physicsWorld) {
+	PhysicsObjectStateHandler(PhysicsLook physicsLook, IPhysicsObject physicsObject, IPhysicsWorld physicsWorld) {
 		this.physicsLook = physicsLook;
 		this.physicsObject = physicsObject;
 		this.physicsWorld = physicsWorld;

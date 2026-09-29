@@ -170,7 +170,7 @@ public class ShadowProxyBodiesTest {
         Array<Body> bodies = new Array<>();
         world.getBodies(bodies);
         assertEquals(1, bodies.size);
-        assertEquals(0, bodies.first().getFixtureList().first().getFilterData().maskBits);
+        assertEquals(0x0002, bodies.first().getFixtureList().first().getFilterData().maskBits);
         assertTrue(bodies.first().getUserData() instanceof Sprite);
 
         final float[] fraction = {1f};

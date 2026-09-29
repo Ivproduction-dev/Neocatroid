@@ -41,15 +41,19 @@ class ThemedResources(base: Resources) :
     @Deprecated("Deprecated in Java")
     override fun getColorStateList(id: Int): ColorStateList {
         val override = overrides[id]
-        return if (override != null) {
-            ColorStateList.valueOf(override)
-        } else {
-            @Suppress("DEPRECATION") super.getColorStateList(id)
+        if (override == null) {
+            @Suppress("DEPRECATION") return super.getColorStateList(id)
         }
+        @Suppress("DEPRECATION") val base = super.getColorStateList(id)
+        return if (base.isStateful) base else ColorStateList.valueOf(override)
     }
 
     override fun getColorStateList(id: Int, theme: Theme?): ColorStateList {
         val override = overrides[id]
-        return if (override != null) ColorStateList.valueOf(override) else super.getColorStateList(id, theme)
+        if (override == null) {
+            return super.getColorStateList(id, theme)
+        }
+        val base = super.getColorStateList(id, theme)
+        return if (base.isStateful) base else ColorStateList.valueOf(override)
     }
 }

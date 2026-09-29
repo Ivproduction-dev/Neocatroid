@@ -48,21 +48,24 @@ object TextRenderer {
 
         if (isVertical) {
             drawTextVertical(canvas, text, paint, box)
-        } else if (angle != 0f) {
-            canvas.save()
-            val cx = box.centerX().toFloat()
-            val cy = box.centerY().toFloat()
-            canvas.rotate(angle, cx, cy)
-        }
-
-        if (region.outlineColor != 0 && region.outlineColor != region.textColor) {
-            drawTextWithOutline(canvas, lines, paint, box, region.outlineColor, region.outlineWidth)
         } else {
-            drawTextLines(canvas, lines, paint, box)
-        }
+            val rotated = angle != 0f
+            if (rotated) {
+                canvas.save()
+                val cx = box.centerX().toFloat()
+                val cy = box.centerY().toFloat()
+                canvas.rotate(angle, cx, cy)
+            }
 
-        if (angle != 0f) {
-            canvas.restore()
+            if (region.outlineColor != 0 && region.outlineColor != region.textColor) {
+                drawTextWithOutline(canvas, lines, paint, box, region.outlineColor, region.outlineWidth)
+            } else {
+                drawTextLines(canvas, lines, paint, box)
+            }
+
+            if (rotated) {
+                canvas.restore()
+            }
         }
 
         return result
@@ -312,12 +315,16 @@ object TextRenderer {
     }
 
     fun detectOutlineColor(bitmap: Bitmap, box: Rect, textColor: Int): Int {
-        val samples = mutableListOf<Int>()
         val step = maxOf(1, minOf(box.width(), box.height()) / 6)
+        val reference = medianColor(opaqueSamples(bitmap, box, step))
+        val refR = reference shr 16 and 0xFF
+        val refG = reference shr 8 and 0xFF
+        val refB = reference and 0xFF
         val textR = textColor shr 16 and 0xFF
         val textG = textColor shr 8 and 0xFF
         val textB = textColor and 0xFF
 
+        val samples = mutableListOf<Int>()
         var y = box.top
         while (y < box.bottom) {
             var x = box.left
@@ -325,8 +332,11 @@ object TextRenderer {
                 if (x in 0 until bitmap.width && y in 0 until bitmap.height) {
                     val p = bitmap.getPixel(x, y)
                     val pr = p shr 16 and 0xFF; val pg = p shr 8 and 0xFF; val pb = p and 0xFF
-                    if ((p shr 24 and 0xFF) > 60 &&
-                        (abs(pr - textR) > 40 || abs(pg - textG) > 40 || abs(pb - textB) > 40)) {
+                    val farFromReference = abs(pr - refR) > 60 ||
+                            abs(pg - refG) > 60 || abs(pb - refB) > 60
+                    val farFromText = abs(pr - textR) > 60 ||
+                            abs(pg - textG) > 60 || abs(pb - textB) > 60
+                    if ((p shr 24 and 0xFF) > 120 && farFromReference && farFromText) {
                         samples.add(p)
                     }
                 }
@@ -335,6 +345,23 @@ object TextRenderer {
             y += step
         }
         return if (samples.size > step) dominantColor(samples) else 0
+    }
+
+    private fun opaqueSamples(bitmap: Bitmap, box: Rect, step: Int): List<Int> {
+        val samples = mutableListOf<Int>()
+        var y = box.top
+        while (y < box.bottom) {
+            var x = box.left
+            while (x < box.right) {
+                if (x in 0 until bitmap.width && y in 0 until bitmap.height) {
+                    val p = bitmap.getPixel(x, y)
+                    if ((p shr 24 and 0xFF) > 40) samples.add(p)
+                }
+                x += step
+            }
+            y += step
+        }
+        return samples
     }
 
     fun detectOutlineWidth(bitmap: Bitmap, box: Rect, textColor: Int): Float {

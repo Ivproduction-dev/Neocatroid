@@ -26,6 +26,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.danvexteam.lunoscript_annotations.LunoClass;
 
@@ -43,9 +44,9 @@ public class PhysicsCollisionListener implements ContactListener {
 	public static final String COLLISION_MESSAGE_CONNECTOR = "<" + COLLISION_MESSAGE_ESCAPE_CHAR
 			+ "-" + COLLISION_MESSAGE_ESCAPE_CHAR + ">";
 
-	private PhysicsWorld physicsWorld;
+	private IPhysicsWorld physicsWorld;
 
-	public PhysicsCollisionListener(PhysicsWorld physicsWorld) {
+	public PhysicsCollisionListener(IPhysicsWorld physicsWorld) {
 		this.physicsWorld = physicsWorld;
 	}
 
@@ -76,34 +77,39 @@ public class PhysicsCollisionListener implements ContactListener {
 
 	@Override
 	public void beginContact(Contact contact) {
-		Body a = contact.getFixtureA().getBody();
-		Body b = contact.getFixtureB().getBody();
+		Object a = userDataOf(contact.getFixtureA());
+		Object b = userDataOf(contact.getFixtureB());
 
-		if (a.getUserData() instanceof Sprite && b.getUserData() instanceof PhysicsBoundaryBox.BoundaryBoxIdentifier) {
-			Sprite sprite = (Sprite) a.getUserData();
-			PhysicsBoundaryBox.BoundaryBoxIdentifier boxId = (PhysicsBoundaryBox.BoundaryBoxIdentifier) b.getUserData();
+		if (a instanceof Sprite && b instanceof PhysicsBoundaryBox.BoundaryBoxIdentifier) {
+			Sprite sprite = (Sprite) a;
+			PhysicsBoundaryBox.BoundaryBoxIdentifier boxId = (PhysicsBoundaryBox.BoundaryBoxIdentifier) b;
 			deferredEvents.add(() -> physicsWorld.bouncedOnEdge(sprite, boxId));
-		} else if (a.getUserData() instanceof PhysicsBoundaryBox.BoundaryBoxIdentifier && (b.getUserData() instanceof Sprite)) {
-			Sprite sprite = (Sprite) b.getUserData();
-			PhysicsBoundaryBox.BoundaryBoxIdentifier boxId = (PhysicsBoundaryBox.BoundaryBoxIdentifier) a.getUserData();
+		} else if (a instanceof PhysicsBoundaryBox.BoundaryBoxIdentifier && (b instanceof Sprite)) {
+			Sprite sprite = (Sprite) b;
+			PhysicsBoundaryBox.BoundaryBoxIdentifier boxId = (PhysicsBoundaryBox.BoundaryBoxIdentifier) a;
 			deferredEvents.add(() -> physicsWorld.bouncedOnEdge(sprite, boxId));
-		} else if (a.getUserData() instanceof Sprite && b.getUserData() instanceof Sprite) {
-			Sprite sprite1 = (Sprite) a.getUserData();
-			Sprite sprite2 = (Sprite) b.getUserData();
+		} else if (a instanceof Sprite && b instanceof Sprite) {
+			Sprite sprite1 = (Sprite) a;
+			Sprite sprite2 = (Sprite) b;
 			registerContact(sprite1, sprite2);
 		}
 	}
 
 	@Override
 	public void endContact(Contact contact) {
-		Body a = contact.getFixtureA().getBody();
-		Body b = contact.getFixtureB().getBody();
+		Object a = userDataOf(contact.getFixtureA());
+		Object b = userDataOf(contact.getFixtureB());
 
-		if (a.getUserData() instanceof Sprite && b.getUserData() instanceof Sprite) {
-			Sprite sprite1 = (Sprite) a.getUserData();
-			Sprite sprite2 = (Sprite) b.getUserData();
+		if (a instanceof Sprite && b instanceof Sprite) {
+			Sprite sprite1 = (Sprite) a;
+			Sprite sprite2 = (Sprite) b;
 			deferredEvents.add(() -> unregisterContact(sprite1, sprite2));
 		}
+	}
+
+	private Object userDataOf(Fixture fixture) {
+		Object bodyUserData = fixture.getBody().getUserData();
+		return bodyUserData != null ? bodyUserData : fixture.getUserData();
 	}
 
 	@Override

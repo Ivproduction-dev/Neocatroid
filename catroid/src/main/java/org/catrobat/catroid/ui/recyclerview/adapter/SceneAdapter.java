@@ -87,11 +87,7 @@ public class SceneAdapter extends ExtendedRVAdapter<Scene> {
 				java.util.List<org.catrobat.catroid.content.Scene> projectScenes = project.getSceneList();
 				projectScenes.clear();
 				projectScenes.addAll(newOrder);
-				try {
-					org.catrobat.catroid.io.XstreamSerializer.getInstance().saveProject(project);
-				} catch (Exception e) {
-					android.util.Log.e("SceneAdapter", "Failed to save scene order", e);
-				}
+				scheduleSave(project);
 			}
 		} catch (Exception e) {
 			android.util.Log.e("SceneAdapter", "onItemMove failed", e);
@@ -106,6 +102,28 @@ public class SceneAdapter extends ExtendedRVAdapter<Scene> {
 			}
 		} catch (Exception ignored) {}
 		return moved;
+	}
+
+	private final android.os.Handler sceneOrderSaveHandler =
+			new android.os.Handler(android.os.Looper.getMainLooper());
+	private Runnable pendingSceneOrderSave;
+
+	private void scheduleSave(final org.catrobat.catroid.content.Project project) {
+		if (pendingSceneOrderSave != null) {
+			sceneOrderSaveHandler.removeCallbacks(pendingSceneOrderSave);
+		}
+		pendingSceneOrderSave = new Runnable() {
+			@Override
+			public void run() {
+				pendingSceneOrderSave = null;
+				try {
+					org.catrobat.catroid.io.XstreamSerializer.getInstance().saveProject(project);
+				} catch (Exception e) {
+					android.util.Log.e("SceneAdapter", "Failed to save scene order", e);
+				}
+			}
+		};
+		sceneOrderSaveHandler.postDelayed(pendingSceneOrderSave, 500L);
 	}
 
 	private int getLookCount(Scene scene) {

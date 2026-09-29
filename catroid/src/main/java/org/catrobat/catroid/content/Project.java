@@ -71,7 +71,8 @@ import static org.catrobat.catroid.utils.Utils.SPEECH_RECOGNITION_SUPPORTED_LANG
 		"globalScene",
 		"programVariableList",
 		"programListOfLists",
-		"programMultiplayerVariableList"
+		"programMultiplayerVariableList",
+		"physicsVersion"
 	})
 @LunoClass
 public class Project implements Serializable {
@@ -92,6 +93,12 @@ public class Project implements Serializable {
 	private List<Scene> sceneList = new ArrayList<>();
 	@XStreamAlias("globalScene")
 	private Scene globalScene = null;
+
+	public static final int PHYSICS_BOX2D_2X = 0;
+	public static final int PHYSICS_BOX2D_3X = 1;
+
+	@XStreamAlias("physicsVersion")
+	private int physicsVersion = PHYSICS_BOX2D_2X;
 
 	private transient File directory;
 
@@ -209,6 +216,14 @@ public class Project implements Serializable {
 
 	public boolean hasGlobalScene() {
 		return globalScene != null;
+	}
+
+	public int getPhysicsVersion() {
+		return physicsVersion;
+	}
+
+	public void setPhysicsVersion(int physicsVersion) {
+		this.physicsVersion = physicsVersion;
 	}
 
 	public Scene getGlobalSceneForMigration() {

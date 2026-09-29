@@ -29,12 +29,13 @@ import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import org.catrobat.catroid.content.Scope;
 import org.catrobat.catroid.formulaeditor.Formula;
 import org.catrobat.catroid.formulaeditor.InterpretationException;
+import org.catrobat.catroid.physics.IPhysicsWorld;
 import org.catrobat.catroid.physics.PhysicsWorld;
 
 public class SetGravityAction extends TemporalAction {
 
 	private Scope scope;
-	private PhysicsWorld physicsWorld;
+	private IPhysicsWorld physicsWorld;
 	private Formula gravityX;
 	private Formula gravityY;
 
@@ -63,7 +64,7 @@ public class SetGravityAction extends TemporalAction {
 		this.scope = scope;
 	}
 
-	public void setPhysicsWorld(PhysicsWorld physicsWorld) {
+	public void setPhysicsWorld(IPhysicsWorld physicsWorld) {
 		this.physicsWorld = physicsWorld;
 	}
 

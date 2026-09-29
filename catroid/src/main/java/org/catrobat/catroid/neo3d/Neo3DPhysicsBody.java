@@ -29,6 +29,7 @@ public final class Neo3DPhysicsBody implements Serializable {
     private float linearDamping = 0.05f;
     private float angularDamping = 0.1f;
     private boolean continuousCollision;
+    private boolean noCollision;
 
     public Neo3DPhysicsBody() {
     }
@@ -47,6 +48,7 @@ public final class Neo3DPhysicsBody implements Serializable {
         copy.linearDamping = linearDamping;
         copy.angularDamping = angularDamping;
         copy.continuousCollision = continuousCollision;
+        copy.noCollision = noCollision;
         return copy;
     }
 
@@ -120,6 +122,14 @@ public final class Neo3DPhysicsBody implements Serializable {
 
     public void setContinuousCollision(boolean continuousCollision) {
         this.continuousCollision = continuousCollision;
+    }
+
+    public boolean isNoCollision() {
+        return noCollision;
+    }
+
+    public void setNoCollision(boolean noCollision) {
+        this.noCollision = noCollision;
     }
 
     private static float clamp(float value, float min, float max) {

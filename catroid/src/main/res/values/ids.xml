@@ -29,5 +29,16 @@
     <item name="formula_editor_keyboard_undo" type="id"/>
     <item name="formula_editor_keyboard_redo" type="id"/>
     <item name="brick_view_data_version" type="id"/>
+    <item name="theme_saved_background" type="id"/>
+    <item name="theme_saved_text" type="id"/>
+    <item name="theme_saved_hint" type="id"/>
+    <item name="theme_saved_card" type="id"/>
+    <item name="theme_saved_tint" type="id"/>
+    <item name="theme_saved_nav_text" type="id"/>
+    <item name="theme_saved_nav_icon" type="id"/>
+    <item name="theme_saved_bg_color" type="id"/>
+    <item name="theme_saved_root" type="id"/>
+    <item name="scratch_saved_background" type="id"/>
+    <item name="scratch_saved_text_color" type="id"/>
 
 </resources>

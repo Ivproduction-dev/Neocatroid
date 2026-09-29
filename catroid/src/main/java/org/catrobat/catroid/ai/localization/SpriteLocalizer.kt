@@ -130,8 +130,10 @@ class SpriteLocalizer(
 
             var resultBitmap = bitmap
             for (region in translatedRegions) {
-                resultBitmap = TextRenderer.replaceText(resultBitmap, region,
+                val previous = resultBitmap
+                resultBitmap = TextRenderer.replaceText(previous, region,
                     quality = quality, isPixelArt = isPixelArt)
+                if (previous !== bitmap) previous.recycle()
             }
 
             val langCode = targetLanguage.take(2).lowercase()

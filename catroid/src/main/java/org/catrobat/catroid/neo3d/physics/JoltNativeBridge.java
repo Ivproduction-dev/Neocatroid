@@ -12,7 +12,7 @@ final class JoltNativeBridge {
             float halfX, float halfY, float halfZ, float radius, float halfHeight,
             float mass, float friction, float restitution, float gravityFactor,
             float linearDamping, float angularDamping, boolean continuousCollision,
-            float[] transform);
+            boolean noCollision, float[] transform);
 
     static native void nDestroyBody(long worldHandle, long bodyId);
 

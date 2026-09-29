@@ -153,6 +153,66 @@
     <string formatted="false" name="brick_neo_turn_object_toward">Turn 3D object</string>
     <string formatted="false" name="brick_neo_toward">toward:</string>
     <string formatted="false" name="brick_neo_clear_objects">Delete all 3D objects</string>
+    <string name="listen_tcp_mode_always">Always</string>
+    <string name="listen_tcp_mode_once">Once</string>
+    <string name="formula_android_id" formatted="false">AndroidID</string>
+    <string name="formula_device_rooted" formatted="false">Rooted</string>
+    <string name="formula_device_bootloader" formatted="false">BootloaderUnlocked</string>
+    <string name="formula_device_emulator" formatted="false">Emulator</string>
+    <string name="formula_device_gms_installed" formatted="false">GMSInstalled</string>
+    <string name="formula_device_gms_system" formatted="false">GMSSystem</string>
+    <string name="formula_device_play_status" formatted="false">PlayServicesStatus</string>
+    <string formatted="false" name="brick_neo_rename_object">Rename 3D object</string>
+    <string formatted="false" name="brick_neo_new_name">to:</string>
+    <string formatted="false" name="brick_neo_copy_object_position">Copy 3D position</string>
+    <string formatted="false" name="brick_neo_from_object">from:</string>
+    <string formatted="false" name="brick_neo_object_position_to_camera">Move 3D object to camera</string>
+    <string formatted="false" name="brick_neo_camera_position_to_object">Move 3D camera to object</string>
+    <string formatted="false" name="brick_neo_turn_object_to_camera">Turn 3D object to camera</string>
+    <string formatted="false" name="brick_neo_move_object_steps">Move 3D object steps</string>
+    <string formatted="false" name="brick_neo_steps">steps:</string>
+    <string formatted="false" name="brick_neo_set_object_step_size">Set 3D step size</string>
+    <string formatted="false" name="brick_neo_set_object_variable">Set 3D object variable</string>
+    <string formatted="false" name="brick_neo_glide_object">Glide 3D object</string>
+    <string formatted="false" name="brick_neo_seconds">seconds:</string>
+    <string formatted="false" name="brick_neo_glide_camera_to_object">Glide 3D camera to</string>
+    <string formatted="false" name="brick_neo_glide_camera_to_position">Glide 3D camera</string>
+    <string formatted="false" name="brick_neo_object_velocity_toward">3D object velocity toward</string>
+    <string formatted="false" name="brick_neo_speed">speed:</string>
+    <string formatted="false" name="brick_neo_object_velocity_camera">3D object velocity to camera</string>
+    <string formatted="false" name="brick_neo_debris">Delete 3D object after</string>
+    <string formatted="false" name="brick_when_neo3d_touch">When 3D object touches</string>
+    <string formatted="false" name="brick_neo_cast_ray">Cast 3D ray</string>
+    <string formatted="false" name="brick_neo_clear_ray">Delete 3D ray</string>
+    <string formatted="false" name="brick_neo_max_hits">max hits:</string>
+    <string formatted="false" name="brick_when_neo3d_ray_hit">When 3D ray hits</string>
+    <string formatted="false" name="brick_neo_play_3d_sound">Play 3D sound</string>
+    <string formatted="false" name="brick_neo_play_3d_sound_at_camera">Play 3D sound at camera</string>
+    <string formatted="false" name="brick_neo_stop_3d_sound">Stop 3D sound</string>
+    <string formatted="false" name="brick_neo_volume">volume %:</string>
+    <string formatted="false" name="brick_neo_tone">tone %:</string>
+    <string formatted="false" name="brick_neo_max_distance">max distance:</string>
+    <string name="brick_neo_loop_no">No</string>
+    <string name="brick_neo_loop_yes">Yes</string>
+    <string name="formula_neo3d_ray_hit" formatted="false">Neo3D_rayHit</string>
+    <string name="formula_neo3d_ray_hit_param" formatted="false">(\'ray\', 0)</string>
+    <string name="formula_neo3d_ray_count" formatted="false">Neo3D_rayCount</string>
+    <string name="formula_neo3d_parent" formatted="false">Neo3D_parent</string>
+    <string name="formula_neo3d_var" formatted="false">Neo3D_var</string>
+    <string name="formula_neo3d_var_param" formatted="false">(\'name\', \'var\')</string>
+    <string name="formula_session_get" formatted="false">SessionVar</string>
+    <string name="formula_session_get_param" formatted="false">(\'name\')</string>
+    <string formatted="false" name="brick_show_sprites_by_prefix">Show sprites by prefix</string>
+    <string formatted="false" name="brick_hide_sprites_by_prefix">Hide sprites by prefix</string>
+    <string formatted="false" name="brick_set_step_size">Set step size</string>
+    <string formatted="false" name="brick_create_session_variable">Create session variable</string>
+    <string formatted="false" name="brick_set_session_variable">Set session variable</string>
+    <string formatted="false" name="brick_change_session_variable">Change session variable</string>
+    <string formatted="false" name="brick_delete_session_variable">Delete session variable</string>
+    <string formatted="false" name="brick_session_variable_value">value:</string>
+    <string name="project_physics_engine_label">Physics engine</string>
+    <string name="project_physics_engine_v1">Box2D 2.x (compatible)</string>
+    <string name="project_physics_engine_v2">Box2D 3.x (new)</string>
     <string name="formula_neo3d_distance" formatted="false">Neo3D_distance</string>
     <string name="formula_neo3d_distance_param" formatted="false">(\'name1\', \'name2\')</string>
     <string name="formula_neo3d_speed" formatted="false">Neo3D_speed</string>
@@ -3651,6 +3711,10 @@
 <string formatted="false" name="formula_editor_function_join_parameter">(\'hello\',\' world\')</string>
 <string formatted="false" name="formula_editor_function_join3">join</string>
 <string formatted="false" name="formula_editor_function_join3_parameter">(\'hello\',\' world\',\'!\')</string>
+<string formatted="false" name="formula_editor_function_word">word</string>
+<string formatted="false" name="formula_editor_function_word_parameter">(1,\'hello world\')</string>
+<string formatted="false" name="formula_editor_function_split">split</string>
+<string formatted="false" name="formula_editor_function_split_parameter">(1,\'a,b\',\',\')</string>
 <string formatted="false" name="formula_editor_function_regex">regular expression</string>
 <string formatted="false" name="formula_editor_function_regex_parameter">(\' an? ([^ .]+)\',\'I am a panda.\')</string>
 <string formatted="false" name="formula_editor_function_regex_html_extractor_not_found">The keyword could not be found.</string>

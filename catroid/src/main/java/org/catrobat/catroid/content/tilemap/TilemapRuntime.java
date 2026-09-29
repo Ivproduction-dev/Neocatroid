@@ -25,12 +25,12 @@ package org.catrobat.catroid.content.tilemap;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.physics.box2d.Body;
+
 
 import org.catrobat.catroid.common.TilemapLookData;
 import org.catrobat.catroid.content.Look;
 import org.catrobat.catroid.content.Sprite;
-import org.catrobat.catroid.physics.PhysicsWorld;
+import org.catrobat.catroid.physics.IPhysicsWorld;
 import org.catrobat.catroid.physics.TilemapPhysicsBuilder;
 
 public class TilemapRuntime {
@@ -43,7 +43,7 @@ public class TilemapRuntime {
 	private static volatile TextureRegion dummyRegion;
 	private volatile boolean regionsDirty = true;
 
-	private Body body;
+	private Object body;
 	private volatile boolean physicsDirty = true;
 
 	public TilemapRuntime(TilemapLookData data) {
@@ -126,7 +126,7 @@ public class TilemapRuntime {
 		return physicsDirty;
 	}
 
-	public void rebuildIfDirty(PhysicsWorld physicsWorld, Sprite sprite) {
+	public void rebuildIfDirty(IPhysicsWorld physicsWorld, Sprite sprite) {
 		if (!physicsDirty || physicsWorld == null || sprite == null) {
 			return;
 		}
@@ -147,7 +147,7 @@ public class TilemapRuntime {
 		tileRegions = null;
 	}
 
-	public void dispose(PhysicsWorld physicsWorld) {
+	public void dispose(IPhysicsWorld physicsWorld) {
 		if (physicsWorld != null) {
 			TilemapPhysicsBuilder.destroy(physicsWorld, body);
 		}

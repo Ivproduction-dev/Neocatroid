@@ -234,7 +234,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	private Handler volumeHoldHandler;
 	private Runnable volumeHoldRunnable;
 
-	private Map<String, View> dynamicViews = new HashMap<>();
+	private Map<String, View> dynamicViews = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private FrameLayout cameraContainer;
 

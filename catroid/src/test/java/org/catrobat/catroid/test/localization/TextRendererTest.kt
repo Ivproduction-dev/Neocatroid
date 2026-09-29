@@ -9,7 +9,14 @@ import org.catrobat.catroid.ai.localization.TextRegion
 import org.catrobat.catroid.ai.localization.TextRenderer
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class TextRendererTest {
 
     private fun createTextBitmap(
@@ -29,10 +36,10 @@ class TextRendererTest {
             color = textColor; this.textSize = textSize
         }
         if (hasOutline) {
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 3f
             paint.color = outlineColor
-            canvas.drawText(text, textX.toFloat(), textY.toFloat(), paint)
+            for ((dx, dy) in listOf(-2 to 0, 2 to 0, 0 to -2, 0 to 2)) {
+                canvas.drawText(text, (textX + dx).toFloat(), (textY + dy).toFloat(), paint)
+            }
         }
         paint.style = Paint.Style.FILL
         paint.color = textColor

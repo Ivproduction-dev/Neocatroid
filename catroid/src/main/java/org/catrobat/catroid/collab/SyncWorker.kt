@@ -943,6 +943,8 @@ object SyncWorker {
         if (saved != null && File(saved.dirPath).isDirectory) {
             dir = File(saved.dirPath)
             progress = saved
+            progress.codeDone = false
+            progress.lastDocId = null
             for (entry in payload.media) {
                 val file = safeProjectFile(dir, entry.path) ?: continue
                 if (!verifiedContains(progress, entry) && file.exists()) {
@@ -1209,8 +1211,13 @@ object SyncWorker {
             val codeXml = SyncChunks.join(
                 dlCodeParts.sortedBy { it.index }.distinctBy { it.index }
             )
-            File(dir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)
-                .writeText(codeXml, Charsets.UTF_8)
+            val codeFile = File(dir, org.catrobat.catroid.common.Constants.CODE_XML_FILE_NAME)
+            if (codeXml.isBlank() && codeFile.isFile && codeFile.length() > 0L) {
+                Log.w(TAG, "assembled code is empty, keeping existing project")
+                abortDownload(session, stid)
+                return
+            }
+            codeFile.writeText(codeXml, Charsets.UTF_8)
             val sid = sid ?: return
             val store = DirSyncFiles(dir, snapshotDir(sid))
             val manifest = SyncEngine.manifestOf(store)

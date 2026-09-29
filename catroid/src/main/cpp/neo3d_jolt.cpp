@@ -34,6 +34,7 @@ constexpr uint32_t kMaxBodyPairs = 65536;
 constexpr uint32_t kMaxContacts = 20480;
 constexpr uint32_t kMovingLayer = 0;
 constexpr uint32_t kStaticLayer = 1;
+constexpr uint32_t kNoCollisionLayer = 2;
 constexpr float kFixedStep = 1.0f / 60.0f;
 constexpr int kMaxSteps = 5;
 constexpr float kPoseEpsilon = 0.00001f;
@@ -118,18 +119,23 @@ class World {
 public:
     World(float gravityX, float gravityY, float gravityZ)
         : mTempAllocator(10 * 1024 * 1024) {
-        mBroadPhaseLayers = std::make_unique<JPH::BroadPhaseLayerInterfaceTable>(2, 1);
+        mBroadPhaseLayers = std::make_unique<JPH::BroadPhaseLayerInterfaceTable>(3, 1);
         mBroadPhaseLayers->MapObjectToBroadPhaseLayer(kMovingLayer,
                 JPH::BroadPhaseLayer(0));
         mBroadPhaseLayers->MapObjectToBroadPhaseLayer(kStaticLayer,
                 JPH::BroadPhaseLayer(0));
-        mObjectLayers = std::make_unique<JPH::ObjectLayerPairFilterTable>(2);
+        mBroadPhaseLayers->MapObjectToBroadPhaseLayer(kNoCollisionLayer,
+                JPH::BroadPhaseLayer(0));
+        mObjectLayers = std::make_unique<JPH::ObjectLayerPairFilterTable>(3);
         mObjectLayers->EnableCollision(kMovingLayer, kMovingLayer);
         mObjectLayers->EnableCollision(kMovingLayer, kStaticLayer);
         mObjectLayers->DisableCollision(kStaticLayer, kStaticLayer);
+        mObjectLayers->DisableCollision(kNoCollisionLayer, kMovingLayer);
+        mObjectLayers->DisableCollision(kNoCollisionLayer, kStaticLayer);
+        mObjectLayers->DisableCollision(kNoCollisionLayer, kNoCollisionLayer);
         mObjectVsBroadPhaseLayers =
                 std::make_unique<JPH::ObjectVsBroadPhaseLayerFilterTable>(
-                        *mBroadPhaseLayers, 1, *mObjectLayers, 2);
+                        *mBroadPhaseLayers, 1, *mObjectLayers, 3);
         mPhysicsSystem.Init(kMaxBodies, 0, kMaxBodyPairs, kMaxContacts,
                 *mBroadPhaseLayers, *mObjectVsBroadPhaseLayers, *mObjectLayers);
         mPhysicsSystem.SetGravity(JPH::Vec3(gravityX, gravityY, gravityZ));
@@ -147,7 +153,8 @@ public:
     int64_t CreateBody(int motionTypeValue, int shapeType, float halfX, float halfY,
             float halfZ, float radius, float halfHeight, float mass, float friction,
             float restitution, float gravityFactor, float linearDamping,
-            float angularDamping, bool continuousCollision, const jfloat *transform) {
+            float angularDamping, bool continuousCollision, bool noCollision,
+            const jfloat *transform) {
         JPH::EMotionType motionType;
         switch (motionTypeValue) {
             case 1:
@@ -192,8 +199,8 @@ public:
         }
         JPH::RVec3 position(transform[0], transform[1], transform[2]);
         JPH::Quat rotation(Normalize(transform[3], transform[4], transform[5], transform[6]));
-        uint32_t objectLayer = motionType == JPH::EMotionType::Static
-                ? kStaticLayer : kMovingLayer;
+        uint32_t objectLayer = noCollision ? kNoCollisionLayer
+                : (motionType == JPH::EMotionType::Static ? kStaticLayer : kMovingLayer);
         JPH::BodyCreationSettings settings(shape, position, rotation, motionType, objectLayer);
         settings.mFriction = std::max(0.0f, PositiveFinite(friction, 0.5f));
         settings.mRestitution = std::clamp(PositiveFinite(restitution, 0.1f), 0.0f, 1.0f);
@@ -465,7 +472,7 @@ Java_org_catrobat_catroid_neo3d_physics_JoltNativeBridge_nCreateBody(
         jfloat halfX, jfloat halfY, jfloat halfZ, jfloat radius, jfloat halfHeight,
         jfloat mass, jfloat friction, jfloat restitution, jfloat gravityFactor,
         jfloat linearDamping, jfloat angularDamping, jboolean continuousCollision,
-        jfloatArray transformArray) {
+        jboolean noCollision, jfloatArray transformArray) {
     World *world = FromHandle(worldHandle);
     jfloat *transform = env->GetFloatArrayElements(transformArray, nullptr);
     if (world == nullptr || transform == nullptr) {
@@ -476,7 +483,8 @@ Java_org_catrobat_catroid_neo3d_physics_JoltNativeBridge_nCreateBody(
     }
     int64_t bodyId = world->CreateBody(motionType, shapeType, halfX, halfY, halfZ, radius,
             halfHeight, mass, friction, restitution, gravityFactor, linearDamping,
-            angularDamping, continuousCollision == JNI_TRUE, transform);
+            angularDamping, continuousCollision == JNI_TRUE, noCollision == JNI_TRUE,
+            transform);
     env->ReleaseFloatArrayElements(transformArray, transform, JNI_ABORT);
     return bodyId;
 }

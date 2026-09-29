@@ -14,7 +14,7 @@ object FormulaParser {
         val tokens = tokenize(trimmed)
         val ctx = ParseContext(tokens)
         val tree = parseOr(ctx)
-        if (ctx.pos < ctx.tokens.size) {
+        if (ctx.pos < ctx.tokens.size && ctx.tokens[ctx.pos].type != TType.EOF) {
             throw IllegalArgumentException(
                 "Unexpected token at position ${ctx.pos}: '${ctx.tokens[ctx.pos].text}'"
             )
@@ -128,14 +128,21 @@ object FormulaParser {
     private fun parseComparison(ctx: ParseContext): FormulaElement {
         val left = parseAdd(ctx)
         val t = ctx.peek()
-        if (t.type == TType.OP && t.text in setOf("=", "!=", "<>", "<", "<=", ">", ">=")) {
-            val opText = when (val raw = t.text) {
-                "<>" -> "!="
-                else -> raw
+        if (t.type == TType.OP) {
+            val operator = when (t.text) {
+                "=" -> Operators.EQUAL
+                "!=", "<>" -> Operators.NOT_EQUAL
+                "<" -> Operators.SMALLER_THAN
+                "<=" -> Operators.SMALLER_OR_EQUAL
+                ">" -> Operators.GREATER_THAN
+                ">=" -> Operators.GREATER_OR_EQUAL
+                else -> null
             }
-            ctx.eat()
-            val right = parseAdd(ctx)
-            return binaryOp(opText, left, right)
+            if (operator != null) {
+                ctx.eat()
+                val right = parseAdd(ctx)
+                return binaryOp(operator, left, right)
+            }
         }
         return left
     }
@@ -235,9 +242,6 @@ object FormulaParser {
 
     private fun binaryOp(op: Operators, left: FormulaElement, right: FormulaElement): FormulaElement =
         FormulaElement(ElementType.OPERATOR, op.name, null, left, right)
-
-    private fun binaryOp(opName: String, left: FormulaElement, right: FormulaElement): FormulaElement =
-        FormulaElement(ElementType.OPERATOR, opName, null, left, right)
 
     private fun buildFunction(name: String, args: List<FormulaElement>): FormulaElement {
         val resolved = resolveFunctionName(name)

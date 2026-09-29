@@ -30,14 +30,20 @@ data class ThemePalette(
     val toolbar: Int,
     val background: Int,
     val button: Int,
-    val accent: Int
+    val accent: Int,
+    val surface: Int = DEFAULT_SURFACE,
+    val textPrimary: Int = DEFAULT_TEXT_PRIMARY,
+    val textSecondary: Int = DEFAULT_TEXT_SECONDARY
 ) {
     val isDefault: Boolean
         get() = name == null && author == null &&
             toolbar == DEFAULT_TOOLBAR &&
             background == DEFAULT_BACKGROUND &&
             button == DEFAULT_BUTTON &&
-            accent == DEFAULT_ACCENT
+            accent == DEFAULT_ACCENT &&
+            surface == DEFAULT_SURFACE &&
+            textPrimary == DEFAULT_TEXT_PRIMARY &&
+            textSecondary == DEFAULT_TEXT_SECONDARY
 
     fun toResourceOverrideMap(): Map<Int, Int> = linkedMapOf(
         R.color.toolbar_background to toolbar,
@@ -45,7 +51,17 @@ data class ThemePalette(
         R.color.app_background_dark to background,
         R.color.button_background to button,
         R.color.button_bottom_bar to button,
-        R.color.accent to accent
+        R.color.accent to accent,
+        R.color.advertising_button_background to surface,
+        R.color.button_border_top to surface,
+        R.color.dialog_title_and_text_view to textPrimary,
+        R.color.toolbar_title to textPrimary,
+        R.color.view_holder_headline to textPrimary,
+        R.color.checkbox_and_radio_button_description to textPrimary,
+        R.color.spinner_icon_and_inactive_elements to textPrimary,
+        R.color.toolbar_icons to textPrimary,
+        R.color.view_holder_item_title to textSecondary,
+        R.color.view_holder_item_details to textSecondary
     )
 
     companion object {
@@ -53,6 +69,9 @@ data class ThemePalette(
         const val DEFAULT_BACKGROUND = 0xFF2C2C2E.toInt()
         const val DEFAULT_BUTTON = 0xFF48484A.toInt()
         const val DEFAULT_ACCENT = 0xFFB0BEC5.toInt()
+        const val DEFAULT_SURFACE = 0xFF5A5A5C.toInt()
+        const val DEFAULT_TEXT_PRIMARY = 0xFFFFFFFF.toInt()
+        const val DEFAULT_TEXT_SECONDARY = 0xFFB0BEC5.toInt()
 
         @JvmField
         val DEFAULT = ThemePalette(

@@ -112,3 +112,19 @@ target_compile_options(Jolt PRIVATE -O3)
 add_library(neo3d_jolt SHARED neo3d_jolt.cpp)
 target_compile_options(neo3d_jolt PRIVATE -O3)
 target_link_libraries(neo3d_jolt PRIVATE Jolt ${log-lib})
+
+#
+# Box2D 3.1.1 (2D physics backend v2) + JNI bridge
+#
+
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+file(GLOB BOX2D_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/box2d/src/*.c)
+
+add_library(neo2d_box2d SHARED neo2d_box2d.cpp ${BOX2D_SOURCES})
+target_include_directories(neo2d_box2d PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/box2d/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/box2d/src)
+target_compile_options(neo2d_box2d PRIVATE -O3)
+target_link_libraries(neo2d_box2d PRIVATE ${log-lib})

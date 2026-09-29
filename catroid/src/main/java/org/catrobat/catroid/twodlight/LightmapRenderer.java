@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import org.catrobat.catroid.content.Look;
 import org.catrobat.catroid.content.Sprite;
+import org.catrobat.catroid.physics.IPhysicsWorld;
 import org.catrobat.catroid.physics.PhysicsWorld;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class LightmapRenderer {
     private boolean shaderLogged;
     private boolean diagLogged;
 
-    public void render(LightManager2D manager, OrthographicCamera camera, PhysicsWorld physicsWorld) {
+    public void render(LightManager2D manager, OrthographicCamera camera, IPhysicsWorld physicsWorld) {
         if (manager == null || camera == null) {
             return;
         }
@@ -170,12 +171,12 @@ public class LightmapRenderer {
     }
 
     private void renderLightmap(LightManager2D manager, List<Light2D> active,
-            OrthographicCamera camera, PhysicsWorld physicsWorld) {
+            OrthographicCamera camera, IPhysicsWorld physicsWorld) {
         float ambient = manager.getAmbient();
         lightFbo.begin();
         try {
             ScreenUtils.clear(ambient, ambient, ambient, 1f);
-            final PhysicsWorld world = physicsWorld;
+            final IPhysicsWorld world = physicsWorld;
             LightRaycaster raycaster = null;
             if (world != null) {
                 raycaster = new LightRaycaster() {
@@ -270,13 +271,17 @@ public class LightmapRenderer {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    void syncProxies(PhysicsWorld physicsWorld, List<Sprite> sprites, Sprite backgroundSprite) {
+    void syncProxies(IPhysicsWorld physicsWorld, List<Sprite> sprites, Sprite backgroundSprite) {
         if (physicsWorld == null || sprites == null) {
             return;
         }
         com.badlogic.gdx.physics.box2d.World world;
         try {
-            world = physicsWorld.getWorld();
+            Object nativeWorld = physicsWorld.getNativeWorld();
+            if (!(nativeWorld instanceof com.badlogic.gdx.physics.box2d.World)) {
+                return;
+            }
+            world = (com.badlogic.gdx.physics.box2d.World) nativeWorld;
         } catch (Exception e) {
             return;
         }
@@ -355,7 +360,7 @@ public class LightmapRenderer {
         }
     }
 
-    private void syncProxies(PhysicsWorld physicsWorld) {
+    private void syncProxies(IPhysicsWorld physicsWorld) {
         try {
             org.catrobat.catroid.stage.StageActivity stageActivity =
                     org.catrobat.catroid.stage.StageActivity.activeStageActivity != null

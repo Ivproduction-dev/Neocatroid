@@ -164,15 +164,18 @@ public class CountLoopBrick extends FormulaBrick implements CompositeBrick {
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
 		ScriptSequenceAction loopSequence = (ScriptSequenceAction) ActionFactory.createScriptSequenceAction(sequence.getScript());
 		boolean isLoopDelay = LoopUtil.checkLoopBrickForLoopDelay(this, sequence.getScript());
+
+		Action action = sprite.getActionFactory().createCountLoopAction(sprite, sequence,
+				getFormulaWithBrickField(BrickField.TIMES_TO_REPEAT), loopSequence,
+				loopVariable, isLoopDelay);
+
+		sprite.getActionFactory().pushLoopControl((org.catrobat.catroid.content.actions.LoopControl) action);
 		for (Brick brick : loopBricks) {
 			if (!brick.isCommentedOut()) {
 				brick.addActionToSequence(sprite, loopSequence);
 			}
 		}
-
-		Action action = sprite.getActionFactory().createCountLoopAction(sprite, sequence,
-				getFormulaWithBrickField(BrickField.TIMES_TO_REPEAT), loopSequence,
-				loopVariable, isLoopDelay);
+		sprite.getActionFactory().popLoopControl();
 
 		sequence.addAction(action);
 	}

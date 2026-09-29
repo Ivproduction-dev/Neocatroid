@@ -48,7 +48,8 @@ object ScriptLockPolicy {
 
     fun isFresh(lock: ScriptLock?, now: Long): Boolean {
         if (lock == null || lock.uid.isEmpty() || lock.at <= 0L) return false
-        return (now - lock.at) in -LOCK_TTL_MS..LOCK_TTL_MS
+        val age = now - lock.at
+        return age in 0..LOCK_TTL_MS
     }
 
     fun canClaim(existing: ScriptLock?, myUid: String, now: Long): Boolean {

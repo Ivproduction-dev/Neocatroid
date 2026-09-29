@@ -353,7 +353,7 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
                 shapeValue, halfX, halfY, halfZ, radius, halfHeight, config.getMass(),
                 config.getFriction(), config.getRestitution(), config.getGravityFactor(),
                 config.getLinearDamping(), config.getAngularDamping(),
-                config.isContinuousCollision(),
+                config.isContinuousCollision(), config.isNoCollision(),
                 new float[]{position[0], position[1], position[2], rotation[0],
                         rotation[1], rotation[2], rotation[3]});
         if (bodyId < 0L) {
@@ -381,6 +381,7 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         hash = 31 * hash + Float.floatToIntBits(config.getLinearDamping());
         hash = 31 * hash + Float.floatToIntBits(config.getAngularDamping());
         hash = 31 * hash + Boolean.hashCode(config.isContinuousCollision());
+        hash = 31 * hash + Boolean.hashCode(config.isNoCollision());
         String modelPath = object.getModelPath();
         hash = 31 * hash + (modelPath == null ? 0 : modelPath.hashCode());
         for (float value : object.getTransform().getScale()) {

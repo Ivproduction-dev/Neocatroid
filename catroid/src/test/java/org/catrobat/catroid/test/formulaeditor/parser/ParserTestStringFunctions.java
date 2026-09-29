@@ -395,6 +395,40 @@ public class ParserTestStringFunctions {
 	}
 
 	@Test
+	public void testWord() {
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "1",
+				InternTokenType.STRING, "hello world", "hello", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "2",
+				InternTokenType.STRING, "hello world", "world", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "3",
+				InternTokenType.STRING, "ban uid reason", "reason", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "4",
+				InternTokenType.STRING, "hello world", "", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "0",
+				InternTokenType.STRING, "hello world", "", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "1",
+				InternTokenType.STRING, "", "", testScope);
+		FormulaEditorTestUtil.testDoubleParameterFunction(Functions.WORD, InternTokenType.NUMBER, "2",
+				InternTokenType.STRING, "  hello   world  ", "world", testScope);
+	}
+
+	@Test
+	public void testSplit() {
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "1",
+				InternTokenType.STRING, "hello,world", InternTokenType.STRING, ",", "hello", testScope);
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "2",
+				InternTokenType.STRING, "hello,world", InternTokenType.STRING, ",", "world", testScope);
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "3",
+				InternTokenType.STRING, "ban:uid:reason", InternTokenType.STRING, ":", "reason", testScope);
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "4",
+				InternTokenType.STRING, "a,b", InternTokenType.STRING, ",", "", testScope);
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "1",
+				InternTokenType.STRING, "abc", InternTokenType.STRING, ",", "abc", testScope);
+		FormulaEditorTestUtil.testTripleParameterFunction(Functions.SPLIT, InternTokenType.NUMBER, "2",
+				InternTokenType.STRING, "a,,c", InternTokenType.STRING, ",", "", testScope);
+	}
+
+	@Test
 	public void testRegex() {
 		String firstParameter = " an? ([^ .]+)";
 		String secondParameter = "I am a penguin.";

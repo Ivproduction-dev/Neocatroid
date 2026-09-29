@@ -71,9 +71,8 @@ public class MathFunctionProvider implements FunctionProvider {
 		}
 
 		if (divisor > 0) {
-			while (dividend < 0) {
-				dividend += Math.abs(divisor);
-			}
+			double rest = dividend % divisor;
+			return rest < 0 ? rest + divisor : rest;
 		} else {
 			if (dividend > 0) {
 				return (dividend % divisor) + divisor;
