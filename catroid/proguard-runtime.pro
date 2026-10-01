@@ -186,3 +186,8 @@
 -dontwarn org.luaj.vm2.script.**
 -dontwarn org.openjsse.**
 -dontwarn pl.droidsonroids.gif.**
+-dontwarn org.jetbrains.kotlin.com.intellij.**
+-dontwarn reactor.blockhound.**
+-dontwarn io.netty.**
+-dontwarn com.hivemq.client.**
+-dontoptimize

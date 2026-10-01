@@ -501,6 +501,7 @@
     <string name="editor_3d_delete_object">Delete GameObject</string>
     <string name="editor_3d_add_component">Add Component</string>
     <string name="editor_3d_delete_object_confirm">Are you sure you want to delete \'%1$s\'?</string>
+    <string name="editor_3d_delete_object_confirm_with_children">Are you sure you want to delete \'%1$s\' and its %2$d child object(s)?</string>
 
     <!-- Transform Component -->
     <string name="editor_3d_position">Position</string>
@@ -4437,6 +4438,11 @@
 <string name="dialog_save_image_format">Image format</string>
 <string name="dialog_antialiasing">Antialiasing</string>
 <string name="dialog_smoothing">Smoothing</string>
+<string name="pocketpaint_ui2_setting_label">Pocket Paint 2.0 (Modern UI)</string>
+<string name="pocketpaint_ui2_onboarding_title">Welcome to Pocket Paint 2.0!</string>
+<string name="pocketpaint_ui2_onboarding_message">Try the redesigned modern interface with quick toolbars, compact panels and updated vector tools. You can switch back at any time in Advanced Settings.</string>
+<string name="pocketpaint_ui2_onboarding_enable">Enable Pocket Paint 2.0</string>
+<string name="pocketpaint_ui2_onboarding_skip">Keep Classic UI</string>
 <string name="dialog_zoom_window_enabled">Enabled</string>
 <string name="dialog_zoom_window_from_size" translatable="false">100</string>
 <string name="dialog_zoom_window_to_size" translatable="false">300</string>
@@ -5049,7 +5055,32 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_step_firebase">Firebase</string>
     <string name="v3_next">Next</string>
     <string name="v3_back">Back</string>
-    <string name="v3_build">Build</string>
+    <string name="v3_build">Build APK</string>
+    <string name="v3_template_light_description">Uses less memory. Other scenes load when needed.</string>
+    <string name="v3_template_full_description">Preloads scenes for faster scene changes. Uses more memory.</string>
+    <string name="v3_permissions_hint">Automatic mode estimates permissions from project blocks. Switch to manual to adjust them.</string>
+    <string name="v3_firebase_hint">Optional. Add Firebase config only if your game uses Firebase. Its package name must match the app.</string>
+    <string name="v3_invalid_package_name">Enter a valid package name, such as com.example.game.</string>
+    <string name="v3_invalid_sdk">Minimum SDK must not be greater than target SDK.</string>
+    <string name="v3_permission_internet">Internet</string>
+    <string name="v3_permission_network_state">Network status</string>
+    <string name="v3_permission_wifi_state">Wi-Fi status</string>
+    <string name="v3_permission_camera">Camera</string>
+    <string name="v3_permission_record_audio">Record audio</string>
+    <string name="v3_permission_write_external_storage">Write to external storage</string>
+    <string name="v3_permission_read_external_storage">Read external storage</string>
+    <string name="v3_permission_read_media_images">Read images</string>
+    <string name="v3_permission_read_media_audio">Read audio</string>
+    <string name="v3_permission_vibrate">Vibration</string>
+    <string name="v3_permission_wake_lock">Keep running in background</string>
+    <string name="v3_permission_post_notifications">Notifications</string>
+    <string name="v3_permission_bluetooth">Bluetooth</string>
+    <string name="v3_permission_bluetooth_admin">Bluetooth management (legacy)</string>
+    <string name="v3_permission_bluetooth_connect">Connect to Bluetooth</string>
+    <string name="v3_permission_nfc">NFC</string>
+    <string name="v3_permission_fine_location">Precise location</string>
+    <string name="v3_permission_coarse_location">Approximate location</string>
+    <string name="v3_permission_unknown">Other permission</string>
 
     <!-- Firebase config for APK Builder V3 -->
     <string name="v3_firebase_section">Firebase</string>
@@ -6119,4 +6150,159 @@ needs read and write access to it. You can always change permissions through you
 <string name="particle_start_color">Start Color</string>
 <string name="particle_end_color">End Color</string>
 <string name="category_2d_particles" formatted="false">2D Particles</string>
+    <string name="editor_3d_version_title">Choose your 3D editor</string>
+    <string name="editor_3d_version_description">The new editor uses Neo3D with Filament and Jolt. It edits Neo3D scene data; classic 3D scenes stay in the classic editor. You can change this choice later in Settings.</string>
+    <string name="editor_3d_version_new">Use Neo3D editor</string>
+    <string name="editor_3d_version_classic">Stay in classic editor</string>
+    <string name="editor_3d_version_setting_title">3D editor</string>
+    <string name="editor_3d_version_setting_summary">Choose which 3D editor opens, or ask each time</string>
+    <string name="editor_3d_switch_new">Switch to Neo3D editor</string>
+    <string name="editor_3d_switch_classic">Switch to classic editor</string>
+    <string name="editor_3d_title_new">3D Editor 2.0 · Neo3D</string>
+    <string name="editor_3d_select_object_hint">Tap an object to select it</string>
+    <string-array name="editor_3d_version_entries">
+        <item>Ask each time</item>
+        <item>Classic editor</item>
+        <item>Neo3D editor</item>
+    </string-array>
+    <string-array name="editor_3d_version_values">
+        <item>ask</item>
+        <item>classic</item>
+        <item>neo3d</item>
+    </string-array>
+    <string name="editor_3d_controls_setting_title">Neo3D camera controls</string>
+    <string name="editor_3d_controls_setting_summary">Buttons, joystick or gestures only</string>
+    <string-array name="editor_3d_controls_entries">
+        <item>WASD buttons</item>
+        <item>Virtual joystick</item>
+        <item>Gestures only</item>
+    </string-array>
+    <string-array name="editor_3d_controls_values">
+        <item>wasd</item>
+        <item>joystick</item>
+        <item>gestures</item>
+    </string-array>
+    <string name="editor_3d_controls_title">Choose camera controls</string>
+    <string name="editor_3d_controls_next">Next</string>
+    <string name="editor_3d_controls_wasd_desc">Six hold-to-move buttons, precise on tablets.</string>
+    <string name="editor_3d_controls_joystick_desc">One-thumb stick for moving the camera.</string>
+    <string name="editor_3d_controls_gestures_desc">Clean viewport, drag and pinch only.</string>
+    <string name="editor_3d_controls_hint">Camera: %1$s. Change anytime in Settings.</string>
+    <string name="editor_3d_snap">Snap 0.5</string>
+    <string name="editor_3d_grid">Grid</string>
+    <string name="editor_3d_view_presets">Views</string>
+    <string name="editor_3d_view_top">Top</string>
+    <string name="editor_3d_view_front">Front</string>
+    <string name="editor_3d_view_side">Side</string>
+    <string name="editor_3d_view_iso">Iso</string>
+    <string name="editor_3d_model_too_large">Model file is too large (max 100 MB).</string>
+    <string name="editor_3d_model_compressed">Model uses compressed meshes (Draco, meshopt or Basis) which are not supported. Re-export it without compression.</string>
+    <string name="editor_3d_model_no_scene_model">No loadable model found in the archive.</string>
+    <string name="editor_3d_add_cylinder">Add Cylinder</string>
+    <string name="editor_3d_add_light">Add Light</string>
+    <string name="editor_3d_add_camera">Add Camera</string>
+    <string name="editor_3d_import_model">Import model</string>
+    <string name="editor_3d_save">Save</string>
+    <string name="editor_3d_undo">Undo</string>
+    <string name="editor_3d_redo">Redo</string>
+    <string name="editor_3d_tool_select">Select</string>
+    <string name="editor_3d_tool_move">Move</string>
+    <string name="editor_3d_tool_rotate">Rotate</string>
+    <string name="editor_3d_tool_scale">Scale</string>
+    <string name="editor_3d_format_glb_gltf_obj">3D models (GLB, glTF, OBJ, STL, ZIP)</string>
+    <string name="editor_3d_unsupported_model">This model format is not supported.</string>
+    <string name="editor_3d_scene_settings">Scene settings</string>
+    <string name="editor_3d_sky_color">Background color (#RRGGBB)</string>
+    <string name="editor_3d_ibl_intensity">Environment brightness</string>
+    <string name="editor_3d_scene_shadows">Enable scene shadows</string>
+    <string name="editor_3d_viewport_hint">Drag to look · tap an object to select</string>
+    <string name="editor_3d_no_selection">No object selected</string>
+    <string name="editor_3d_selected">Selected: %1$s</string>
+    <string name="editor_3d_type_camera">Camera</string>
+    <string name="editor_3d_type_light">Light</string>
+    <string name="editor_3d_type_cube">Cube</string>
+    <string name="editor_3d_type_sphere">Sphere</string>
+    <string name="editor_3d_type_cylinder">Cylinder</string>
+    <string name="editor_3d_type_model">Model</string>
+    <string name="editor_3d_inspector_empty">Select an object to edit its properties.</string>
+    <string name="editor_3d_name">Name</string>
+    <string name="editor_3d_rename">Rename</string>
+    <string name="editor_3d_visible">Visible</string>
+    <string name="editor_3d_active">Active</string>
+    <string name="editor_3d_transform">Transform</string>
+    <string name="editor_3d_apply">Apply</string>
+    <string name="editor_3d_material">Material</string>
+    <string name="editor_3d_metallic">Metallic (0–1)</string>
+    <string name="editor_3d_roughness">Roughness (0–1)</string>
+    <string name="editor_3d_emissive">Emission color (#RRGGBB)</string>
+    <string name="editor_3d_material_applied">Material updated</string>
+    <string name="editor_3d_color_invalid">Enter a color such as #AABBCC</string>
+    <string name="editor_3d_physics">Physics</string>
+    <string name="editor_3d_physics_enabled">Enable physics body</string>
+    <string name="editor_3d_motion">Motion</string>
+    <string name="editor_3d_shape">Collider shape</string>
+    <string name="editor_3d_mass">Mass</string>
+    <string name="editor_3d_friction">Friction</string>
+    <string name="editor_3d_restitution">Bounciness</string>
+    <string name="editor_3d_gravity">Gravity factor</string>
+    <string name="editor_3d_linear_damping">Linear damping</string>
+    <string name="editor_3d_angular_damping">Angular damping</string>
+    <string name="editor_3d_save_failed">Could not save the scene.</string>
+    <string name="editor_3d_camera">Camera settings</string>
+    <string name="editor_3d_fov">Field of view</string>
+    <string name="editor_3d_near">Near clipping</string>
+    <string name="editor_3d_far">Far clipping</string>
+    <string name="editor_3d_aperture">Aperture</string>
+    <string name="editor_3d_shutter">Shutter speed (seconds)</string>
+    <string name="editor_3d_sensitivity">ISO sensitivity</string>
+    <string name="editor_3d_main_camera">Main camera</string>
+    <string name="editor_3d_light">Light settings</string>
+    <string name="editor_3d_intensity">Intensity</string>
+    <string name="editor_3d_range">Range</string>
+    <string name="editor_3d_light_color_hex">Light color (#RRGGBB)</string>
+    <string name="editor_3d_light_direction">Light direction</string>
+    <string name="editor_3d_inner_cone">Inner cone (degrees)</string>
+    <string name="editor_3d_outer_cone">Outer cone (degrees)</string>
+    <string name="editor_3d_continuous_collision">Continuous collision</string>
+    <string name="editor_3d_shadows">Cast shadows</string>
+    <string name="editor_3d_directional_light">Directional</string>
+    <string name="editor_3d_point_light">Point</string>
+    <string name="editor_3d_spot_light">Spot</string>
+    <string name="editor_3d_parent">Parent</string>
+    <string name="editor_3d_no_parent">None</string>
+    <string name="editor_3d_duplicate">Duplicate</string>
+    <string name="editor_3d_delete_confirm">Delete “%1$s” from this scene?</string>
+    <string name="editor_3d_model_import_failed">Could not import this model.</string>
+    <string name="editor_3d_import_glb_only">Choose a self-contained GLB file.</string>
+    <string name="editor_3d_animations">Animations</string>
+    <string name="editor_3d_animation_number">Animation %1$d</string>
+    <string name="editor_3d_play">Play</string>
+    <string name="editor_3d_pause">Pause</string>
+    <string name="editor_3d_stop">Stop</string>
+    <string name="editor_3d_scene_saved_to_project">Scene saved in the project</string>
+    <string-array name="editor_3d_motion_entries">
+        <item>None</item><item>Static</item><item>Kinematic</item><item>Dynamic</item>
+    </string-array>
+    <string-array name="editor_3d_shape_entries">
+        <item>Auto</item><item>Box</item><item>Sphere</item><item>Capsule</item><item>Cylinder</item>
+    </string-array>
+    <string-array name="editor_3d_light_type_entries">
+        <item>Directional</item><item>Point</item><item>Spot</item>
+    </string-array>
+    <string name="editor_3d_axis_all">All</string>
+    <string name="editor_3d_focus">Focus</string>
+    <string name="editor_3d_move_to_camera">To camera</string>
+    <string name="editor_3d_face_camera">Face camera</string>
+    <string name="editor_3d_axis_constraint">Axis</string>
+    <string name="editor_3d_collider_size">Collider size (× model)</string>
+    <string name="editor_3d_keyframes">Keyframes</string>
+    <string name="editor_3d_add_keyframe">Add key here</string>
+    <string name="editor_3d_keyframe_loop">Loop</string>
+    <string name="editor_3d_keyframe_time">t=%1$.1fs</string>
+    <string name="editor_3d_paste">Paste</string>
+    <string name="editor_3d_copy">Copy</string>
+    <string name="editor_3d_copied">Copied %1$d object(s)</string>
+    <string name="editor_3d_pasted">Pasted %1$d object(s)</string>
+    <string name="editor_3d_selected_count">%1$d objects selected</string>
+    <string name="editor_3d_delete_selected_confirm">Delete %1$d selected objects?</string>
 </resources>

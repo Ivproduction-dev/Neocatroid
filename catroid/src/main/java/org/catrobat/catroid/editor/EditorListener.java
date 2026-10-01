@@ -335,10 +335,11 @@ public class EditorListener extends ApplicationAdapter {
         renderKeyframeVisuals();
 
         DebugDrawer dd = threeDManager.getDebugDrawer();
+        Map<String, GameObject> allObjects = sceneManager.getAllGameObjects();
         if (dd != null) {
             dd.begin(threeDManager.getCamera());
 
-            for (GameObject go : sceneManager.getAllGameObjects().values()) {
+            for (GameObject go : allObjects.values()) {
                 CameraComponent camComp = go.getComponent(CameraComponent.class);
                 if (camComp != null) {
                     threeDManager.renderCameraFrustum(go.transform.toMatrix(), camComp.fieldOfView, camComp.farPlane);
@@ -351,7 +352,7 @@ public class EditorListener extends ApplicationAdapter {
         Map<String, ModelInstance> proxies = threeDManager.getEditorProxies();
         if (!proxies.isEmpty()) {
             for (Map.Entry<String, ModelInstance> entry : proxies.entrySet()) {
-                GameObject owner = sceneManager.findGameObject(entry.getKey());
+                GameObject owner = allObjects.get(entry.getKey());
                 if (owner != null) {
                     ModelInstance proxyInstance = entry.getValue();
                     owner.transform.worldTransform.getTranslation(tempVec3);

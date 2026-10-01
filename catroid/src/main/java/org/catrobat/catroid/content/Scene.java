@@ -85,6 +85,16 @@ public class Scene implements Nameable, Serializable {
 
 	@XStreamAlias("neo3DObjects")
 	private List<Neo3DPersistedObject> neo3DObjects = new ArrayList<>();
+	@XStreamAlias("neo3DSkyRed")
+	private float neo3DSkyRed = 0.16f;
+	@XStreamAlias("neo3DSkyGreen")
+	private float neo3DSkyGreen = 0.29f;
+	@XStreamAlias("neo3DSkyBlue")
+	private float neo3DSkyBlue = 0.42f;
+	@XStreamAlias("neo3DIblIntensity")
+	private float neo3DIblIntensity = 30000f;
+	@XStreamAlias("neo3DShadowsEnabled")
+	private boolean neo3DShadowsEnabled = true;
 
 	@XStreamAlias("transitionType")
 	private int transitionType = 0;
@@ -265,6 +275,32 @@ public class Scene implements Nameable, Serializable {
 			neo3DObjects = new ArrayList<>();
 		}
 		return neo3DObjects;
+	}
+
+	public float[] getNeo3DSkyColor() {
+		return new float[]{neo3DSkyRed, neo3DSkyGreen, neo3DSkyBlue};
+	}
+
+	public void setNeo3DSkyColor(float red, float green, float blue) {
+		neo3DSkyRed = red;
+		neo3DSkyGreen = green;
+		neo3DSkyBlue = blue;
+	}
+
+	public float getNeo3DIblIntensity() {
+		return neo3DIblIntensity;
+	}
+
+	public void setNeo3DIblIntensity(float intensity) {
+		neo3DIblIntensity = intensity;
+	}
+
+	public boolean isNeo3DShadowsEnabled() {
+		return neo3DShadowsEnabled;
+	}
+
+	public void setNeo3DShadowsEnabled(boolean enabled) {
+		neo3DShadowsEnabled = enabled;
 	}
 
 	public Sprite getSpriteAll(String spriteName) {

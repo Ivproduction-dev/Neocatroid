@@ -273,6 +273,11 @@ public class Neo3DEngine {
 
     public void setObjectModelBytes(String sceneId, String objectId, String assetKey,
             byte[] glbBytes) {
+        setObjectModelBytes(sceneId, objectId, assetKey, glbBytes, Collections.emptyMap());
+    }
+
+    public void setObjectModelBytes(String sceneId, String objectId, String assetKey,
+            byte[] glbBytes, Map<String, byte[]> resources) {
         Neo3DScene scene = requireScene(sceneId);
         Neo3DGameObject obj = scene.getObject(objectId);
         if (obj == null) {
@@ -294,7 +299,8 @@ public class Neo3DEngine {
             Log.w(TAG, "Model " + assetKey + " uses unsupported glTF extensions "
                     + "(draco/meshopt/basis); backend will try anyway, took " + loadMs + "ms");
         }
-        dispatcher.dispatch(() -> backend.loadModelBytes(sceneId, objectId, glbBytes, assetKey));
+        dispatcher.dispatch(() -> backend.loadModelBytes(sceneId, objectId, glbBytes, assetKey,
+                resources == null ? Collections.emptyMap() : resources));
     }
 
     private void onModelPathAssigned(Neo3DScene scene, Neo3DGameObject obj) {

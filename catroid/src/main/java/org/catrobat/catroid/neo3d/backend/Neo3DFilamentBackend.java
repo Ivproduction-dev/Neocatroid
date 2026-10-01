@@ -37,6 +37,7 @@ import org.catrobat.catroid.neo3d.Neo3DShadowSettings;
 import org.catrobat.catroid.neo3d.Neo3DSkybox;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -442,6 +443,12 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
 
     @Override
     public void loadModelBytes(String sceneId, String objectId, byte[] data, String sourceName) {
+        loadModelBytes(sceneId, objectId, data, sourceName, Collections.emptyMap());
+    }
+
+    @Override
+    public void loadModelBytes(String sceneId, String objectId, byte[] data, String sourceName,
+            Map<String, byte[]> resources) {
         FilamentScene fs = nativeScenes.get(sceneId);
         Neo3DScene scene = scenes.get(sceneId);
         if (fs == null || scene == null) {
@@ -470,7 +477,16 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
             if (old != null) {
                 destroyModelEntry(fs, old);
             }
+            for (String resourceUri : asset.getResourceUris()) {
+                byte[] resourceData = resources.get(resourceUri);
+                if (resourceData == null) continue;
+                ByteBuffer resourceBuffer = ByteBuffer.allocateDirect(resourceData.length);
+                resourceBuffer.put(resourceData);
+                resourceBuffer.flip();
+                resourceLoader.addResourceData(resourceUri, resourceBuffer);
+            }
             resourceLoader.loadResources(asset);
+            resourceLoader.evictResourceData();
             asset.releaseSourceData();
             ModelEntry entry = new ModelEntry();
             entry.asset = asset;
@@ -501,13 +517,26 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
             if (count == 0) {
                 return;
             }
+            String selectedClip = obj.getAnimationState() == null
+                    ? null : obj.getAnimationState().getClipName();
+            boolean wasPlaying = obj.getAnimationState() != null
+                    && obj.getAnimationState().isPlaying();
+            obj.clearAnimationClips();
             StringBuilder names = new StringBuilder();
             for (int i = 0; i < count; i++) {
                 if (i > 0) {
                     names.append(", ");
                 }
-                names.append(animator.getAnimationName(i))
+                String name = animator.getAnimationName(i);
+                float duration = animator.getAnimationDuration(i);
+                obj.addAnimationClip(new org.catrobat.catroid.neo3d.Neo3DAnimationClip(
+                        name == null ? "Animation " + (i + 1) : name, duration));
+                names.append(name)
                         .append("(").append(animator.getAnimationDuration(i)).append("s)");
+            }
+            if (selectedClip != null) {
+                obj.playAnimation(selectedClip);
+                if (!wasPlaying) obj.stopAnimation();
             }
             Log.i(TAG, "Skeletal animations for " + obj.getName() + ": " + names);
         } catch (Throwable t) {
@@ -609,7 +638,7 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
             return;
         }
         for (Neo3DGameObject obj : scene.getAllObjects()) {
-            if (obj.getAnimationState() == null || !obj.getAnimationState().isPlaying()) {
+            if (obj.getAnimationState() == null) {
                 continue;
             }
             ModelEntry entry = fs.models.get(obj.getId());

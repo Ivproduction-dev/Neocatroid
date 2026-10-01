@@ -43,6 +43,7 @@ class BottomNavigationViewHolder(
     val bottomNavigationView: BottomNavigationView =
         layout.findViewById(R.id.pocketpaint_bottom_navigation)
     private val bottomNavigation: BottomNavigationAppearance
+    var onCurrentToolChanged: ((ToolType?) -> Unit)? = null
     private var colorButton: ImageView? = null
     private val colorItemView: BottomNavigationItemView
 
@@ -66,6 +67,7 @@ class BottomNavigationViewHolder(
 
     override fun showCurrentTool(toolType: ToolType?) {
         toolType?.let { bottomNavigation.showCurrentTool(it) }
+        onCurrentToolChanged?.invoke(toolType)
     }
 
     override fun enableColorItemView(show: Boolean) {
@@ -74,6 +76,13 @@ class BottomNavigationViewHolder(
 
     override fun setColorButtonColor(color: Int) {
         colorButton?.setColorFilter(color)
+    }
+
+    fun applyUiMode(ui2Enabled: Boolean) {
+        val layersItem = bottomNavigationView.menu.findItem(R.id.action_layers)
+        layersItem?.setIcon(if (ui2Enabled) R.drawable.ic_pocketpaint_v2_layers else R.drawable.ic_pocketpaint_layers)
+        (bottomNavigation as? BottomNavigationPortrait)?.isUi2 = ui2Enabled
+        (bottomNavigation as? BottomNavigationLandscape)?.isUi2 = ui2Enabled
     }
 
     private fun initColorButton() {

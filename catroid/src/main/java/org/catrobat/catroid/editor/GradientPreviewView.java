@@ -17,6 +17,11 @@ public class GradientPreviewView extends View {
 
     private Paint paint;
     private List<ParticleCurvePoint<com.badlogic.gdx.graphics.Color>> points;
+    private int[] cachedColors;
+    private float[] cachedPositions;
+    private LinearGradient cachedGradient;
+    private int cachedWidth = -1;
+    private int cachedPointsIdentity = 0;
 
     public GradientPreviewView(Context context, List<ParticleCurvePoint<com.badlogic.gdx.graphics.Color>> points) {
         super(context);
@@ -37,7 +42,14 @@ public class GradientPreviewView extends View {
 
     public void setPoints(List<ParticleCurvePoint<com.badlogic.gdx.graphics.Color>> points) {
         this.points = points;
+        cachedGradient = null;
         invalidate();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw) cachedGradient = null;
     }
 
     @Override
@@ -59,32 +71,53 @@ public class GradientPreviewView extends View {
 
 
         int count = points.size();
-        int[] colors = new int[count];
-        float[] positions = new float[count];
-
-        for (int i = 0; i < count; i++) {
-            colors[i] = gdxToAndroid(points.get(i).value);
-            positions[i] = Math.max(0f, Math.min(1f, points.get(i).time));
-        }
-
-
-        for (int i = 1; i < count; i++) {
-            if (positions[i] <= positions[i - 1]) {
-                positions[i] = positions[i - 1] + 0.001f;
+        int identity = pointsIdentity(points);
+        if (cachedGradient == null || cachedWidth != getWidth() || cachedPointsIdentity != identity) {
+            if (cachedColors == null || cachedColors.length != count) {
+                cachedColors = new int[count];
+                cachedPositions = new float[count];
             }
+            for (int i = 0; i < count; i++) {
+                cachedColors[i] = gdxToAndroid(points.get(i).value);
+                cachedPositions[i] = Math.max(0f, Math.min(1f, points.get(i).time));
+            }
+
+
+            for (int i = 1; i < count; i++) {
+                if (cachedPositions[i] <= cachedPositions[i - 1]) {
+                    cachedPositions[i] = cachedPositions[i - 1] + 0.001f;
+                }
+            }
+
+            cachedGradient = new LinearGradient(
+                    0, 0, getWidth(), 0,
+                    cachedColors, cachedPositions,
+                    Shader.TileMode.CLAMP);
+            cachedWidth = getWidth();
+            cachedPointsIdentity = identity;
         }
 
-        LinearGradient gradient = new LinearGradient(
-                0, 0, getWidth(), 0,
-                colors, positions,
-                Shader.TileMode.CLAMP);
-
-        paint.setShader(gradient);
+        paint.setShader(cachedGradient);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         paint.setShader(null);
 
 
 
+    }
+
+    private int pointsIdentity(List<ParticleCurvePoint<com.badlogic.gdx.graphics.Color>> pts) {
+        int hash = pts.size();
+        for (int i = 0; i < pts.size(); i++) {
+            ParticleCurvePoint<com.badlogic.gdx.graphics.Color> p = pts.get(i);
+            hash = hash * 31 + Float.floatToIntBits(p.time);
+            if (p.value != null) {
+                hash = hash * 31 + Float.floatToIntBits(p.value.r);
+                hash = hash * 31 + Float.floatToIntBits(p.value.g);
+                hash = hash * 31 + Float.floatToIntBits(p.value.b);
+                hash = hash * 31 + Float.floatToIntBits(p.value.a);
+            }
+        }
+        return hash;
     }
 
     private int gdxToAndroid(com.badlogic.gdx.graphics.Color c) {

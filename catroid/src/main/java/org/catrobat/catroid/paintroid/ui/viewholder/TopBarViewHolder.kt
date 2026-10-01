@@ -88,4 +88,16 @@ class TopBarViewHolder(val layout: ViewGroup) : MainActivityContracts.TopBarView
     override fun hideTitleIfNotStandalone() {
         toolbar.title = ""
     }
+
+    fun applyUiMode(ui2Enabled: Boolean) {
+        if (ui2Enabled) {
+            undoButton.setImageResource(R.drawable.ic_pocketpaint_v2_undo)
+            redoButton.setImageResource(R.drawable.ic_pocketpaint_v2_redo)
+            checkmarkButton.setImageResource(R.drawable.ic_pocketpaint_v2_done)
+        } else {
+            undoButton.setImageResource(R.drawable.ic_pocketpaint_undo_selector)
+            redoButton.setImageResource(R.drawable.ic_pocketpaint_redo_selector)
+            checkmarkButton.setImageResource(R.drawable.ic_pocketpaint_checkmark)
+        }
+    }
 }

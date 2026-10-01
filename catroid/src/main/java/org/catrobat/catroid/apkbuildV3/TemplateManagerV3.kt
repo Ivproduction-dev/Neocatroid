@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit
 
 object TemplateManagerV3 {
     private const val TAG = "TemplateManagerV3"
-    private const val TEMPLATE_RUNTIME_ASSET = "template_runtime.apk"
     private const val TEMPLATE_RUNTIME_URL =
         "https://raw.githubusercontent.com/Ivproduction-dev/Neocatroid-Template/main/template_runtime.apk"
     private const val TEMPLATE_RUNTIME_MEDIA_URL =
@@ -19,7 +18,6 @@ object TemplateManagerV3 {
     private const val CACHE_FILE_NAME = "template_runtime_v3.apk"
     private const val ETAG_FILE_NAME = "template_runtime_v3.apk.etag"
     private const val DOWNLOAD_BUFFER_SIZE = 64 * 1024
-    private const val FALLBACK_TEMPLATE_SIZE = 200L * 1024 * 1024
 
     data class TemplateCacheStatus(val cached: Boolean, val sizeBytes: Long)
 
@@ -88,48 +86,6 @@ object TemplateManagerV3 {
             reasons += "не удалось скачать шаблон с GitHub (${failure.failure}: ${failure.detail})"
         }
 
-        val templateSize = runCatching {
-            context.assets.open(TEMPLATE_RUNTIME_ASSET).use { it.available().toLong() }
-        }.getOrElse { 0L }
-        val needed = (templateSize.takeIf { it > 0 } ?: FALLBACK_TEMPLATE_SIZE) + 64L * 1024 * 1024
-        if (!hasEnoughSpace(workDir, needed)) {
-            reasons += "недостаточно места в ${workDir.absolutePath} (нужно ~${needed / (1024 * 1024)} МБ)"
-        }
-
-        if (reasons.isEmpty()) {
-            try {
-                context.assets.open(TEMPLATE_RUNTIME_ASSET).use { input ->
-                    target.outputStream().use { input.copyTo(it) }
-                }
-                if (target.exists() && target.length() > 0 && isZip(target)) {
-                    Log.d(TAG, "Базовый шаблон: $TEMPLATE_RUNTIME_ASSET (${target.length() / (1024 * 1024)} MB)")
-                    return target
-                }
-                reasons += "template_runtime.apk скопирован, но не является корректным APK " +
-                        "(размер=${target.length()})"
-            } catch (e: Exception) {
-                reasons += "template_runtime.apk недоступен: ${e.message}"
-                Log.d(TAG, "template_runtime.apk недоступен: ${e.message}", e)
-            }
-        }
-
-        val selfPath = context.applicationInfo.sourceDir
-        if (selfPath != null && File(selfPath).exists()) {
-            try {
-                File(selfPath).copyTo(target, overwrite = true)
-                if (target.exists() && target.length() > 0 && isZip(target)) {
-                    Log.d(TAG, "Базовый шаблон: собственный APK (${target.length() / (1024 * 1024)} MB)")
-                    return target
-                }
-                reasons += "собственный APK скопирован, но не является корректным APK"
-            } catch (e: Exception) {
-                reasons += "не удалось скопировать собственный APK: ${e.message}"
-                Log.e(TAG, "Не удалось скопировать собственный APK", e)
-            }
-        } else {
-            reasons += "путь собственного APK (applicationInfo.sourceDir) отсутствует"
-        }
-
         throw IllegalStateException(
             "Базовый шаблон не найден. Причины: " + reasons.joinToString("; ")
         )
@@ -152,7 +108,7 @@ object TemplateManagerV3 {
         val finalFile = File(cacheDir, CACHE_FILE_NAME)
         val etagFile = File(cacheDir, ETAG_FILE_NAME)
 
-        if (!hasEnoughSpace(cacheDir, FALLBACK_TEMPLATE_SIZE + 64L * 1024 * 1024)) {
+        if (!hasEnoughSpace(cacheDir, 200L * 1024 * 1024 + 64L * 1024 * 1024)) {
             Log.e(TAG, "Недостаточно места для скачивания шаблона в ${cacheDir.absolutePath}")
             return TemplateOutcome.Failed(TemplateFailure.NO_SPACE, "", previousCache)
         }

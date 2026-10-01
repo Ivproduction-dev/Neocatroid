@@ -14,6 +14,7 @@ import com.reandroid.apk.ApkModule
 import com.reandroid.arsc.chunk.xml.ResXmlElement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.catrobat.catroid.apkbuildV3.TemplateManagerV3
 import java.io.*
 import java.security.SecureRandom
 import java.util.zip.ZipEntry
@@ -22,7 +23,6 @@ import java.util.zip.ZipOutputStream
 
 object AlignedApkBuilder {
     private const val TAG = "AlignedApkBuilder"
-    private const val TEMPLATE_RUNTIME_APK = "template_runtime.apk"
 
     data class ApkConfig(
         val appName: String,
@@ -105,24 +105,19 @@ object AlignedApkBuilder {
                 }
 
                 onProgress("Loading template APK...")
-                val templateFile = File(tempDir, "template.apk")
-                var templateLoaded = false
-                try {
-                    context.assets.open(TEMPLATE_RUNTIME_APK).use { input ->
-                        FileOutputStream(templateFile).use { output -> input.copyTo(output) }
-                    }
-                    templateLoaded = true
-                    Log.d(TAG, "Template: ${templateFile.length() / (1024 * 1024)} MB")
-                } catch (_: Exception) {}
-
-                if (!templateLoaded) {
-                    val selfPath = context.applicationInfo.sourceDir
-                    if (selfPath != null) File(selfPath).copyTo(templateFile, overwrite = true)
-                    else {
-                        tempDir?.deleteRecursively()
-                        return@withContext BuildResult.Error("Template APK not found")
-                    }
+                val workDir = tempDir
+                if (workDir == null) {
+                    return@withContext BuildResult.Error("Template APK unavailable: no work dir")
                 }
+                val templateFile = try {
+                    TemplateManagerV3.prepareBaseApk(context, workDir) { p, msg ->
+                        onProgress("Loading template APK... ${(p * 100).toInt()}% $msg")
+                    }
+                } catch (e: Exception) {
+                    workDir.deleteRecursively()
+                    return@withContext BuildResult.Error("Template APK unavailable: ${e.message}")
+                }
+                Log.d(TAG, "Template: ${templateFile.length() / (1024 * 1024)} MB")
 
                 onProgress("Loading project...")
                 val currentProject = ProjectManager.getInstance()?.currentProject

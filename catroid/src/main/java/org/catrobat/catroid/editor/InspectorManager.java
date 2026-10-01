@@ -109,6 +109,9 @@ public class InspectorManager {
             colliderOwner = null;
         }
         this.selectedObject = go;
+        android.widget.ScrollView scroller = container.getParent() instanceof android.widget.ScrollView
+                ? (android.widget.ScrollView) container.getParent() : null;
+        final int savedScrollY = scroller != null ? scroller.getScrollY() : 0;
         container.removeAllViews();
 
         if (go == null) {
@@ -205,9 +208,14 @@ public class InspectorManager {
         deleteObjectButton.setTextColor(Color.parseColor("#FF5252"));
 
         deleteObjectButton.setOnClickListener(v -> {
+            int descendantCount = countDescendants(go);
+            String confirmMessage = descendantCount == 0
+                    ? activity.getString(R.string.editor_3d_delete_object_confirm, go.name)
+                    : activity.getString(R.string.editor_3d_delete_object_confirm_with_children,
+                            go.name, descendantCount);
             new AlertDialog.Builder(activity)
                     .setTitle(R.string.editor_3d_delete_object)
-                    .setMessage(activity.getString(R.string.editor_3d_delete_object_confirm, go.name))
+                    .setMessage(confirmMessage)
                     .setPositiveButton(R.string.delete, (dialog, which) -> {
                         if (activity.getUndoManager() != null) {
                             activity.getUndoManager().pushCommand(new Commands.DeleteCommand(sceneManager, go));
@@ -220,6 +228,9 @@ public class InspectorManager {
                     .show();
         });
         container.addView(deleteObjectButton);
+        if (scroller != null && savedScrollY != 0) {
+            scroller.post(() -> scroller.scrollTo(0, savedScrollY));
+        }
     }
 
     private void createPrefabView(GameObject go) {
@@ -287,6 +298,28 @@ public class InspectorManager {
                 setWhiteTextToAllChildren((ViewGroup) child);
             }
         }
+    }
+
+    private int countDescendants(GameObject go) {
+        if (go == null || go.childrenIds == null || sceneManager == null) {
+            return 0;
+        }
+        int count = 0;
+        java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>(go.childrenIds);
+        java.util.HashSet<String> visited = new java.util.HashSet<>();
+        visited.add(go.id);
+        while (!queue.isEmpty()) {
+            String childId = queue.poll();
+            if (childId == null || !visited.add(childId)) {
+                continue;
+            }
+            count++;
+            GameObject child = sceneManager.findGameObject(childId);
+            if (child != null && child.childrenIds != null) {
+                queue.addAll(child.childrenIds);
+            }
+        }
+        return count;
     }
 
     private final Vector3 tempPosition = new Vector3();
@@ -1617,8 +1650,16 @@ public class InspectorManager {
 
 
 
-    private android.os.Handler ps3dUpdateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final android.os.Handler ps3dUpdateHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable pendingPS3DUpdate = null;
+
+    public void cancelPendingUpdates() {
+        if (pendingPS3DUpdate != null) {
+            ps3dUpdateHandler.removeCallbacks(pendingPS3DUpdate);
+            pendingPS3DUpdate = null;
+        }
+    }
 
     private void updatePS3D(GameObject go) {
         if (pendingPS3DUpdate != null) {
@@ -3319,8 +3360,9 @@ public class InspectorManager {
     private interface StringUpdater { void update(String value); }
 
     private static class DelayedTextWatcher implements TextWatcher {
+        private static final android.os.Handler SHARED_HANDLER =
+                new android.os.Handler(android.os.Looper.getMainLooper());
         private final Runnable action;
-        private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
         private final Runnable debounced;
         public DelayedTextWatcher(Runnable action) {
             this.action = action;
@@ -3329,8 +3371,8 @@ public class InspectorManager {
         @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
         @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
         @Override public void afterTextChanged(Editable s) {
-            handler.removeCallbacks(debounced);
-            handler.postDelayed(debounced, 300);
+            SHARED_HANDLER.removeCallbacks(debounced);
+            SHARED_HANDLER.postDelayed(debounced, 300);
         }
     }
 

@@ -390,6 +390,12 @@
         </activity>
 
         <activity
+            android:name=".editor2.Neo3DEditorActivity"
+            android:label="@string/editor_3d_title_new"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+
+        <activity
             android:name=".visualplacement.VisualPlacementActivity"/>
 
         <activity

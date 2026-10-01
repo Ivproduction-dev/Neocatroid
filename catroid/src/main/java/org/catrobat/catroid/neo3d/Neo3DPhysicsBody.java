@@ -30,6 +30,9 @@ public final class Neo3DPhysicsBody implements Serializable {
     private float angularDamping = 0.1f;
     private boolean continuousCollision;
     private boolean noCollision;
+    private float shapeScaleX = 1f;
+    private float shapeScaleY = 1f;
+    private float shapeScaleZ = 1f;
 
     public Neo3DPhysicsBody() {
     }
@@ -49,6 +52,9 @@ public final class Neo3DPhysicsBody implements Serializable {
         copy.angularDamping = angularDamping;
         copy.continuousCollision = continuousCollision;
         copy.noCollision = noCollision;
+        copy.shapeScaleX = shapeScaleX;
+        copy.shapeScaleY = shapeScaleY;
+        copy.shapeScaleZ = shapeScaleZ;
         return copy;
     }
 
@@ -130,6 +136,30 @@ public final class Neo3DPhysicsBody implements Serializable {
 
     public void setNoCollision(boolean noCollision) {
         this.noCollision = noCollision;
+    }
+
+    public float getShapeScaleX() {
+        return shapeScaleX;
+    }
+
+    public void setShapeScaleX(float shapeScaleX) {
+        this.shapeScaleX = clamp(shapeScaleX, 0.01f, 100f);
+    }
+
+    public float getShapeScaleY() {
+        return shapeScaleY;
+    }
+
+    public void setShapeScaleY(float shapeScaleY) {
+        this.shapeScaleY = clamp(shapeScaleY, 0.01f, 100f);
+    }
+
+    public float getShapeScaleZ() {
+        return shapeScaleZ;
+    }
+
+    public void setShapeScaleZ(float shapeScaleZ) {
+        this.shapeScaleZ = clamp(shapeScaleZ, 0.01f, 100f);
     }
 
     private static float clamp(float value, float min, float max) {

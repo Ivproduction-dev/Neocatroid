@@ -134,7 +134,7 @@ class ApkBuilderV3ExportDialog {
         val permContainer = view.findViewById<LinearLayout>(R.id.v3_permissions_container)
         val permChecks = ApkBuilderV3Config.ALL_PERMISSIONS.map { perm ->
             val cb = CheckBox(ctx).apply {
-                text = perm.substringAfterLast('.')
+                text = ctx.getString(permissionLabelResId(perm))
                 isChecked = perm in ApkBuilderV3Config.DEFAULT_PERMISSIONS
             }
             permContainer?.addView(cb)
@@ -169,6 +169,17 @@ class ApkBuilderV3ExportDialog {
         view.findViewById<RadioButton>(R.id.v3_icon_default)?.isChecked = !hasProjectIcon
 
         view.findViewById<RadioButton>(R.id.v3_template_full)?.isChecked = true
+        val templateDescription = view.findViewById<TextView>(R.id.v3_template_description)
+        fun updateTemplateDescription() {
+            templateDescription?.setText(
+                if (view.findViewById<RadioButton>(R.id.v3_template_full)?.isChecked == true)
+                    R.string.v3_template_full_description
+                else R.string.v3_template_light_description
+            )
+        }
+        view.findViewById<android.widget.RadioGroup>(R.id.v3_template_radio_group)
+            ?.setOnCheckedChangeListener { _, _ -> updateTemplateDescription() }
+        updateTemplateDescription()
 
         val firebaseAddButton = view.findViewById<Button>(R.id.v3_firebase_add_button)
         val firebaseStatus = view.findViewById<TextView>(R.id.v3_firebase_status)
@@ -215,7 +226,7 @@ class ApkBuilderV3ExportDialog {
                     val pkg = view.findViewById<TextInputEditText>(R.id.v3_package_input)
                         ?.text.toString().ifBlank { "org.neocatroid.runtime.v3" }.lowercase()
                     if (!pkg.matches(Regex("^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"))) {
-                        ToastUtil.showError(ctx, "Invalid package name format")
+                        ToastUtil.showError(ctx, ctx.getString(R.string.v3_invalid_package_name))
                         return@setOnClickListener
                     }
                     currentStep = 3
@@ -244,6 +255,28 @@ class ApkBuilderV3ExportDialog {
             3 -> ctx.getString(R.string.v3_step_permissions)
             else -> ctx.getString(R.string.v3_step_firebase)
         }
+    }
+
+    private fun permissionLabelResId(permission: String): Int = when (permission) {
+        "android.permission.INTERNET" -> R.string.v3_permission_internet
+        "android.permission.ACCESS_NETWORK_STATE" -> R.string.v3_permission_network_state
+        "android.permission.ACCESS_WIFI_STATE" -> R.string.v3_permission_wifi_state
+        "android.permission.CAMERA" -> R.string.v3_permission_camera
+        "android.permission.RECORD_AUDIO" -> R.string.v3_permission_record_audio
+        "android.permission.WRITE_EXTERNAL_STORAGE" -> R.string.v3_permission_write_external_storage
+        "android.permission.READ_EXTERNAL_STORAGE" -> R.string.v3_permission_read_external_storage
+        "android.permission.READ_MEDIA_IMAGES" -> R.string.v3_permission_read_media_images
+        "android.permission.READ_MEDIA_AUDIO" -> R.string.v3_permission_read_media_audio
+        "android.permission.VIBRATE" -> R.string.v3_permission_vibrate
+        "android.permission.WAKE_LOCK" -> R.string.v3_permission_wake_lock
+        "android.permission.POST_NOTIFICATIONS" -> R.string.v3_permission_post_notifications
+        "android.permission.BLUETOOTH" -> R.string.v3_permission_bluetooth
+        "android.permission.BLUETOOTH_ADMIN" -> R.string.v3_permission_bluetooth_admin
+        "android.permission.BLUETOOTH_CONNECT" -> R.string.v3_permission_bluetooth_connect
+        "android.permission.NFC" -> R.string.v3_permission_nfc
+        "android.permission.ACCESS_FINE_LOCATION" -> R.string.v3_permission_fine_location
+        "android.permission.ACCESS_COARSE_LOCATION" -> R.string.v3_permission_coarse_location
+        else -> R.string.v3_permission_unknown
     }
 
     private fun updateStepUI(view: android.view.View, ctx: android.content.Context) {
@@ -378,7 +411,7 @@ class ApkBuilderV3ExportDialog {
         val pkg = pkgRaw.lowercase()
 
         if (!pkg.matches(Regex("^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"))) {
-            ToastUtil.showError(ctx, "Invalid package name format")
+            ToastUtil.showError(ctx, ctx.getString(R.string.v3_invalid_package_name))
             return
         }
 
@@ -392,7 +425,7 @@ class ApkBuilderV3ExportDialog {
             .toIntOrNull() ?: 35
 
         if (minSdk > targetSdk) {
-            ToastUtil.showError(ctx, "Min SDK cannot be greater than Target SDK")
+            ToastUtil.showError(ctx, ctx.getString(R.string.v3_invalid_sdk))
             return
         }
 

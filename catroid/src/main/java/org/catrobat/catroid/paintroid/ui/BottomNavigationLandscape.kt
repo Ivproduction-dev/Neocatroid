@@ -31,7 +31,11 @@ import org.catrobat.catroid.R
 import org.catrobat.catroid.paintroid.contract.MainActivityContracts.BottomNavigationAppearance
 import org.catrobat.catroid.paintroid.tools.ToolType
 
-class BottomNavigationLandscape(context: Context, private val bottomNavigationView: BottomNavigationView) : BottomNavigationAppearance {
+class BottomNavigationLandscape(
+    context: Context,
+    private val bottomNavigationView: BottomNavigationView,
+    var isUi2: Boolean = false
+) : BottomNavigationAppearance {
     private val bottomNavigationMenuView: BottomNavigationMenuView = bottomNavigationView.getChildAt(0) as BottomNavigationMenuView
 
     init {
@@ -42,7 +46,7 @@ class BottomNavigationLandscape(context: Context, private val bottomNavigationVi
         val item = bottomNavigationMenuView.getChildAt(1)
         val icon = item.findViewById<ImageView>(R.id.icon)
         val title = item.findViewById<TextView>(R.id.title)
-        icon.setImageResource(toolType.drawableResource)
+        icon.setImageResource(Ui2Helper.getToolIcon(toolType, isUi2))
         title.setText(toolType.nameResource)
     }
 

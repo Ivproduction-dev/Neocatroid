@@ -118,6 +118,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import org.catrobat.catroid.apkbuildV3.TemplateManagerV3
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -1134,18 +1135,11 @@ class ProjectOptionsFragment : Fragment() {
         val tempDir = File(context.cacheDir, "apk_temp")
         tempDir.mkdirs()
 
-        val templateApk = File(tempDir, "template_runtime.apk")
-        val templateCopied = try {
-            context.assets.open("template_runtime.apk").use { input ->
-                FileOutputStream(templateApk).use { output -> input.copyTo(output) }
-            }
-            true
-        } catch (_: Exception) {
-            false
-        }
-        if (!templateCopied) {
+        val templateApk = try {
+            TemplateManagerV3.prepareBaseApk(context, tempDir)
+        } catch (e: Exception) {
             tempDir.deleteRecursively()
-            throw IllegalStateException("Template APK missing from assets")
+            throw IllegalStateException("Template APK unavailable: ${e.message}", e)
         }
 
         val configured = ApkToolboxManager.configureApk(

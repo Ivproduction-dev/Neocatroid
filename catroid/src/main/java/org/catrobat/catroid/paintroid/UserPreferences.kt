@@ -21,6 +21,8 @@ package org.catrobat.catroid.paintroid
 import android.content.SharedPreferences
 import org.catrobat.catroid.paintroid.common.IMAGE_NUMBER_SHARED_PREFERENCES_TAG
 import org.catrobat.catroid.paintroid.common.SHOW_LIKE_US_DIALOG_SHARED_PREFERENCES_TAG
+import org.catrobat.catroid.paintroid.common.UI2_ENABLED_SHARED_PREFERENCES_TAG
+import org.catrobat.catroid.paintroid.common.UI2_PROMPT_SHOWN_SHARED_PREFERENCES_TAG
 import org.catrobat.catroid.paintroid.common.ZOOM_WINDOW_ENABLED_SHARED_PREFERENCES_TAG
 import org.catrobat.catroid.paintroid.common.ZOOM_WINDOW_ZOOM_PERCENTAGE_SHARED_PREFERENCES_TAG
 
@@ -63,6 +65,24 @@ open class UserPreferences(var preferences: SharedPreferences) {
             .putBoolean(SHOW_LIKE_US_DIALOG_SHARED_PREFERENCES_TAG, true)
             .apply()
     }
+
+    open var preferenceUi2Enabled: Boolean
+        get() = preferences.getBoolean(UI2_ENABLED_SHARED_PREFERENCES_TAG, false)
+        set(value) {
+            preferences
+                .edit()
+                .putBoolean(UI2_ENABLED_SHARED_PREFERENCES_TAG, value)
+                .apply()
+        }
+
+    open var preferenceUi2PromptShown: Boolean
+        get() = preferences.getBoolean(UI2_PROMPT_SHOWN_SHARED_PREFERENCES_TAG, false)
+        set(value) {
+            preferences
+                .edit()
+                .putBoolean(UI2_PROMPT_SHOWN_SHARED_PREFERENCES_TAG, value)
+                .apply()
+        }
 
     companion object {
         const val initialZoomPercent: Int = 100

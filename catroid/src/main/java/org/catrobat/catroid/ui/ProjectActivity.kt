@@ -62,7 +62,6 @@ import org.catrobat.catroid.content.bricks.PlaceAtBrick
 import org.catrobat.catroid.databinding.ActivityRecyclerBinding
 import org.catrobat.catroid.databinding.DialogNewActorBinding
 import org.catrobat.catroid.databinding.ProgressBarBinding
-import org.catrobat.catroid.editor.EditorActivity
 import org.catrobat.catroid.formulaeditor.UserData
 import org.catrobat.catroid.formulaeditor.UserList
 import org.catrobat.catroid.formulaeditor.UserVariable
@@ -107,6 +106,10 @@ import org.catrobat.catroid.utils.setVisibleOrGone
 import org.catrobat.catroid.visualplacement.VisualPlacementActivity
 import org.koin.android.ext.android.inject
 import java.io.File
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import org.catrobat.catroid.sensing.CollisionInformation
 
 @LunoClass
 class ProjectActivity : BaseCastActivity() {
@@ -398,8 +401,7 @@ class ProjectActivity : BaseCastActivity() {
                         .addToBackStack(ProjectLibsFragment.TAG).commit()
                 }
             R.id.editor3d -> {
-                val intent = Intent(this, EditorActivity::class.java)
-                startActivity(intent)
+                org.catrobat.catroid.editor.ThreeDEditorRouter.open(this)
             }
             R.id.collab -> {
                 if (org.catrobat.catroid.collab.CollabUi.ENABLED) {
@@ -1065,14 +1067,28 @@ class ProjectActivity : BaseCastActivity() {
             try {
                 val project = projectManager.currentProject
                 if (project != null && project.sceneList != null) {
+                    val collisionInfos = ArrayList<CollisionInformation>()
                     for (scene in project.sceneList) {
                         if (scene.spriteList == null) continue
                         for (sprite in scene.spriteList) {
                             if (sprite.lookList == null) continue
                             for (look in sprite.lookList) {
-                                look.collisionInformation?.calculate()
+                                look.collisionInformation?.let { collisionInfos.add(it) }
                             }
                         }
+                    }
+                    val poolSize = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+                    val executor = Executors.newFixedThreadPool(poolSize)
+                    try {
+                        val futures = ArrayList<Future<Boolean>>(collisionInfos.size)
+                        for (info in collisionInfos) {
+                            futures.add(executor.submit(Callable { info.forceRecalculateAndSave() }))
+                        }
+                        for (future in futures) {
+                            future.get()
+                        }
+                    } finally {
+                        executor.shutdown()
                     }
                     org.catrobat.catroid.io.XstreamSerializer.getInstance().saveProject(project)
                 }

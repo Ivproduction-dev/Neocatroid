@@ -26,4 +26,17 @@ class BottomBarViewHolder(val layout: View) : MainActivityContracts.BottomBarVie
             button.isSelected = toolType in types
         }
     }
+
+    fun applyUiMode(ui2Enabled: Boolean) {
+        for (type in ToolType.values()) {
+            val button = layout.findViewById<android.view.ViewGroup>(type.toolButtonID) ?: continue
+            for (i in 0 until button.childCount) {
+                val child = button.getChildAt(i)
+                if (child is android.widget.ImageView) {
+                    child.setImageResource(org.catrobat.catroid.paintroid.ui.Ui2Helper.getToolIcon(type, ui2Enabled))
+                    break
+                }
+            }
+        }
+    }
 }

@@ -81,7 +81,7 @@
             android:importantForAutofill="no"
             android:inputType="number"
             android:textAlignment="center"
-            android:textColor="@color/pocketpaint_lighter_gray"
+            android:textColor="@color/pocketpaint_text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
 

@@ -14,6 +14,8 @@ import java.util.List;
 
 public class HierarchyAdapter extends RecyclerView.Adapter<HierarchyAdapter.ViewHolder> {
 
+    private static final int SELECTED_BG = 0x559999FF;
+
 
     public static class HierarchyItem {
         public final GameObject gameObject;
@@ -61,7 +63,7 @@ public class HierarchyAdapter extends RecyclerView.Adapter<HierarchyAdapter.View
 
 
         if (currentItem.gameObject == selectedObject) {
-            holder.itemView.setBackgroundColor(Color.parseColor("#559999FF"));
+            holder.itemView.setBackgroundColor(SELECTED_BG);
         } else {
             holder.itemView.setBackgroundColor(Color.TRANSPARENT);
         }
@@ -85,8 +87,18 @@ public class HierarchyAdapter extends RecyclerView.Adapter<HierarchyAdapter.View
 
     public void setSelectedObject(GameObject go) {
         if (this.selectedObject == go) return;
+        GameObject old = this.selectedObject;
         this.selectedObject = go;
-        notifyDataSetChanged();
+        int oldPos = -1;
+        int newPos = -1;
+        for (int i = 0; i < items.size(); i++) {
+            GameObject itemGo = items.get(i).gameObject;
+            if (itemGo == old) oldPos = i;
+            if (itemGo == go) newPos = i;
+        }
+        if (oldPos >= 0) notifyItemChanged(oldPos);
+        if (newPos >= 0) notifyItemChanged(newPos);
+        if (oldPos < 0 && newPos < 0) notifyDataSetChanged();
     }
 
     public void filter(String query) {
@@ -94,9 +106,9 @@ public class HierarchyAdapter extends RecyclerView.Adapter<HierarchyAdapter.View
         if (query.isEmpty()) {
             items.addAll(fullList);
         } else {
-            String lowerQuery = query.toLowerCase().trim();
+            String lowerQuery = query.toLowerCase(java.util.Locale.ROOT).trim();
             for (HierarchyItem item : fullList) {
-                if (item.gameObject.name.toLowerCase().contains(lowerQuery)) {
+                if (item.gameObject.name.toLowerCase(java.util.Locale.ROOT).contains(lowerQuery)) {
                     items.add(item);
                 }
             }

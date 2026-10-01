@@ -24,10 +24,13 @@ import org.catrobat.catroid.R
 import org.catrobat.catroid.paintroid.contract.MainActivityContracts.BottomNavigationAppearance
 import org.catrobat.catroid.paintroid.tools.ToolType
 
-class BottomNavigationPortrait(private val bottomNavigationView: BottomNavigationView) : BottomNavigationAppearance {
+class BottomNavigationPortrait(
+    private val bottomNavigationView: BottomNavigationView,
+    var isUi2: Boolean = false
+) : BottomNavigationAppearance {
     override fun showCurrentTool(toolType: ToolType) {
         bottomNavigationView.menu.findItem(R.id.action_current_tool)?.let { item ->
-            item.setIcon(toolType.drawableResource)
+            item.setIcon(Ui2Helper.getToolIcon(toolType, isUi2))
             item.setTitle(toolType.nameResource)
         }
     }

@@ -81,6 +81,22 @@
         android:summary="@string/preference_title_pcmode"
         android:defaultValue="false" />
 
+    <ListPreference
+        android:key="setting_3d_editor_version"
+        android:title="@string/editor_3d_version_setting_title"
+        android:summary="@string/editor_3d_version_setting_summary"
+        android:entries="@array/editor_3d_version_entries"
+        android:entryValues="@array/editor_3d_version_values"
+        android:defaultValue="ask" />
+
+    <ListPreference
+        android:key="setting_neo3d_controls"
+        android:title="@string/editor_3d_controls_setting_title"
+        android:summary="@string/editor_3d_controls_setting_summary"
+        android:entries="@array/editor_3d_controls_entries"
+        android:entryValues="@array/editor_3d_controls_values"
+        android:defaultValue="wasd" />
+
     <CheckBoxPreference
         android:key="setting_ui_scene_editor_2"
         android:title="@string/preference_title_scene_editor_2"

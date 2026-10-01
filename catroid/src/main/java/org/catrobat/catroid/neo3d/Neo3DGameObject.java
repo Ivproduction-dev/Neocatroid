@@ -121,6 +121,11 @@ public class Neo3DGameObject {
         }
     }
 
+    public void clearAnimationClips() {
+        animationClips.clear();
+        animationState = null;
+    }
+
     public void playAnimation(String clipName) {
         for (Neo3DAnimationClip clip : animationClips) {
             if (clip.getName().equals(clipName)) {

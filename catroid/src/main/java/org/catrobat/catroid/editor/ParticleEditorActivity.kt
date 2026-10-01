@@ -70,6 +70,7 @@ class ParticleEditorActivity : AppCompatActivity() {
 
     private val updateHandler = Handler(Looper.getMainLooper())
     private var pendingUpdate: Runnable? = null
+    private var pendingLegacyUpdate: Runnable? = null
 
     private val density by lazy { resources.displayMetrics.density }
 
@@ -1315,7 +1316,7 @@ class ParticleEditorActivity : AppCompatActivity() {
                     graph.removeAt(i)
                     preview.setPoints(graph)
                     updateParticles()
-                    buildEditor()
+                    rebuildGraphEditor(wrapper, title, graph)
                 }
             }
             row.addView(delBtn)
@@ -1329,10 +1330,22 @@ class ParticleEditorActivity : AppCompatActivity() {
             graph.add(ParticleCurvePoint(newTime, lastCol))
             preview.setPoints(graph)
             updateParticles()
-            buildEditor()
+            rebuildGraphEditor(wrapper, title, graph)
         }
 
         mainLayout.addView(wrapper)
+    }
+
+    private fun rebuildGraphEditor(oldWrapper: LinearLayout, title: String,
+            graph: MutableList<ParticleCurvePoint<com.badlogic.gdx.graphics.Color>>) {
+        val index = mainLayout.indexOfChild(oldWrapper)
+        mainLayout.removeView(oldWrapper)
+        addColorGraphEditor(title, graph)
+        if (index >= 0 && mainLayout.childCount > 0) {
+            val fresh = mainLayout.getChildAt(mainLayout.childCount - 1)
+            mainLayout.removeView(fresh)
+            mainLayout.addView(fresh, if (index > mainLayout.childCount) mainLayout.childCount else index)
+        }
     }
 
     private fun addDelayedTextListener(editText: EditText, updater: (String) -> Unit) {
@@ -1373,12 +1386,16 @@ class ParticleEditorActivity : AppCompatActivity() {
     }
 
     private fun updateParticles() {
-        val go = gameObject ?: return
-        val p = legacyParticle ?: return
-        val threeDManager = SceneManager.getInstance()?.engine ?: return
-        Gdx.app.postRunnable {
-            threeDManager.updateParticleEffect(go.id, p, go.transform.worldTransform)
+        if (pendingLegacyUpdate != null) updateHandler.removeCallbacks(pendingLegacyUpdate!!)
+        pendingLegacyUpdate = Runnable {
+            val go = gameObject ?: return@Runnable
+            val p = legacyParticle ?: return@Runnable
+            val threeDManager = SceneManager.getInstance()?.engine ?: return@Runnable
+            Gdx.app.postRunnable {
+                threeDManager.updateParticleEffect(go.id, p, go.transform.worldTransform)
+            }
         }
+        updateHandler.postDelayed(pendingLegacyUpdate!!, 300)
     }
 
     private fun showSubEmitterPicker(entry: ParticleSystem3DComponent.SubEmitterEntry) {

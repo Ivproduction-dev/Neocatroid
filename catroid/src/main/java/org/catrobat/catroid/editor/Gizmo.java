@@ -56,9 +56,27 @@ public class Gizmo {
     private final Quaternion dragStartRot = new Quaternion();
     private final Vector3 dragStartScale = new Vector3();
     private boolean isTransforming = false;
+    private boolean dragApplied = false;
 
     private final Quaternion tmpParentRot = new Quaternion();
     private final Quaternion tmpDelta = new Quaternion();
+    private final Vector3 gizmoPosition = new Vector3();
+    private final Vector3 gizmoOffset = new Vector3();
+    private final Quaternion gizmoRotation = new Quaternion();
+    private final Vector3 dragVector = new Vector3();
+    private final Vector3 axisVector = new Vector3();
+    private final Vector3 worldTranslation = new Vector3();
+    private final Vector3 scaleVector = new Vector3();
+    private final Vector3 newScale = new Vector3();
+    private final Vector3 currentVector = new Vector3();
+    private final Vector3 startVector = new Vector3();
+    private final Vector3 projectedStart = new Vector3();
+    private final Vector3 projectedCurrent = new Vector3();
+    private final Vector3 parentScale = new Vector3();
+    private final Vector3 planeNormal = new Vector3();
+    private final Vector3 crossVector = new Vector3();
+    private final Quaternion inverseRotation = new Quaternion();
+    private final Quaternion axisRotation = new Quaternion();
 
 
     public Gizmo(EditorActivity activity, SceneManager sceneManager, Camera camera) {
@@ -148,6 +166,8 @@ public class Gizmo {
     }
 
     public void setCurrentTool(EditorTool tool) {
+        if (selectedAxis != Axis.NONE) tintAxis(selectedAxis, axisColor(selectedAxis));
+        selectedAxis = Axis.NONE;
         this.currentTool = tool;
     }
 
@@ -165,17 +185,16 @@ public class Gizmo {
             return Vector3.Zero;
         }
 
-        Vector3 objectWorldPosition = selectedObject.transform.worldTransform.getTranslation(new Vector3());
+        selectedObject.transform.worldTransform.getTranslation(gizmoPosition);
 
         if (selectedCollider != null) {
-            Vector3 localOffset = selectedCollider.centerOffset;
-            Quaternion worldRotation = selectedObject.transform.worldTransform.getRotation(new Quaternion());
-            Vector3 rotatedOffset = worldRotation.transform(new Vector3(localOffset));
-
-            return objectWorldPosition.add(rotatedOffset);
+            selectedObject.transform.worldTransform.getRotation(gizmoRotation);
+            gizmoOffset.set(selectedCollider.centerOffset);
+            gizmoRotation.transform(gizmoOffset);
+            gizmoPosition.add(gizmoOffset);
         }
 
-        return objectWorldPosition;
+        return gizmoPosition;
     }
 
     public void render(ModelBatch batch) {
@@ -234,12 +253,11 @@ public class Gizmo {
         }
         if (!Intersector.intersectRayPlane(pickRay, dragPlane, dragCurrentPoint)) return;
 
-        Vector3 dragVector = dragCurrentPoint.cpy().sub(dragStartPoint);
-
-        Vector3 axisVector = new Vector3();
-        if (selectedAxis == Axis.X) axisVector.set(1, 0, 0);
-        if (selectedAxis == Axis.Y) axisVector.set(0, 1, 0);
-        if (selectedAxis == Axis.Z) axisVector.set(0, 0, 1);
+        dragVector.set(dragCurrentPoint).sub(dragStartPoint);
+        axisVector.set(0, 0, 0);
+        if (selectedAxis == Axis.X) axisVector.x = 1f;
+        if (selectedAxis == Axis.Y) axisVector.y = 1f;
+        if (selectedAxis == Axis.Z) axisVector.z = 1f;
 
         if (selectedCollider != null) {
             PhysicsComponent physics = selectedObject.getComponent(PhysicsComponent.class);
@@ -248,26 +266,26 @@ public class Gizmo {
             switch (currentTool) {
                 case TRANSLATE: {
                     float projection = dragVector.dot(axisVector);
-                    Vector3 worldTranslation = axisVector.cpy().scl(projection);
+                    worldTranslation.set(axisVector).scl(projection);
 
-                    Quaternion invRot = selectedObject.transform.worldTransform.getRotation(new Quaternion()).conjugate();
-                    invRot.transform(worldTranslation);
+                    selectedObject.transform.worldTransform.getRotation(inverseRotation).conjugate();
+                    inverseRotation.transform(worldTranslation);
 
                     selectedCollider.centerOffset.add(worldTranslation);
                     break;
                 }
                 case SCALE: {
                     float projection = dragVector.dot(axisVector);
-                    Vector3 scaleAmount = axisVector.cpy().scl(projection * 0.5f);
+                    scaleVector.set(axisVector).scl(projection * 0.5f);
 
                     if (selectedCollider.type == ColliderShapeData.ShapeType.SPHERE || selectedCollider.type == ColliderShapeData.ShapeType.CAPSULE) {
-                        float amount = scaleAmount.len() * Math.signum(scaleAmount.dot(axisVector));
+                        float amount = scaleVector.len() * Math.signum(scaleVector.dot(axisVector));
                         selectedCollider.radius = Math.max(0.01f, selectedCollider.radius + amount);
                         if (selectedCollider.type == ColliderShapeData.ShapeType.CAPSULE) {
                             selectedCollider.size.y = Math.max(0.01f, selectedCollider.size.y + amount * 2);
                         }
                     } else {
-                        selectedCollider.size.add(scaleAmount);
+                        selectedCollider.size.add(scaleVector);
                         selectedCollider.size.x = Math.max(0.01f, selectedCollider.size.x);
                         selectedCollider.size.y = Math.max(0.01f, selectedCollider.size.y);
                         selectedCollider.size.z = Math.max(0.01f, selectedCollider.size.z);
@@ -282,38 +300,35 @@ public class Gizmo {
             switch (currentTool) {
                 case TRANSLATE: {
                     float projection = dragVector.dot(axisVector);
-                    selectedKeyframe.position.add(axisVector.cpy().scl(projection));
+                    selectedKeyframe.position.mulAdd(axisVector, projection);
                     break;
                 }
                 case SCALE: {
                     float projection = dragVector.dot(axisVector);
                     float scaleAmount = projection * 0.1f;
-                    selectedKeyframe.scale.add(axisVector.cpy().scl(scaleAmount));
+                    selectedKeyframe.scale.mulAdd(axisVector, scaleAmount);
                     if (selectedKeyframe.scale.x < 0.01f) selectedKeyframe.scale.x = 0.01f;
                     if (selectedKeyframe.scale.y < 0.01f) selectedKeyframe.scale.y = 0.01f;
                     if (selectedKeyframe.scale.z < 0.01f) selectedKeyframe.scale.z = 0.01f;
                     break;
                 }
                 case ROTATE: {
-                    Vector3 currentVec = dragCurrentPoint.cpy().sub(getGizmoPosition());
-                    Vector3 startVec = dragStartPoint.cpy().sub(getGizmoPosition());
+                    currentVector.set(dragCurrentPoint).sub(getGizmoPosition());
+                    startVector.set(dragStartPoint).sub(getGizmoPosition());
+                    projectedStart.set(startVector).mulAdd(axisVector,
+                            -startVector.dot(axisVector)).nor();
+                    projectedCurrent.set(currentVector).mulAdd(axisVector,
+                            -currentVector.dot(axisVector)).nor();
 
-                    Vector3 planeNormal = axisVector;
-                    Vector3 projectedStart = startVec.cpy().sub(planeNormal.cpy().scl(startVec.dot(planeNormal)));
-                    Vector3 projectedCurrent = currentVec.cpy().sub(planeNormal.cpy().scl(currentVec.dot(planeNormal)));
-
-                    projectedStart.nor();
-                    projectedCurrent.nor();
-
-                    float angle = (float) Math.toDegrees(Math.acos(projectedStart.dot(projectedCurrent)));
+                    float angle = (float) Math.toDegrees(Math.acos(clamp(
+                            projectedStart.dot(projectedCurrent), -1f, 1f)));
 
                     if (Float.isNaN(angle) || angle < 0.01f) break;
 
-                    Vector3 cross = projectedStart.crs(projectedCurrent);
-                    float sign = Math.signum(cross.dot(axisVector));
+                    float sign = Math.signum(crossVector.set(projectedStart).crs(projectedCurrent).dot(axisVector));
 
-                    Quaternion deltaRotation = new Quaternion(axisVector, angle * sign);
-                    selectedKeyframe.rotation.mulLeft(deltaRotation);
+                    axisRotation.set(axisVector, angle * sign);
+                    selectedKeyframe.rotation.mulLeft(axisRotation);
                     break;
                 }
             }
@@ -321,16 +336,15 @@ public class Gizmo {
             switch (currentTool) {
                 case TRANSLATE: {
                     float projection = dragVector.dot(axisVector);
-                    Vector3 worldTranslation = axisVector.cpy().scl(projection);
+                    worldTranslation.set(axisVector).scl(projection);
 
                     if (selectedObject.parentId != null) {
                         GameObject parent = sceneManager.findGameObject(selectedObject.parentId);
                         if (parent != null) {
-                            Quaternion parentInverseRotation = parent.transform.worldTransform.getRotation(new Quaternion()).conjugate();
+                            parent.transform.worldTransform.getRotation(inverseRotation).conjugate();
+                            inverseRotation.transform(worldTranslation);
 
-                            parentInverseRotation.transform(worldTranslation);
-
-                            Vector3 parentScale = parent.transform.worldTransform.getScale(new Vector3());
+                            parent.transform.worldTransform.getScale(parentScale);
                             if (parentScale.x != 0) worldTranslation.x /= parentScale.x;
                             if (parentScale.y != 0) worldTranslation.y /= parentScale.y;
                             if (parentScale.z != 0) worldTranslation.z /= parentScale.z;
@@ -343,8 +357,8 @@ public class Gizmo {
                 case SCALE: {
                     float projection = dragVector.dot(axisVector);
                     float scaleAmount = projection * 0.1f;
-                    Vector3 scaleVec = axisVector.cpy().scl(scaleAmount);
-                    Vector3 newScale = selectedObject.transform.scale.cpy().add(scaleVec);
+                    scaleVector.set(axisVector).scl(scaleAmount);
+                    newScale.set(selectedObject.transform.scale).add(scaleVector);
 
                     if (newScale.x < 0.01f) newScale.x = 0.01f;
                     if (newScale.y < 0.01f) newScale.y = 0.01f;
@@ -354,46 +368,45 @@ public class Gizmo {
                     break;
                 }
                 case ROTATE: {
-                    Vector3 currentVec = dragCurrentPoint.cpy().sub(getGizmoPosition());
-                    Vector3 startVec = dragStartPoint.cpy().sub(getGizmoPosition());
+                    currentVector.set(dragCurrentPoint).sub(getGizmoPosition());
+                    startVector.set(dragStartPoint).sub(getGizmoPosition());
+                    projectedStart.set(startVector).mulAdd(axisVector,
+                            -startVector.dot(axisVector)).nor();
+                    projectedCurrent.set(currentVector).mulAdd(axisVector,
+                            -currentVector.dot(axisVector)).nor();
 
-                    Vector3 planeNormal = axisVector;
-                    Vector3 projectedStart = startVec.cpy().sub(planeNormal.cpy().scl(startVec.dot(planeNormal)));
-                    Vector3 projectedCurrent = currentVec.cpy().sub(planeNormal.cpy().scl(currentVec.dot(planeNormal)));
-
-                    projectedStart.nor();
-                    projectedCurrent.nor();
-
-                    float angle = (float) Math.toDegrees(Math.acos(projectedStart.dot(projectedCurrent)));
+                    float angle = (float) Math.toDegrees(Math.acos(clamp(
+                            projectedStart.dot(projectedCurrent), -1f, 1f)));
 
                     if (Float.isNaN(angle) || angle < 0.01f) break;
 
-                    Vector3 cross = projectedStart.crs(projectedCurrent);
-                    float sign = Math.signum(cross.dot(axisVector));
+                    float sign = Math.signum(crossVector.set(projectedStart).crs(projectedCurrent).dot(axisVector));
 
-                    Quaternion deltaRotation = new Quaternion(axisVector, angle * sign);
+                    axisRotation.set(axisVector, angle * sign);
 
                     GameObject parent = selectedObject.parentId == null ? null
                             : sceneManager.findGameObject(selectedObject.parentId);
                     if (parent != null) {
                         parent.transform.worldTransform.getRotation(tmpParentRot, true);
                         tmpDelta.set(tmpParentRot).conjugate();
-                        tmpDelta.mul(deltaRotation);
+                        tmpDelta.mul(axisRotation);
                         tmpDelta.mul(tmpParentRot);
-                        deltaRotation.set(tmpDelta);
+                        axisRotation.set(tmpDelta);
                     }
 
-                    sceneManager.rotate(selectedObject, deltaRotation);
+                    sceneManager.rotate(selectedObject, axisRotation);
                     break;
                 }
             }
         }
+        dragApplied = true;
         dragStartPoint.set(dragCurrentPoint);
     }
 
     public boolean touchDown(Ray pickRay) {
         if (selectedObject == null || currentTool == EditorTool.HAND) return false;
 
+        if (selectedAxis != Axis.NONE) tintAxis(selectedAxis, axisColor(selectedAxis));
         selectedAxis = Axis.NONE;
         float closestDist = Float.MAX_VALUE;
 
@@ -421,7 +434,9 @@ public class Gizmo {
         if ((dist = intersect(pickRay, boxZ)) < closestDist) { closestDist = dist; selectedAxis = Axis.Z; }
 
         if (selectedAxis != Axis.NONE) {
+            tintAxis(selectedAxis, Color.YELLOW);
             isTransforming = true;
+            dragApplied = false;
             setupDragPlane(getGizmoPosition());
             Intersector.intersectRayPlane(pickRay, dragPlane, dragStartPoint);
             return true;
@@ -436,29 +451,74 @@ public class Gizmo {
         return Float.MAX_VALUE;
     }
 
+    private ModelInstance axisHandle(Axis axis) {
+        switch (currentTool) {
+            case TRANSLATE:
+                return axis == Axis.X ? gizmoTranslateX
+                        : axis == Axis.Y ? gizmoTranslateY : gizmoTranslateZ;
+            case ROTATE:
+                return axis == Axis.X ? gizmoRotateX
+                        : axis == Axis.Y ? gizmoRotateY : gizmoRotateZ;
+            case SCALE:
+                return axis == Axis.X ? gizmoScaleBoxX
+                        : axis == Axis.Y ? gizmoScaleBoxY : gizmoScaleBoxZ;
+            default:
+                return null;
+        }
+    }
+
+    private Color axisColor(Axis axis) {
+        return axis == Axis.X ? Color.RED : axis == Axis.Y ? Color.GREEN : Color.BLUE;
+    }
+
+    private void tintAxis(Axis axis, Color color) {
+        if (currentTool == EditorTool.SCALE) {
+            if (axis == Axis.X) {
+                tintHandle(gizmoScaleBoxX, color);
+                tintHandle(gizmoScaleLineX, color);
+            } else if (axis == Axis.Y) {
+                tintHandle(gizmoScaleBoxY, color);
+                tintHandle(gizmoScaleLineY, color);
+            } else if (axis == Axis.Z) {
+                tintHandle(gizmoScaleBoxZ, color);
+                tintHandle(gizmoScaleLineZ, color);
+            }
+            return;
+        }
+        tintHandle(axisHandle(axis), color);
+    }
+
+    private void tintHandle(ModelInstance handle, Color color) {
+        if (handle != null && !handle.materials.isEmpty()) {
+            handle.materials.get(0).set(ColorAttribute.createDiffuse(color));
+        }
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     private void setupDragPlane(Vector3 origin) {
-        Vector3 planeNormal = new Vector3(camera.direction).scl(-1);
+        planeNormal.set(camera.direction).scl(-1f);
         dragPlane.set(origin, planeNormal);
     }
 
     public void touchUp() {
         if (isTransforming && selectedObject != null) {
             isTransforming = false;
-
-                if (!dragStartPos.epsilonEquals(selectedObject.transform.position, 0.001f) ||
-                        !dragStartRot.equals(selectedObject.transform.rotation) ||
-                        !dragStartScale.epsilonEquals(selectedObject.transform.scale, 0.001f)) {
-
-                    UndoManager undoManager = activity.getUndoManager();
-                    if (undoManager != null) {
-                        undoManager.pushCommand(
-                                new Commands.TransformCommand(sceneManager, selectedObject, dragStartPos, dragStartRot, dragStartScale)
-                        );
-                    }
+            if (!dragStartPos.epsilonEquals(selectedObject.transform.position, 0.001f) ||
+                    !dragStartRot.equals(selectedObject.transform.rotation) ||
+                    !dragStartScale.epsilonEquals(selectedObject.transform.scale, 0.001f)) {
+                UndoManager undoManager = activity.getUndoManager();
+                if (undoManager != null) {
+                    undoManager.pushCommand(
+                            new Commands.TransformCommand(sceneManager, selectedObject, dragStartPos, dragStartRot, dragStartScale)
+                    );
                 }
+            }
         }
 
-        if (selectedObject != null && selectedAxis != Axis.NONE) {
+        if (selectedObject != null && selectedAxis != Axis.NONE && dragApplied) {
             if (selectedCollider != null) {
                 PhysicsComponent physics = selectedObject.getComponent(PhysicsComponent.class);
                 if (physics != null) {
@@ -471,7 +531,9 @@ public class Gizmo {
                 }
             });
         }
+        if (selectedAxis != Axis.NONE) tintAxis(selectedAxis, axisColor(selectedAxis));
         selectedAxis = Axis.NONE;
+        dragApplied = false;
     }
 
     public GameObject getSelectedObject() {

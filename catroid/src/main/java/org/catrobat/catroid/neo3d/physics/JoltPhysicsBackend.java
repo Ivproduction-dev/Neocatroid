@@ -323,10 +323,14 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         float baseHalf = unitPrimitive ? 1f : 0.5f;
         Neo3DPhysicsBody.ShapeType shapeType = resolveShapeType(
                 config.getShapeType(), object);
-        float halfX = baseHalf * sx;
-        float halfY = baseHalf * sy;
-        float halfZ = baseHalf * sz;
-        float radius = baseHalf * Math.max(sx, Math.max(sy, sz));
+        float shapeScaleX = Math.max(0.01f, config.getShapeScaleX());
+        float shapeScaleY = Math.max(0.01f, config.getShapeScaleY());
+        float shapeScaleZ = Math.max(0.01f, config.getShapeScaleZ());
+        float halfX = baseHalf * sx * shapeScaleX;
+        float halfY = baseHalf * sy * shapeScaleY;
+        float halfZ = baseHalf * sz * shapeScaleZ;
+        float radius = baseHalf * Math.max(sx * shapeScaleX,
+                Math.max(sy * shapeScaleY, sz * shapeScaleZ));
         float halfHeight = Math.max(0.005f, baseHalf * sy - radius);
         int shapeValue;
         switch (shapeType) {
@@ -335,13 +339,13 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
                 break;
             case CAPSULE:
                 shapeValue = 3;
-                radius = Math.max(MIN_EXTENT, Math.min(baseHalf * Math.max(sx, sz), halfY));
-                halfHeight = Math.max(0.005f, baseHalf * sy - radius);
+                radius = Math.max(MIN_EXTENT, Math.min(halfX > halfZ ? halfX : halfZ, halfY));
+                halfHeight = Math.max(0.005f, halfY - radius);
                 break;
             case CYLINDER:
                 shapeValue = 4;
-                radius = baseHalf * Math.max(sx, sz);
-                halfHeight = Math.max(MIN_EXTENT, baseHalf * sy);
+                radius = halfX > halfZ ? halfX : halfZ;
+                halfHeight = Math.max(MIN_EXTENT, halfY);
                 break;
             case BOX:
             case AUTO:
@@ -382,6 +386,9 @@ public final class JoltPhysicsBackend implements INeo3DPhysicsBackend {
         hash = 31 * hash + Float.floatToIntBits(config.getAngularDamping());
         hash = 31 * hash + Boolean.hashCode(config.isContinuousCollision());
         hash = 31 * hash + Boolean.hashCode(config.isNoCollision());
+        hash = 31 * hash + Float.floatToIntBits(config.getShapeScaleX());
+        hash = 31 * hash + Float.floatToIntBits(config.getShapeScaleY());
+        hash = 31 * hash + Float.floatToIntBits(config.getShapeScaleZ());
         String modelPath = object.getModelPath();
         hash = 31 * hash + (modelPath == null ? 0 : modelPath.hashCode());
         for (float value : object.getTransform().getScale()) {

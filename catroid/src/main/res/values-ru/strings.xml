@@ -527,6 +527,7 @@
     <string name="editor_3d_delete_object">Удалить объект</string>
     <string name="editor_3d_add_component">Добавить компонент</string>
     <string name="editor_3d_delete_object_confirm">Вы действительно хотите удалить \'%1$s\'?</string>
+    <string name="editor_3d_delete_object_confirm_with_children">Вы действительно хотите удалить \'%1$s\' и его дочерние объекты (%2$d шт.)?</string>
 
     <!-- Transform Component -->
     <string name="editor_3d_position">Позиция</string>
@@ -5650,7 +5651,32 @@
     <string name="v3_step_firebase">Firebase</string>
     <string name="v3_next">Далее</string>
     <string name="v3_back">Назад</string>
-    <string name="v3_build">Собрать</string>
+    <string name="v3_build">Собрать APK</string>
+    <string name="v3_template_light_description">Меньше расход памяти. Остальные сцены загружаются по мере перехода.</string>
+    <string name="v3_template_full_description">Сцены загружаются заранее для быстрых переходов. Требуется больше памяти.</string>
+    <string name="v3_permissions_hint">Автоматический режим выбирает разрешения по блокам проекта. Переключитесь на ручной, чтобы изменить список.</string>
+    <string name="v3_firebase_hint">Необязательно. Добавьте конфигурацию Firebase, только если игра использует Firebase. Имя пакета должно совпадать.</string>
+    <string name="v3_invalid_package_name">Введите корректное имя пакета, например com.example.game.</string>
+    <string name="v3_invalid_sdk">Минимальный SDK не может быть выше целевого.</string>
+    <string name="v3_permission_internet">Интернет</string>
+    <string name="v3_permission_network_state">Состояние сети</string>
+    <string name="v3_permission_wifi_state">Состояние Wi-Fi</string>
+    <string name="v3_permission_camera">Камера</string>
+    <string name="v3_permission_record_audio">Запись звука</string>
+    <string name="v3_permission_write_external_storage">Запись во внешнее хранилище</string>
+    <string name="v3_permission_read_external_storage">Чтение внешнего хранилища</string>
+    <string name="v3_permission_read_media_images">Чтение изображений</string>
+    <string name="v3_permission_read_media_audio">Чтение аудио</string>
+    <string name="v3_permission_vibrate">Вибрация</string>
+    <string name="v3_permission_wake_lock">Работа в фоне</string>
+    <string name="v3_permission_post_notifications">Уведомления</string>
+    <string name="v3_permission_bluetooth">Bluetooth</string>
+    <string name="v3_permission_bluetooth_admin">Управление Bluetooth (устаревшее)</string>
+    <string name="v3_permission_bluetooth_connect">Подключение к Bluetooth</string>
+    <string name="v3_permission_nfc">NFC</string>
+    <string name="v3_permission_fine_location">Точная геопозиция</string>
+    <string name="v3_permission_coarse_location">Приблизительная геопозиция</string>
+    <string name="v3_permission_unknown">Другое разрешение</string>
 
     <!-- Firebase конфигурация для APK Builder V3 -->
     <string name="v3_firebase_section">Firebase</string>
@@ -6277,6 +6303,11 @@ Catrobat — это визуальный язык программировани
     <string name="dialog_save_image_format">Формат изображения</string>
     <string name="dialog_antialiasing">Сглаживание</string>
     <string name="dialog_smoothing">Сглаживание</string>
+    <string name="pocketpaint_ui2_setting_label">Pocket Paint 2.0 (Новый интерфейс)</string>
+    <string name="pocketpaint_ui2_onboarding_title">Добро пожаловать в Pocket Paint 2.0!</string>
+    <string name="pocketpaint_ui2_onboarding_message">Попробуйте обновлённый современный интерфейс с быстрыми панелями инструментов и новыми векторными иконками. Вы всегда можете переключиться обратно в расширенных настройках.</string>
+    <string name="pocketpaint_ui2_onboarding_enable">Включить Pocket Paint 2.0</string>
+    <string name="pocketpaint_ui2_onboarding_skip">Оставить классический</string>
     <string name="dialog_zoom_window_enabled">Включено</string>
     <string name="dialog_zoom_window_from_size" translatable="false">100</string>
     <string name="dialog_zoom_window_to_size" translatable="false">300</string>
@@ -6943,4 +6974,159 @@ Catrobat — это визуальный язык программировани
     <string name="collab_snapshot_received">Проект получен, открываю…</string>
     <string name="collab_select_project">Выберите проект для совместной работы</string>
     <string name="collab_active_project">Проект</string>
+    <string name="editor_3d_version_title">Выберите 3D-редактор</string>
+    <string name="editor_3d_version_description">Новый редактор работает на Neo3D, Filament и Jolt и редактирует сцены Neo3D. Старые 3D-сцены остаются в классическом редакторе. Выбор можно изменить в настройках.</string>
+    <string name="editor_3d_version_new">Открыть редактор Neo3D</string>
+    <string name="editor_3d_version_classic">Остаться в классическом</string>
+    <string name="editor_3d_version_setting_title">3D-редактор</string>
+    <string name="editor_3d_version_setting_summary">Выберите редактор или спрашивайте при каждом входе</string>
+    <string name="editor_3d_switch_new">Переключить на Neo3D</string>
+    <string name="editor_3d_switch_classic">Переключить на классический</string>
+    <string name="editor_3d_title_new">3D-редактор 2.0 · Neo3D</string>
+    <string name="editor_3d_select_object_hint">Нажмите на объект, чтобы выбрать его</string>
+    <string-array name="editor_3d_version_entries">
+        <item>Спрашивать при входе</item>
+        <item>Классический редактор</item>
+        <item>Редактор Neo3D</item>
+    </string-array>
+    <string-array name="editor_3d_version_values">
+        <item>ask</item>
+        <item>classic</item>
+        <item>neo3d</item>
+    </string-array>
+    <string name="editor_3d_controls_setting_title">Управление камерой Neo3D</string>
+    <string name="editor_3d_controls_setting_summary">Кнопки, джойстик или только жесты</string>
+    <string-array name="editor_3d_controls_entries">
+        <item>Кнопки WASD</item>
+        <item>Виртуальный джойстик</item>
+        <item>Только жесты</item>
+    </string-array>
+    <string-array name="editor_3d_controls_values">
+        <item>wasd</item>
+        <item>joystick</item>
+        <item>gestures</item>
+    </string-array>
+    <string name="editor_3d_controls_title">Выберите управление камерой</string>
+    <string name="editor_3d_controls_next">Далее</string>
+    <string name="editor_3d_controls_wasd_desc">Шесть кнопок движения с удержанием, точно на планшете.</string>
+    <string name="editor_3d_controls_joystick_desc">Стик под один палец для движения камеры.</string>
+    <string name="editor_3d_controls_gestures_desc">Чистый вьюпорт, только drag и pinch.</string>
+    <string name="editor_3d_controls_hint">Камера: %1$s. Можно сменить в настройках.</string>
+    <string name="editor_3d_snap">Снап 0.5</string>
+    <string name="editor_3d_grid">Сетка</string>
+    <string name="editor_3d_view_presets">Виды</string>
+    <string name="editor_3d_view_top">Сверху</string>
+    <string name="editor_3d_view_front">Спереди</string>
+    <string name="editor_3d_view_side">Сбоку</string>
+    <string name="editor_3d_view_iso">Изо</string>
+    <string name="editor_3d_model_too_large">Файл модели слишком большой (максимум 100 МБ).</string>
+    <string name="editor_3d_model_compressed">Модель использует сжатые меши (Draco, meshopt или Basis), они не поддерживаются. Переэкспортируйте без сжатия.</string>
+    <string name="editor_3d_model_no_scene_model">В архиве нет загружаемой модели.</string>
+    <string name="editor_3d_add_cylinder">Добавить цилиндр</string>
+    <string name="editor_3d_add_light">Добавить свет</string>
+    <string name="editor_3d_add_camera">Добавить камеру</string>
+    <string name="editor_3d_import_model">Импорт модели</string>
+    <string name="editor_3d_save">Сохранить</string>
+    <string name="editor_3d_undo">Отменить</string>
+    <string name="editor_3d_redo">Повторить</string>
+    <string name="editor_3d_tool_select">Выбор</string>
+    <string name="editor_3d_tool_move">Переместить</string>
+    <string name="editor_3d_tool_rotate">Вращать</string>
+    <string name="editor_3d_tool_scale">Масштаб</string>
+    <string name="editor_3d_format_glb_gltf_obj">3D-модели (GLB, glTF, OBJ, STL, ZIP)</string>
+    <string name="editor_3d_unsupported_model">Формат этой модели не поддерживается.</string>
+    <string name="editor_3d_scene_settings">Настройки сцены</string>
+    <string name="editor_3d_sky_color">Цвет фона (#RRGGBB)</string>
+    <string name="editor_3d_ibl_intensity">Яркость окружения</string>
+    <string name="editor_3d_scene_shadows">Тени сцены</string>
+    <string name="editor_3d_viewport_hint">Проведите для обзора · нажмите объект для выбора</string>
+    <string name="editor_3d_no_selection">Объект не выбран</string>
+    <string name="editor_3d_selected">Выбран: %1$s</string>
+    <string name="editor_3d_type_camera">Камера</string>
+    <string name="editor_3d_type_light">Свет</string>
+    <string name="editor_3d_type_cube">Куб</string>
+    <string name="editor_3d_type_sphere">Сфера</string>
+    <string name="editor_3d_type_cylinder">Цилиндр</string>
+    <string name="editor_3d_type_model">Модель</string>
+    <string name="editor_3d_inspector_empty">Выберите объект, чтобы изменить его свойства.</string>
+    <string name="editor_3d_name">Имя</string>
+    <string name="editor_3d_rename">Переименовать</string>
+    <string name="editor_3d_visible">Видимый</string>
+    <string name="editor_3d_active">Активный</string>
+    <string name="editor_3d_transform">Преобразование</string>
+    <string name="editor_3d_apply">Применить</string>
+    <string name="editor_3d_material">Материал</string>
+    <string name="editor_3d_metallic">Металличность (0–1)</string>
+    <string name="editor_3d_roughness">Шероховатость (0–1)</string>
+    <string name="editor_3d_emissive">Цвет свечения (#RRGGBB)</string>
+    <string name="editor_3d_material_applied">Материал обновлён</string>
+    <string name="editor_3d_color_invalid">Введите цвет, например #AABBCC</string>
+    <string name="editor_3d_physics">Физика</string>
+    <string name="editor_3d_physics_enabled">Включить физическое тело</string>
+    <string name="editor_3d_motion">Движение</string>
+    <string name="editor_3d_shape">Форма коллайдера</string>
+    <string name="editor_3d_mass">Масса</string>
+    <string name="editor_3d_friction">Трение</string>
+    <string name="editor_3d_restitution">Упругость</string>
+    <string name="editor_3d_gravity">Сила гравитации</string>
+    <string name="editor_3d_linear_damping">Линейное затухание</string>
+    <string name="editor_3d_angular_damping">Угловое затухание</string>
+    <string name="editor_3d_save_failed">Не удалось сохранить сцену.</string>
+    <string name="editor_3d_camera">Настройки камеры</string>
+    <string name="editor_3d_fov">Угол обзора</string>
+    <string name="editor_3d_near">Ближняя плоскость</string>
+    <string name="editor_3d_far">Дальняя плоскость</string>
+    <string name="editor_3d_aperture">Диафрагма</string>
+    <string name="editor_3d_shutter">Выдержка (секунды)</string>
+    <string name="editor_3d_sensitivity">Светочувствительность ISO</string>
+    <string name="editor_3d_main_camera">Основная камера</string>
+    <string name="editor_3d_light">Настройки света</string>
+    <string name="editor_3d_intensity">Интенсивность</string>
+    <string name="editor_3d_range">Дальность</string>
+    <string name="editor_3d_light_color_hex">Цвет света (#RRGGBB)</string>
+    <string name="editor_3d_light_direction">Направление света</string>
+    <string name="editor_3d_inner_cone">Внутренний конус (градусы)</string>
+    <string name="editor_3d_outer_cone">Внешний конус (градусы)</string>
+    <string name="editor_3d_continuous_collision">Непрерывная коллизия</string>
+    <string name="editor_3d_shadows">Отбрасывать тени</string>
+    <string name="editor_3d_directional_light">Направленный</string>
+    <string name="editor_3d_point_light">Точечный</string>
+    <string name="editor_3d_spot_light">Прожектор</string>
+    <string name="editor_3d_parent">Родитель</string>
+    <string name="editor_3d_no_parent">Нет</string>
+    <string name="editor_3d_duplicate">Дублировать</string>
+    <string name="editor_3d_delete_confirm">Удалить «%1$s» из сцены?</string>
+    <string name="editor_3d_model_import_failed">Не удалось импортировать модель.</string>
+    <string name="editor_3d_import_glb_only">Выберите автономный файл GLB.</string>
+    <string name="editor_3d_animations">Анимации</string>
+    <string name="editor_3d_animation_number">Анимация %1$d</string>
+    <string name="editor_3d_play">Воспроизвести</string>
+    <string name="editor_3d_pause">Пауза</string>
+    <string name="editor_3d_stop">Стоп</string>
+    <string name="editor_3d_scene_saved_to_project">Сцена сохранена в проекте</string>
+    <string-array name="editor_3d_motion_entries">
+        <item>Нет</item><item>Статическое</item><item>Кинематическое</item><item>Динамическое</item>
+    </string-array>
+    <string-array name="editor_3d_shape_entries">
+        <item>Авто</item><item>Коробка</item><item>Сфера</item><item>Капсула</item><item>Цилиндр</item>
+    </string-array>
+    <string-array name="editor_3d_light_type_entries">
+        <item>Направленный</item><item>Точечный</item><item>Прожектор</item>
+    </string-array>
+    <string name="editor_3d_axis_all">Все</string>
+    <string name="editor_3d_focus">Фокус</string>
+    <string name="editor_3d_move_to_camera">К камере</string>
+    <string name="editor_3d_face_camera">Повернуть к камере</string>
+    <string name="editor_3d_axis_constraint">Ось</string>
+    <string name="editor_3d_collider_size">Размер коллайдера (× модель)</string>
+    <string name="editor_3d_keyframes">Кейфреймы</string>
+    <string name="editor_3d_add_keyframe">Добавить ключ здесь</string>
+    <string name="editor_3d_keyframe_loop">Цикл</string>
+    <string name="editor_3d_keyframe_time">t=%1$.1fс</string>
+    <string name="editor_3d_paste">Вставить</string>
+    <string name="editor_3d_copy">Копировать</string>
+    <string name="editor_3d_copied">Скопировано: %1$d</string>
+    <string name="editor_3d_pasted">Вставлено: %1$d</string>
+    <string name="editor_3d_selected_count">Выбрано объектов: %1$d</string>
+    <string name="editor_3d_delete_selected_confirm">Удалить %1$d выбранных объектов?</string>
 </resources>

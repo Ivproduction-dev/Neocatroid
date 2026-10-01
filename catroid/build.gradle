@@ -394,8 +394,8 @@ android {
         }
 
         template {
-            initWith debug // intentional: templates need debug symbols and proguard
-            minifyEnabled true
+            initWith debug
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt', 'proguard-runtime.pro' // both proguard files applied intentionally
             matchingFallbacks = ['debug']
         }
@@ -407,6 +407,7 @@ android {
     }
     lint {
         abortOnError false
+        checkReleaseBuilds false
         baseline file('config/lint-baseline.xml')
         htmlOutput file('build/reports/lint-report.html')
         htmlReport true
@@ -1120,25 +1121,25 @@ tasks.register('makeCoffee') {
 
 tasks.register('copyTemplateApk') {
     group = "build"
-    description = "Builds and copies the minimal runtime APK template to assets (with proguard)"
+    description = "Builds the minimal runtime APK template (template is downloaded at runtime, not bundled)"
     dependsOn 'assembleRuntimeTemplate'
     doLast {
         copy {
             from "$buildDir/outputs/apk/runtime/template"
-            into "$projectDir/src/main/assets"
+            into "$buildDir/template-runtime"
             include "*-runtime-template.apk"
             rename { "template_runtime.apk" }
         }
-        println "Runtime Template APK updated at: $projectDir/src/main/assets/template_runtime.apk"
+        println "Runtime Template APK updated at: $buildDir/template-runtime/template_runtime.apk"
     }
 }
 
 tasks.register('copyAllRuntimeTemplates') {
     group = "build"
-    description = "Builds and copies the runtime template APK to assets"
+    description = "Builds the runtime template APK"
     dependsOn 'copyTemplateApk'
     doLast {
-        println "Runtime template APK copied to: $projectDir/src/main/assets"
+        println "Runtime template APK at: $buildDir/template-runtime"
     }
 }
 

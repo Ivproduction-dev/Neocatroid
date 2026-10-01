@@ -29,7 +29,7 @@
         android:layout_height="match_parent"
         android:checked="true"
         android:text="@string/dialog_antialiasing"
-        android:textColor="@color/design_default_color_on_secondary"
+        android:textColor="@color/pocketpaint_text_primary"
         android:theme="@style/CustomSwitchTheme" />
 
     <Space
@@ -42,7 +42,20 @@
         android:layout_height="match_parent"
         android:checked="true"
         android:text="@string/dialog_smoothing"
-        android:textColor="@color/design_default_color_on_secondary"
+        android:textColor="@color/pocketpaint_text_primary"
+        android:theme="@style/CustomSwitchTheme" />
+
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="16dp" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/pocketpaint_ui2_switch"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:checked="false"
+        android:text="@string/pocketpaint_ui2_setting_label"
+        android:textColor="@color/pocketpaint_text_primary"
         android:theme="@style/CustomSwitchTheme" />
 
 </LinearLayout>

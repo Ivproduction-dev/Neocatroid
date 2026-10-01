@@ -74,15 +74,7 @@ public class ConditionScriptTrigger {
 		try {
 			Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, null);
 			boolean conditionValue = false;
-			boolean isGlobal = false;
-			try {
-				org.catrobat.catroid.content.Project p = org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
-				if (p != null && p.getGlobalScene() != null && p.getGlobalScene().getSpriteList().contains(sprite)) {
-					isGlobal = true;
-				} else if (p != null && p.getAllGlobalSprites().contains(sprite)) {
-					isGlobal = true;
-				}
-			} catch (Exception ignored) {}
+			boolean isGlobal = logGlobalEnabled() && isGlobalSprite(sprite);
 			if (sceneFirstStart || sceneRestarted) {
 				if (startTime == 0) {
 					startTime = SystemClock.uptimeMillis();
@@ -122,24 +114,33 @@ public class ConditionScriptTrigger {
 
 	private void triggerScript(Sprite sprite) {
 		if (status == TRIGGER_NOW) {
-			boolean isGlobal = false;
-			try {
-				org.catrobat.catroid.content.Project p = org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
-				if (p != null && p.getGlobalScene() != null && p.getGlobalScene().getSpriteList().contains(sprite)) isGlobal = true;
-				else if (p != null && p.getAllGlobalSprites().contains(sprite)) isGlobal = true;
-			} catch (Exception ignored) {}
+			boolean isGlobal = logGlobalEnabled() && isGlobalSprite(sprite);
 			if (isGlobal) Log.d(TAG, "global TRIGGER_NOW firing sprite=" + sprite.getName() + " formula=" + formula);
 			EventWrapper eventWrapper = new EventWrapper(new WhenConditionEventId(formula), false);
 			sprite.look.fire(eventWrapper);
 			status = ALREADY_TRIGGERED;
 		} else {
-			boolean isGlobal = false;
-			try {
-				org.catrobat.catroid.content.Project p = org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
-				if (p != null && p.getGlobalScene() != null && p.getGlobalScene().getSpriteList().contains(sprite)) isGlobal = true;
-				else if (p != null && p.getAllGlobalSprites().contains(sprite)) isGlobal = true;
-			} catch (Exception ignored) {}
+			boolean isGlobal = logGlobalEnabled() && isGlobalSprite(sprite);
 			if (isGlobal) Log.d(TAG, "global already triggered, not firing sprite=" + sprite.getName() + " formula=" + formula + " status=" + status);
+		}
+	}
+
+	private static boolean logGlobalEnabled() {
+		return Log.isLoggable(TAG, Log.DEBUG);
+	}
+
+	private static boolean isGlobalSprite(Sprite sprite) {
+		try {
+			org.catrobat.catroid.content.Project p = org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
+			if (p == null) {
+				return false;
+			}
+			if (p.getGlobalScene() != null && p.getGlobalScene().getSpriteList().contains(sprite)) {
+				return true;
+			}
+			return p.getAllGlobalSprites().contains(sprite);
+		} catch (Exception ignored) {
+			return false;
 		}
 	}
 

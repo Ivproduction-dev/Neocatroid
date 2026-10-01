@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:checked="true"
         android:text="@string/dialog_zoom_window_enabled"
-        android:textColor="@color/design_default_color_on_secondary"
+        android:textColor="@color/pocketpaint_text_primary"
         android:theme="@style/CustomSwitchTheme" />
 
     <Space

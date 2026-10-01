@@ -120,7 +120,7 @@ class RgbSelectorView : LinearLayoutCompat {
         editTextHex.setTextColor(
             ContextCompat.getColor(
                 context,
-                R.color.pocketpaint_color_picker_hex_correct_black
+                R.color.pocketpaint_color_picker_hex_black
             )
         )
     }

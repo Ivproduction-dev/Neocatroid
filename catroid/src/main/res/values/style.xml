@@ -74,7 +74,7 @@
         <item name="chipStartPadding">16dp</item>
         <item name="chipEndPadding">16dp</item>
         <item name="chipBackgroundColor">@color/background_color_chip_state_list</item>
-        <item name="android:textColor">@color/textcolor_togglebutton</item>
+        <item name="android:textColor">@color/pocketpaint_chip_text_color</item>
     </style>
 
     <style name="appBarLayout" parent="Widget.MaterialComponents.AppBarLayout.Primary" />
@@ -296,7 +296,7 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetRight">0dp</item>
         <item name="android:insetBottom">0dp</item>
-        <item name="android:textColor">@color/textcolor_togglebutton</item>
+        <item name="android:textColor">@color/pocketpaint_circular_toggle_text_color</item>
         <item name="android:backgroundTint">@color/background_togglebutton</item>
         <item name="android:padding">0dp</item>
         <item name="iconPadding">0dp</item>

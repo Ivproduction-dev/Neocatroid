@@ -80,6 +80,8 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     private ItemTouchHelper touchHelper;
     private HierarchyDragCallback hierarchyDragCallback;
     private boolean uiInitialized = false;
+    private View mainContentView;
+    private View leftDrawerView;
 
     private GameObject currentSelectedObject = null;
     private View quickActions;
@@ -213,20 +215,19 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         setSupportActionBar(toolbar);
 
         drawerLayout = findViewById(R.id.drawer_layout);
+        mainContentView = findViewById(R.id.main_content_coordinator);
+        leftDrawerView = findViewById(R.id.left_drawer);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open, R.string.navigation_drawer_close);
 
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
-                final View mainContent = findViewById(R.id.main_content_coordinator);
-                final View leftDrawer = findViewById(R.id.left_drawer);
-
-                if (mainContent != null && drawerView != null) {
-                    if (drawerView.getId() == leftDrawer.getId()) {
-                        mainContent.setTranslationX(drawerView.getWidth() * slideOffset);
+                if (mainContentView != null && drawerView != null && leftDrawerView != null) {
+                    if (drawerView.getId() == leftDrawerView.getId()) {
+                        mainContentView.setTranslationX(drawerView.getWidth() * slideOffset);
                     } else {
-                        mainContent.setTranslationX(-drawerView.getWidth() * slideOffset);
+                        mainContentView.setTranslationX(-drawerView.getWidth() * slideOffset);
                     }
                 }
             }
@@ -371,9 +372,14 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (hierarchyAdapter != null) {
-                    hierarchyAdapter.filter(s.toString());
-                }
+                hierarchySearchHandler.removeCallbacks(hierarchySearchRunnable);
+                final String query = s.toString();
+                hierarchySearchRunnable = () -> {
+                    if (hierarchyAdapter != null) {
+                        hierarchyAdapter.filter(query);
+                    }
+                };
+                hierarchySearchHandler.postDelayed(hierarchySearchRunnable, HIERARCHY_SEARCH_DEBOUNCE_MS);
             }
             @Override
             public void afterTextChanged(Editable s) {}
@@ -422,9 +428,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                         Gdx.app.postRunnable(() -> {
                             Commands.CompositeCommand compositeDelete = new Commands.CompositeCommand();
                             List<GameObject> toRemove = new ArrayList<>();
+                            final String lowerQuery = query.toLowerCase(java.util.Locale.ROOT);
 
                             for (GameObject go : sceneManager.getAllGameObjects().values()) {
-                                if (go.name.toLowerCase().contains(query.toLowerCase())) {
+                                if (go.name.toLowerCase(java.util.Locale.ROOT).contains(lowerQuery)) {
                                     toRemove.add(go);
                                 }
                             }
@@ -657,7 +664,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                 rootObjects.add(go);
             }
         }
-        rootObjects.sort(Comparator.comparing(go -> go.name.toLowerCase()));
+        rootObjects.sort(Comparator.comparing(go -> go.name, String.CASE_INSENSITIVE_ORDER));
 
 
         for (GameObject root : rootObjects) {
@@ -669,7 +676,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     }
 
     private void addGameObjectToHierarchyList(GameObject go, int depth) {
-        String prefix = String.join("", Collections.nCopies(depth, "    "));
+        StringBuilder prefix = new StringBuilder(depth * 4);
+        for (int i = 0; i < depth; i++) {
+            prefix.append("    ");
+        }
         String displayName = prefix + go.name;
 
         hierarchyItems.add(new HierarchyAdapter.HierarchyItem(go, displayName));
@@ -680,7 +690,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                 GameObject child = sceneManager.findGameObject(childId);
                 if (child != null) children.add(child);
             }
-            children.sort(Comparator.comparing(child -> child.name.toLowerCase()));
+            children.sort(Comparator.comparing(child -> child.name, String.CASE_INSENSITIVE_ORDER));
 
             for (GameObject child : children) {
                 addGameObjectToHierarchyList(child, depth + 1);
@@ -692,6 +702,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.editor_tools_menu, menu);
         getMenuInflater().inflate(R.menu.editor_toolbar_menu, menu);
+        MenuItem translateItem = menu.findItem(R.id.tool_translate);
+        if (translateItem != null) {
+            translateItem.setChecked(true);
+        }
         return true;
     }
 
@@ -701,15 +715,19 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         if (editorListener != null) {
             if (id == R.id.tool_hand) {
                 editorListener.setCurrentTool(EditorTool.HAND);
+                item.setChecked(true);
                 return true;
             } else if (id == R.id.tool_translate) {
                 editorListener.setCurrentTool(EditorTool.TRANSLATE);
+                item.setChecked(true);
                 return true;
             } else if (id == R.id.tool_rotate) {
                 editorListener.setCurrentTool(EditorTool.ROTATE);
+                item.setChecked(true);
                 return true;
             } else if (id == R.id.tool_scale) {
                 editorListener.setCurrentTool(EditorTool.SCALE);
+                item.setChecked(true);
                 return true;
             }
         }
@@ -741,6 +759,9 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
             return true;
         } else if (id == R.id.action_exit) {
             showExitConfirmationDialog();
+            return true;
+        } else if (id == R.id.action_switch_3d_editor) {
+            ThreeDEditorRouter.switchEditor(this, ThreeDEditorRouter.NEO3D);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -1016,6 +1037,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     }
 
     private AlertDialog exitDialog;
+    private AlertDialog recoveryDialog;
 
     private void showExitConfirmationDialog() {
         if (exitDialog != null && exitDialog.isShowing()) {
@@ -1222,7 +1244,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     }
 
     private void showRecoveryDialog(File recoveryFile) {
-        new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
+        if (recoveryDialog != null && recoveryDialog.isShowing()) {
+            return;
+        }
+        recoveryDialog = new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
                 .setTitle(R.string.editor_3d_crash_recovery_title)
                 .setMessage(R.string.editor_3d_crash_recovery_msg)
                 .setCancelable(false)
@@ -1233,7 +1258,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                     }
                     editorListener.resetEngine(
                             Gdx.files.absolute(recoveryFile.getAbsolutePath()));
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    recoveryHandler.postDelayed(() -> {
                         recoveryFile.delete();
                     }, 5000L);
                     updateHierarchy();
@@ -1262,6 +1287,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
 
     private final android.os.Handler autosaveHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private static final long AUTOSAVE_DEBOUNCE_MS = 3000L;
+    private final android.os.Handler hierarchySearchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static final long HIERARCHY_SEARCH_DEBOUNCE_MS = 300L;
+    private Runnable hierarchySearchRunnable = () -> {};
+    private final android.os.Handler recoveryHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable autosaveRunnable = () -> {
         if (!isFinishing() && !isDestroyed()) {
             postSceneSnapshotToDisk(sceneManager);
@@ -1361,6 +1390,17 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     protected void onDestroy() {
         super.onDestroy();
         autosaveHandler.removeCallbacks(autosaveRunnable);
+        hierarchySearchHandler.removeCallbacks(hierarchySearchRunnable);
+        recoveryHandler.removeCallbacksAndMessages(null);
+        if (exitDialog != null && exitDialog.isShowing()) {
+            exitDialog.dismiss();
+        }
+        if (recoveryDialog != null && recoveryDialog.isShowing()) {
+            recoveryDialog.dismiss();
+        }
+        if (inspectorManager != null) {
+            inspectorManager.cancelPendingUpdates();
+        }
         if (installedCrashHandler != null
                 && Thread.getDefaultUncaughtExceptionHandler() == installedCrashHandler) {
             Thread.setDefaultUncaughtExceptionHandler(defaultCrashHandler);

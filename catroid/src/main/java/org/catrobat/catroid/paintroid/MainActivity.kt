@@ -119,13 +119,17 @@ import java.io.File
 import java.util.Locale
 import org.catrobat.catroid.BuildConfig
 import org.catrobat.catroid.R
+import org.catrobat.catroid.paintroid.common.UI2_ONBOARDING_DIALOG_TAG
+import org.catrobat.catroid.paintroid.dialog.Ui2OnboardingDialog
+import org.catrobat.catroid.paintroid.dialog.AdvancedSettingsDialog
+import org.catrobat.catroid.paintroid.ui.Ui2Helper
 
 private const val TEMP_IMAGE_COROUTINE_DELAY_MILLI_SEC = 1000
 private const val MILLI_SEC_TO_SEC = 1000
 private const val TEMP_IMAGE_SAVE_INTERVAL = 60
 private const val TEMP_IMAGE_IDLE_INTERVAL = 2 * TEMP_IMAGE_COROUTINE_DELAY_MILLI_SEC
 
-class MainActivity : AppCompatActivity(), MainView, CommandListener {
+class MainActivity : AppCompatActivity(), MainView, CommandListener, Ui2OnboardingDialog.Listener, AdvancedSettingsDialog.Listener {
     @VisibleForTesting
     lateinit var perspective: Perspective
 
@@ -152,6 +156,8 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
     lateinit var commandManager: CommandManager
     lateinit var toolPaint: ToolPaint
     lateinit var bottomNavigationViewHolder: BottomNavigationViewHolder
+    lateinit var topBarViewHolder: TopBarViewHolder
+    lateinit var bottomBarViewHolder: BottomBarViewHolder
     lateinit var model: MainActivityContracts.Model
 
     private lateinit var commandSerializer: CommandSerializer
@@ -223,6 +229,10 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
             val runnable: Runnable = result
             deferredRequestPermissionsResult = null
             runnable.run()
+        }
+        if (::topBarViewHolder.isInitialized && ::bottomBarViewHolder.isInitialized && ::bottomNavigationViewHolder.isInitialized) {
+            val userPrefs = UserPreferences(getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE))
+            applyUiMode(userPrefs.preferenceUi2Enabled)
         }
     }
 
@@ -389,6 +399,11 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
                 presenterMain.showHelpClicked()
             }
         }
+
+        val ui2Prefs = UserPreferences(getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE))
+        if (resources.configuration.smallestScreenWidthDp >= 600 && !ui2Prefs.preferenceUi2PromptShown) {
+            Ui2OnboardingDialog().show(supportFragmentManager, UI2_ONBOARDING_DIALOG_TAG)
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -405,6 +420,21 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
         }
     }
 
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
+        if (resources.configuration.smallestScreenWidthDp >= 600 && currentFocus !is android.widget.EditText && event.isCtrlPressed) {
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_Z -> {
+                    presenterMain.undoClicked()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_Y -> {
+                    presenterMain.redoClicked()
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_pocketpaint_more_options, menu)
         presenterMain.removeMoreOptionsItems(menu)
@@ -489,13 +519,22 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
         val bottomNavigationView = findViewById<View>(R.id.pocketpaint_main_bottom_navigation)
         toolOptionsViewController = DefaultToolOptionsViewController(this, idlingResource)
         drawerLayoutViewHolder = DrawerLayoutViewHolder(drawerLayout)
-        val topBarViewHolder = TopBarViewHolder(topBarLayout)
-        val bottomBarViewHolder = BottomBarViewHolder(bottomBarLayout)
+        topBarViewHolder = TopBarViewHolder(topBarLayout)
+        bottomBarViewHolder = BottomBarViewHolder(bottomBarLayout)
         bottomNavigationViewHolder = BottomNavigationViewHolder(
             bottomNavigationView,
             resources.configuration.orientation,
             applicationContext
         )
+        bottomNavigationViewHolder.onCurrentToolChanged = { selectedTool ->
+            val rail = findViewById<View>(R.id.paintroid_ui2_tool_rail) as? android.widget.LinearLayout
+            if (rail != null) {
+                for (index in 0 until rail.childCount) {
+                    val button = rail.getChildAt(index)
+                    button.isSelected = button.tag == selectedTool
+                }
+            }
+        }
         perspective = Perspective(layerModel.width, layerModel.height)
         val listener = DefaultWorkspace.Listener { drawingSurface.refreshDrawingSurface() }
         workspace = DefaultWorkspace(
@@ -550,6 +589,103 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
         setBottomNavigationListeners(bottomNavigationViewHolder)
         setActionBarToolTips(topBarViewHolder, context)
         progressBar = findViewById(R.id.pocketpaint_content_loading_progress_bar)
+        val userPrefs = UserPreferences(getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE))
+        applyUiMode(userPrefs.preferenceUi2Enabled)
+    }
+
+    private fun applyUiMode(ui2Enabled: Boolean) {
+        val largeScreen = resources.configuration.smallestScreenWidthDp >= 600
+        val ui2ToolRail = findViewById<android.widget.LinearLayout?>(R.id.paintroid_ui2_tool_rail)
+        val ui2ToolRailScroll = findViewById<View>(R.id.paintroid_ui2_tool_rail_scroll)
+        val showToolRail = ui2Enabled && largeScreen && ui2ToolRail != null
+        val tabletUi2Enabled = ui2Enabled && largeScreen
+        ui2ToolRailScroll?.visibility = if (showToolRail) View.VISIBLE else View.GONE
+        ui2ToolRail?.visibility = if (showToolRail) View.VISIBLE else View.GONE
+        if (showToolRail) {
+            populateUi2ToolRail(ui2ToolRail!!)
+        }
+        if (::topBarViewHolder.isInitialized) {
+            topBarViewHolder.applyUiMode(tabletUi2Enabled)
+            if (largeScreen) {
+                topBarViewHolder.layout.alpha = 1f
+                topBarViewHolder.layout.setBackgroundColor(ContextCompat.getColor(this, R.color.pocketpaint_surface_nav))
+            }
+        }
+        if (::bottomBarViewHolder.isInitialized) {
+            bottomBarViewHolder.applyUiMode(tabletUi2Enabled)
+        }
+        if (::bottomNavigationViewHolder.isInitialized) {
+            bottomNavigationViewHolder.applyUiMode(tabletUi2Enabled)
+            if (largeScreen) {
+                bottomNavigationViewHolder.bottomNavigationView.background = ContextCompat.getDrawable(this, R.color.pocketpaint_surface_nav)
+                bottomNavigationViewHolder.bottomNavigationView.alpha = 1f
+            }
+            bottomNavigationViewHolder.bottomNavigationView.menu
+                .findItem(R.id.action_tools)?.isVisible = !showToolRail
+            bottomNavigationViewHolder.showCurrentTool(toolReference.tool?.toolType)
+        }
+    }
+
+    private fun populateUi2ToolRail(rail: android.widget.LinearLayout) {
+        if (rail.childCount > 0) return
+        val density = resources.displayMetrics.density
+        val tools = ToolType.values()
+            .filter {
+                it.toolButtonID > 0 &&
+                    it.toolButtonID != R.id.pocketpaint_btn_top_undo &&
+                    it.toolButtonID != R.id.pocketpaint_btn_top_redo
+            }
+            .distinctBy { it.toolButtonID }
+        val alternateTools = mapOf(
+            R.id.pocketpaint_tools_brush to listOf(ToolType.BRUSH, ToolType.PIXELART, ToolType.SYMMETRY, ToolType.PATTERN),
+            R.id.pocketpaint_tools_fill to listOf(ToolType.FILL, ToolType.MAGIC_WAND, ToolType.COLOR_REPLACE),
+            R.id.pocketpaint_tools_stamp to listOf(ToolType.CLIPBOARD, ToolType.LASSO),
+            R.id.pocketpaint_tools_eraser to listOf(ToolType.ERASER, ToolType.AUTO_REMOVE_BG)
+        )
+        for (type in tools) {
+            val button = ImageButton(this).apply {
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    (48 * density).toInt(),
+                    (48 * density).toInt()
+                ).apply {
+                    bottomMargin = (4 * density).toInt()
+                }
+                setPadding(
+                    (12 * density).toInt(),
+                    (12 * density).toInt(),
+                    (12 * density).toInt(),
+                    (12 * density).toInt()
+                )
+                setImageResource(Ui2Helper.getToolIcon(type, true))
+                contentDescription = getString(type.nameResource)
+                background = ContextCompat.getDrawable(context, R.drawable.paintroid_ui2_tool_button)
+                scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                isFocusable = true
+                isClickable = true
+                tag = type
+                setOnClickListener { presenterMain.toolClicked(type) }
+            }
+            TooltipCompat.setTooltipText(button, getString(type.nameResource))
+            button.isSelected = type == toolReference.tool?.toolType
+            alternateTools[type.toolButtonID]?.let { alternatives ->
+                button.setOnLongClickListener { anchor ->
+                    showAlternateToolPicker(anchor, alternatives)
+                    true
+                }
+            }
+            rail.addView(button)
+        }
+    }
+    override fun onUi2Accepted() {
+        applyUiMode(true)
+    }
+
+    override fun onUi2Declined() {
+        applyUiMode(false)
+    }
+
+    override fun onUi2SettingsApplied(enabled: Boolean) {
+        applyUiMode(enabled)
     }
 
     private fun onCreateLayerMenu() {
@@ -723,7 +859,9 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener {
                 val type = getItem(position)!!
                 val name = getString(type.nameResource)
                 textView.text = if (type == currentToolType) "• $name" else name
-                val icon = androidx.core.content.ContextCompat.getDrawable(context, type.drawableResource)
+                val userPrefs = UserPreferences(getSharedPreferences(SHARED_PREFS_NAME, MODE_PRIVATE))
+                val useTabletUi2 = resources.configuration.smallestScreenWidthDp >= 600 && userPrefs.preferenceUi2Enabled
+                val icon = androidx.core.content.ContextCompat.getDrawable(context, Ui2Helper.getToolIcon(type, useTabletUi2))
                 textView.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)
                 textView.compoundDrawablePadding = (12 * resources.displayMetrics.density).toInt()
                 return view

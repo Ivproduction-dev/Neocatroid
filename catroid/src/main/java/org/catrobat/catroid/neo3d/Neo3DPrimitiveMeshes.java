@@ -4,14 +4,64 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 
 public final class Neo3DPrimitiveMeshes {
 
     public static final String ASSET_KEY_CUBE = "embedded:neo-cube";
     public static final String ASSET_KEY_SPHERE = "embedded:neo-sphere";
     public static final String ASSET_KEY_CYLINDER = "embedded:neo-cylinder";
+    public static final String ASSET_KEY_EDITOR_GRID = "embedded:neo-editor-grid";
+
+    public static byte[] buildGrid(float extent, float cell, float thickness,
+            float[] baseColorRgba) {
+        float safeExtent = Math.max(1f, extent);
+        float safeCell = Math.max(0.1f, cell);
+        float halfThick = Math.max(0.001f, thickness) * 0.5f;
+        int linesPerAxis = (int) (safeExtent * 2f / safeCell) + 1;
+        List<Float> pos = new ArrayList<>(linesPerAxis * 2 * 4 * 3);
+        List<Float> nor = new ArrayList<>(linesPerAxis * 2 * 4 * 3);
+        List<Float> uv = new ArrayList<>(linesPerAxis * 2 * 4 * 2);
+        List<Integer> idx = new ArrayList<>(linesPerAxis * 2 * 6);
+        float[] quadUv = {0, 0, 1, 0, 1, 1, 0, 1};
+        for (int i = 0; i < linesPerAxis; i++) {
+            float coord = -safeExtent + i * safeCell;
+            addGridQuad(pos, nor, uv, idx, quadUv,
+                    -safeExtent, coord - halfThick, safeExtent, coord + halfThick);
+            addGridQuad(pos, nor, uv, idx, quadUv,
+                    coord - halfThick, -safeExtent, coord + halfThick, safeExtent);
+        }
+        return packGlb("NeoEditorGrid", pos, nor, uv, idx, baseColorRgba);
+    }
+
+    private static void addGridQuad(List<Float> pos, List<Float> nor, List<Float> uv,
+            List<Integer> idx, float[] quadUv,
+            float minX, float minZ, float maxX, float maxZ) {
+        int base = pos.size() / 3;
+        float[] xs = {minX, maxX, maxX, minX};
+        float[] zs = {minZ, minZ, maxZ, maxZ};
+        for (int v = 0; v < 4; v++) {
+            pos.add(xs[v]);
+            pos.add(0f);
+            pos.add(zs[v]);
+            nor.add(0f);
+            nor.add(1f);
+            nor.add(0f);
+            uv.add(quadUv[v * 2]);
+            uv.add(quadUv[v * 2 + 1]);
+        }
+        idx.add(base);
+        idx.add(base + 1);
+        idx.add(base + 2);
+        idx.add(base);
+        idx.add(base + 2);
+        idx.add(base + 3);
+    }
 
     private Neo3DPrimitiveMeshes() {
     }
@@ -196,6 +246,180 @@ public final class Neo3DPrimitiveMeshes {
             idx.add(bottomRing + j + 1);
         }
         return packGlb("NeoCylinder", pos, nor, uv, idx, baseColorRgba);
+    }
+
+    public static byte[] convertObjToGlb(byte[] objBytes, float[] color) {
+        List<float[]> sourcePositions = new ArrayList<>();
+        List<float[]> sourceNormals = new ArrayList<>();
+        List<float[]> sourceUvs = new ArrayList<>();
+        List<Float> positions = new ArrayList<>();
+        List<Float> normals = new ArrayList<>();
+        List<Float> uvs = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new ByteArrayInputStream(objBytes), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                String[] tokens = trimmed.split("\\s+");
+                if ("v".equals(tokens[0]) && tokens.length >= 4) {
+                    sourcePositions.add(new float[]{Float.parseFloat(tokens[1]),
+                            Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3])});
+                } else if ("vn".equals(tokens[0]) && tokens.length >= 4) {
+                    sourceNormals.add(new float[]{Float.parseFloat(tokens[1]),
+                            Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3])});
+                } else if ("vt".equals(tokens[0]) && tokens.length >= 3) {
+                    sourceUvs.add(new float[]{Float.parseFloat(tokens[1]),
+                            Float.parseFloat(tokens[2])});
+                } else if ("f".equals(tokens[0]) && tokens.length >= 4) {
+                    ObjCorner first = parseObjCorner(tokens[1], sourcePositions.size(),
+                            sourceUvs.size(), sourceNormals.size());
+                    ObjCorner previous = parseObjCorner(tokens[2], sourcePositions.size(),
+                            sourceUvs.size(), sourceNormals.size());
+                    for (int cornerIndex = 3; cornerIndex < tokens.length; cornerIndex++) {
+                        ObjCorner next = parseObjCorner(tokens[cornerIndex], sourcePositions.size(),
+                                sourceUvs.size(), sourceNormals.size());
+                        addObjTriangle(first, previous, next, sourcePositions, sourceNormals,
+                                sourceUvs, positions, normals, uvs, indices);
+                        previous = next;
+                        if (indices.size() > 300000) {
+                            throw new IllegalArgumentException("OBJ has too many triangles");
+                        }
+                    }
+                }
+            }
+        } catch (java.io.IOException | NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid OBJ model", e);
+        }
+        if (positions.isEmpty()) throw new IllegalArgumentException("OBJ contains no faces");
+        return packGlb("ImportedOBJ", positions, normals, uvs, indices, color);
+    }
+
+    public static byte[] convertStlToGlb(byte[] stlBytes, float[] color) {
+        List<Float> positions = new ArrayList<>();
+        List<Float> normals = new ArrayList<>();
+        List<Float> uvs = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+        if (stlBytes.length >= 84) {
+            ByteBuffer input = ByteBuffer.wrap(stlBytes).order(ByteOrder.LITTLE_ENDIAN);
+            long triangles = Integer.toUnsignedLong(input.getInt(80));
+            if (triangles <= 100000 && 84L + triangles * 50L == stlBytes.length) {
+                input.position(84);
+                for (int i = 0; i < triangles; i++) {
+                    float[] normal = normalize(new float[]{input.getFloat(), input.getFloat(),
+                            input.getFloat()});
+                    float[][] vertices = new float[3][3];
+                    for (int vertex = 0; vertex < 3; vertex++) {
+                        vertices[vertex][0] = input.getFloat();
+                        vertices[vertex][1] = input.getFloat();
+                        vertices[vertex][2] = input.getFloat();
+                    }
+                    input.getShort();
+                    appendStlTriangle(vertices, normal, positions, normals, uvs, indices);
+                }
+            }
+        }
+        if (positions.isEmpty()) {
+            String text = new String(stlBytes, StandardCharsets.US_ASCII);
+            float[] facetNormal = {0f, 1f, 0f};
+            List<float[]> vertices = new ArrayList<>(3);
+            for (String line : text.split("\\r?\\n")) {
+                String[] tokens = line.trim().split("\\s+");
+                if (tokens.length >= 5 && "facet".equals(tokens[0])
+                        && "normal".equals(tokens[1])) {
+                    facetNormal = normalize(new float[]{Float.parseFloat(tokens[2]),
+                            Float.parseFloat(tokens[3]), Float.parseFloat(tokens[4])});
+                } else if (tokens.length >= 4 && "vertex".equals(tokens[0])) {
+                    vertices.add(new float[]{Float.parseFloat(tokens[1]),
+                            Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3])});
+                    if (vertices.size() == 3) {
+                        appendStlTriangle(vertices.toArray(new float[0][0]), facetNormal,
+                                positions, normals, uvs, indices);
+                        vertices.clear();
+                        if (indices.size() >= 300000) break;
+                    }
+                }
+            }
+        }
+        if (positions.isEmpty()) throw new IllegalArgumentException("STL contains no triangles");
+        return packGlb("ImportedSTL", positions, normals, uvs, indices, color);
+    }
+
+    private static void appendStlTriangle(float[][] vertices, float[] normal,
+            List<Float> positions, List<Float> normals, List<Float> uvs,
+            List<Integer> indices) {
+        float[] faceNormal = normalize(normal);
+        for (float[] vertex : vertices) {
+            positions.add(vertex[0]); positions.add(vertex[1]); positions.add(vertex[2]);
+            normals.add(faceNormal[0]); normals.add(faceNormal[1]); normals.add(faceNormal[2]);
+            uvs.add(0f); uvs.add(0f);
+            indices.add(indices.size());
+        }
+    }
+
+    private static ObjCorner parseObjCorner(String token, int positionCount, int uvCount,
+            int normalCount) {
+        String[] parts = token.split("/", -1);
+        int position = objIndex(parts[0], positionCount);
+        int uv = parts.length > 1 && !parts[1].isEmpty() ? objIndex(parts[1], uvCount) : -1;
+        int normal = parts.length > 2 && !parts[2].isEmpty()
+                ? objIndex(parts[2], normalCount) : -1;
+        if (position < 0 || position >= positionCount
+                || uv >= uvCount || normal >= normalCount) {
+            throw new IllegalArgumentException("OBJ face references a missing vertex");
+        }
+        return new ObjCorner(position, uv, normal);
+    }
+
+    private static int objIndex(String value, int count) {
+        int index = Integer.parseInt(value);
+        return index > 0 ? index - 1 : count + index;
+    }
+
+    private static void addObjTriangle(ObjCorner a, ObjCorner b, ObjCorner c,
+            List<float[]> sourcePositions, List<float[]> sourceNormals, List<float[]> sourceUvs,
+            List<Float> positions, List<Float> normals, List<Float> uvs,
+            List<Integer> indices) {
+        float[] pa = sourcePositions.get(a.position);
+        float[] pb = sourcePositions.get(b.position);
+        float[] pc = sourcePositions.get(c.position);
+        float[] faceNormal = normalize(cross(pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2],
+                pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]));
+        ObjCorner[] corners = {a, b, c};
+        for (ObjCorner corner : corners) {
+            float[] position = sourcePositions.get(corner.position);
+            float[] normal = corner.normal >= 0
+                    ? normalize(sourceNormals.get(corner.normal)) : faceNormal;
+            float[] texture = corner.uv >= 0 ? sourceUvs.get(corner.uv) : new float[]{0f, 0f};
+            positions.add(position[0]); positions.add(position[1]); positions.add(position[2]);
+            normals.add(normal[0]); normals.add(normal[1]); normals.add(normal[2]);
+            uvs.add(texture[0]); uvs.add(texture[1]);
+            indices.add(indices.size());
+        }
+    }
+
+    private static float[] cross(float ax, float ay, float az, float bx, float by, float bz) {
+        return new float[]{ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx};
+    }
+
+    private static float[] normalize(float[] vector) {
+        float length = (float) Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]
+                + vector[2] * vector[2]);
+        if (length < 1.0e-6f) return new float[]{0f, 1f, 0f};
+        return new float[]{vector[0] / length, vector[1] / length, vector[2] / length};
+    }
+
+    private static final class ObjCorner {
+        final int position;
+        final int uv;
+        final int normal;
+
+        ObjCorner(int position, int uv, int normal) {
+            this.position = position;
+            this.uv = uv;
+            this.normal = normal;
+        }
     }
 
     static byte[] packGlb(String name, List<Float> pos, List<Float> nor, List<Float> uv,

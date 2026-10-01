@@ -35,6 +35,7 @@ import org.catrobat.catroid.common.Constants
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.catrobat.catroid.apkbuildV3.TemplateManagerV3
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -44,7 +45,6 @@ import java.util.zip.ZipOutputStream
 
 object BakedApkBuilder {
     private const val TAG = "BakedApkBuilder"
-    private const val TEMPLATE_RUNTIME_APK = "template_runtime.apk"
 
     enum class TemplateType {
         FULL
@@ -130,31 +130,19 @@ object BakedApkBuilder {
             }
 
             onProgress("Loading template APK...")
-            val templateApk = File(tempDir, "template_temp.apk")
-
-            var templateLoaded = false
-            val templateAssetName = TEMPLATE_RUNTIME_APK
-            try {
-                context.assets.open(templateAssetName).use { input ->
-                    FileOutputStream(templateApk).use { output -> input.copyTo(output) }
+            val workDir = tempDir
+            if (workDir == null) {
+                return@withContext BuildResult.Error("Template APK unavailable: no work dir")
+            }
+            val templateApk = try {
+                TemplateManagerV3.prepareBaseApk(context, workDir) { p, msg ->
+                    onProgress("Loading template APK... ${(p * 100).toInt()}% $msg")
                 }
-                templateLoaded = true
-                Log.d(TAG, "DIAG: template APK extracted = ${templateApk.length() / (1024*1024)} MB")
-                Log.d(TAG, "Loaded template APK from assets: $templateAssetName")
             } catch (e: Exception) {
-                Log.w(TAG, "Template APK not found in assets: $templateAssetName")
+                workDir.deleteRecursively()
+                return@withContext BuildResult.Error("Template APK unavailable: ${e.message}")
             }
-
-            if (!templateLoaded) {
-                val selfApkPath = context.applicationInfo.sourceDir
-                if (selfApkPath != null && File(selfApkPath).exists()) {
-                    File(selfApkPath).copyTo(templateApk, overwrite = true)
-                    Log.d(TAG, "Using self-APK as template: $selfApkPath")
-                } else {
-                    tempDir.deleteRecursively()
-                    return@withContext BuildResult.Error("Template APK missing and self-APK unavailable.")
-                }
-            }
+            Log.d(TAG, "DIAG: template APK ready = ${templateApk.length() / (1024*1024)} MB")
 
             onProgress("Protecting project payload...")
             val currentProject = ProjectManager.getInstance()?.currentProject
