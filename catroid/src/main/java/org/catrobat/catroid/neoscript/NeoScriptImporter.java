@@ -22,8 +22,18 @@ import org.catrobat.catroid.content.Script;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.UserDefinedScript;
 import org.catrobat.catroid.content.WhenBackgroundChangesScript;
+import org.catrobat.catroid.content.WhenBounceOffScript;
+import org.catrobat.catroid.content.WhenConditionScript;
 import org.catrobat.catroid.content.WhenFirebaseChangedScript;
 import org.catrobat.catroid.content.WhenGamepadButtonScript;
+import org.catrobat.catroid.content.bricks.Brick;
+import org.catrobat.catroid.content.bricks.CompositeBrick;
+import org.catrobat.catroid.content.bricks.FormulaBrick;
+import org.catrobat.catroid.content.bricks.NoteBrick;
+import org.catrobat.catroid.content.bricks.UnknownBrick;
+import org.catrobat.catroid.content.bricks.UserListBrick;
+import org.catrobat.catroid.content.bricks.UserVariableBrickWithFormula;
+import org.catrobat.catroid.formulaeditor.Formula;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -165,14 +175,14 @@ public final class NeoScriptImporter {
 
 	public static String scriptSignature(Script script) {
 		if (script instanceof BroadcastScript) {
-			return "BroadcastScript#" + ((BroadcastScript) script).getBroadcastMessage();
+			return "BroadcastScript#" + ((BroadcastScript) script).getBroadcastMessage() + "#" + contentFingerprint(script);
 		}
 		if (script instanceof WhenBackgroundChangesScript) {
 			org.catrobat.catroid.common.LookData look = ((WhenBackgroundChangesScript) script).getLook();
-			return "WhenBackgroundChangesScript#" + (look != null ? look.getName() : "");
+			return "WhenBackgroundChangesScript#" + (look != null ? look.getName() : "") + "#" + contentFingerprint(script);
 		}
 		if (script instanceof WhenGamepadButtonScript) {
-			return "WhenGamepadButtonScript#" + ((WhenGamepadButtonScript) script).getAction();
+			return "WhenGamepadButtonScript#" + ((WhenGamepadButtonScript) script).getAction() + "#" + contentFingerprint(script);
 		}
 		if (script instanceof WhenFirebaseChangedScript) {
 			WhenFirebaseChangedScript fb = (WhenFirebaseChangedScript) script;
@@ -190,16 +200,167 @@ public final class NeoScriptImporter {
 					path = f.getTrimmedFormulaString(null);
 				}
 			}
-			return "WhenFirebaseChangedScript#" + bucket + "/" + path;
+			return "WhenFirebaseChangedScript#" + bucket + "/" + path + "#" + contentFingerprint(script);
 		}
 		if (script instanceof RaspiInterruptScript) {
 			RaspiInterruptScript raspi = (RaspiInterruptScript) script;
-			return "RaspiInterruptScript#" + raspi.getPin() + "+" + raspi.getEventValue();
+			return "RaspiInterruptScript#" + raspi.getPin() + "+" + raspi.getEventValue() + "#" + contentFingerprint(script);
 		}
 		if (script instanceof UserDefinedScript) {
 			UserDefinedScript uds = (UserDefinedScript) script;
-			return "UserDefinedScript#" + uds.getUserDefinedBrickID();
+			return "UserDefinedScript#" + uds.getUserDefinedBrickID() + "#" + contentFingerprint(script);
 		}
-		return script.getClass().getSimpleName();
+		if (script instanceof WhenBounceOffScript) {
+			String target = ((WhenBounceOffScript) script).getSpriteToBounceOffName();
+			return "WhenBounceOffScript#" + (target != null ? target : "") + "#" + contentFingerprint(script);
+		}
+		if (script instanceof WhenConditionScript) {
+			WhenConditionScript conditionScript = (WhenConditionScript) script;
+			String condition = "";
+			try {
+				Formula formula = conditionScript.getFormulaMap() != null
+						? conditionScript.getFormulaMap().get(Brick.BrickField.IF_CONDITION) : null;
+				if (formula != null) {
+					condition = formula.getTrimmedFormulaString(null);
+				}
+			} catch (Exception ignored) {
+			}
+			return "WhenConditionScript#" + condition + "#" + contentFingerprint(script);
+		}
+		return script.getClass().getSimpleName() + "#" + contentFingerprint(script);
+	}
+
+	public static boolean hasUnknownBricks(NeoScriptFile file) {
+		if (file == null || file.getScripts() == null) {
+			return false;
+		}
+		for (Script script : file.getScripts()) {
+			if (script != null && containsUnknownBrick(script.getBrickList(), new HashSet<>())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static void replaceUnknownBricks(NeoScriptFile file) {
+		if (file == null || file.getScripts() == null) {
+			return;
+		}
+		for (Script script : file.getScripts()) {
+			if (script != null && script.getBrickList() != null) {
+				replaceUnknownInList(script.getBrickList(), new HashSet<>());
+			}
+		}
+	}
+
+	private static boolean containsUnknownBrick(List<Brick> bricks, Set<Object> visited) {
+		if (bricks == null) {
+			return false;
+		}
+		for (Brick brick : bricks) {
+			if (brick == null || !visited.add(brick)) {
+				continue;
+			}
+			if (brick instanceof UnknownBrick) {
+				return true;
+			}
+			if (brick instanceof CompositeBrick) {
+				CompositeBrick composite = (CompositeBrick) brick;
+				if (containsUnknownBrick(composite.getNestedBricks(), visited)) {
+					return true;
+				}
+				if (composite.hasSecondaryList()
+						&& containsUnknownBrick(composite.getSecondaryNestedBricks(), visited)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static void replaceUnknownInList(List<Brick> bricks, Set<Object> visited) {
+		if (bricks == null) {
+			return;
+		}
+		for (int i = 0; i < bricks.size(); i++) {
+			Brick brick = bricks.get(i);
+			if (brick == null || !visited.add(brick)) {
+				continue;
+			}
+			if (brick instanceof UnknownBrick) {
+				bricks.set(i, new NoteBrick("This block is not supported"));
+			} else if (brick instanceof CompositeBrick) {
+				CompositeBrick composite = (CompositeBrick) brick;
+				replaceUnknownInList(composite.getNestedBricks(), visited);
+				if (composite.hasSecondaryList()) {
+					replaceUnknownInList(composite.getSecondaryNestedBricks(), visited);
+				}
+			}
+		}
+	}
+
+	private static String contentFingerprint(Script script) {
+		StringBuilder builder = new StringBuilder();
+		Set<Object> visited = new HashSet<>();
+		if (script.getBrickList() != null) {
+			for (Brick brick : script.getBrickList()) {
+				appendBrickFingerprint(builder, brick, visited);
+			}
+		}
+		return Integer.toHexString(builder.toString().hashCode());
+	}
+
+	private static void appendBrickFingerprint(StringBuilder builder, Brick brick, Set<Object> visited) {
+		if (brick == null || !visited.add(brick)) {
+			return;
+		}
+		builder.append(brick.getClass().getSimpleName()).append(';');
+		if (brick instanceof UserVariableBrickWithFormula) {
+			try {
+				org.catrobat.catroid.formulaeditor.UserVariable variable =
+						((UserVariableBrickWithFormula) brick).getUserVariable();
+				builder.append(variable != null && variable.getName() != null ? variable.getName() : "").append(';');
+			} catch (Exception ignored) {
+			}
+		}
+		if (brick instanceof UserListBrick) {
+			try {
+				org.catrobat.catroid.formulaeditor.UserList list = ((UserListBrick) brick).getUserList();
+				builder.append(list != null && list.getName() != null ? list.getName() : "").append(';');
+			} catch (Exception ignored) {
+			}
+		}
+		if (brick instanceof FormulaBrick) {
+			try {
+				for (Formula formula : ((FormulaBrick) brick).getFormulas()) {
+					if (formula != null) {
+						builder.append(formulaText(formula)).append(';');
+					}
+				}
+			} catch (Exception ignored) {
+			}
+		}
+		if (brick instanceof CompositeBrick) {
+			CompositeBrick composite = (CompositeBrick) brick;
+			if (composite.getNestedBricks() != null) {
+				for (Brick nested : composite.getNestedBricks()) {
+					appendBrickFingerprint(builder, nested, visited);
+				}
+			}
+			if (composite.hasSecondaryList() && composite.getSecondaryNestedBricks() != null) {
+				for (Brick nested : composite.getSecondaryNestedBricks()) {
+					appendBrickFingerprint(builder, nested, visited);
+				}
+			}
+		}
+	}
+
+	private static String formulaText(Formula formula) {
+		try {
+			String text = formula.getTrimmedFormulaString(null);
+			return text != null ? text : "";
+		} catch (Exception e) {
+			return "";
+		}
 	}
 }

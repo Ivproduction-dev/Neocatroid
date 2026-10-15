@@ -1300,17 +1300,50 @@ object ToolCallingEngine {
 
     class ImportNeoScriptModuleTool : Tool {
         override val name = "importNeoScriptModule"
-        override val description = "Imports a reusable .neoscript module (JoystickControl, HealthBar, EnemyAI, ParticleEmitter) into a target sprite."
+        override val description = "Imports a .neoscript module file into a target sprite. The module must be a file inside the project (files/neoscript/) or an absolute path."
         override val parameters = listOf(
-            ToolParameter("moduleName", ParameterType.STRING, "Module name, e.g. JoystickControl, HealthBar, EnemyAI, ParticleEmitter"),
+            ToolParameter("moduleFilePath", ParameterType.STRING, "Project-relative or absolute path of the .neoscript file, e.g. files/neoscript/EnemyAI.neoscript"),
             ToolParameter("targetSprite", ParameterType.STRING, "Name of the target sprite"),
-            ToolParameter("sceneName", ParameterType.STRING, "Scene name")
+            ToolParameter("sceneName", ParameterType.STRING, "Scene name (optional, defaults to the sprite's scene)")
         )
 
         override suspend fun execute(args: Map<String, String>): ToolResult {
-            val moduleName = args["moduleName"] ?: return ToolResult(false, "Missing moduleName", "")
-            val targetSprite = args["targetSprite"] ?: return ToolResult(false, "Missing targetSprite", "")
-            return ToolResult(false, "Built-in module '$moduleName' is not available as a .neoscript file. Import requires an explicit module file path.", "")
+            val modulePath = args["moduleFilePath"] ?: args["moduleName"]
+                    ?: return ToolResult(false, "Missing moduleFilePath", "")
+            val targetSpriteName = args["targetSprite"] ?: return ToolResult(false, "Missing targetSprite", "")
+            val project = ProjectManager.getInstance().currentProject ?: return ToolResult(false, "No active project", "")
+            val moduleFile = withContext(Dispatchers.IO) {
+                org.catrobat.catroid.neoscript.NeoScriptProjectFiles.resolveModuleFile(modulePath, project)
+            } ?: return ToolResult(false, "Module file not found: $modulePath", "")
+            val neoScriptFile = try {
+                withContext(Dispatchers.IO) {
+                    org.catrobat.catroid.neoscript.NeoScriptSerializer.deserializeFromFile(moduleFile)
+                }
+            } catch (e: Exception) {
+                return ToolResult(false, "Cannot read module: ${e.message}", "")
+            }
+            val sceneName = args["sceneName"]
+            val scene = if (!sceneName.isNullOrEmpty()) {
+                project.getSceneByName(sceneName) ?: return ToolResult(false, "Scene not found: $sceneName", "")
+            } else {
+                project.sceneList.firstOrNull { s -> resolveSprite(s, targetSpriteName) != null }
+                        ?: return ToolResult(false, "Sprite '$targetSpriteName' not found in any scene", "")
+            }
+            val sprite = resolveSprite(scene, targetSpriteName)
+                    ?: return ToolResult(false, "Sprite '$targetSpriteName' not found in scene '${scene.name}'", "")
+            return try {
+                val result = withContext(Dispatchers.Main) {
+                    if (org.catrobat.catroid.neoscript.NeoScriptImporter.hasUnknownBricks(neoScriptFile)) {
+                        org.catrobat.catroid.neoscript.NeoScriptImporter.replaceUnknownBricks(neoScriptFile)
+                    }
+                    org.catrobat.catroid.neoscript.NeoScriptImporter.importScripts(
+                        neoScriptFile, project, sprite,
+                        org.catrobat.catroid.neoscript.NeoScriptImporter.ImportStrategy.SKIP_DUPLICATES)
+                }
+                ToolResult(true, "Imported ${result.added.size} script(s), skipped ${result.skipped.size}", "")
+            } catch (e: Exception) {
+                ToolResult(false, "Import failed: ${e.message}", "")
+            }
         }
     }
 

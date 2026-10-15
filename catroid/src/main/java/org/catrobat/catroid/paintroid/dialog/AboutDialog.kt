@@ -78,7 +78,6 @@ class AboutDialog : AppCompatDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = requireActivity().layoutInflater
         val layout = inflater.inflate(R.layout.dialog_pocketpaint_about, null)
-        onViewCreated(layout, savedInstanceState)
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)
             .setTitle(R.string.pocketpaint_about_title)
             .setView(layout)

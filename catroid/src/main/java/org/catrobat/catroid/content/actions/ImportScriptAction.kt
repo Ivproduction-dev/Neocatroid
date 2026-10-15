@@ -69,21 +69,33 @@ class ImportScriptAction : TemporalAction() {
 
         ioScope.launch {
             try {
-                val neoScriptFile = loadNeoScriptFile(path)
-                val strategy = if (overwrite) NeoScriptImporter.ImportStrategy.REPLACE_DUPLICATES else NeoScriptImporter.ImportStrategy.SKIP_DUPLICATES
-                val result = NeoScriptImporter.importScripts(neoScriptFile, project, targetSprite, strategy)
-                RuntimeMutationTracker.hasTemporaryMutations = true
+                val neoScriptFile = loadNeoScriptFile(path, project)
                 withContext(Dispatchers.Main) {
-                    val stageListener = StageActivity.getActiveStageListener()
-                    val activeScene = ProjectManager.getInstance().getCurrentlyPlayingScene()
-                    val sceneIsActive = executionScene == null || (activeScene != null && activeScene.getSceneId() == executionScene.getSceneId())
-                    if (stageListener != null && sceneIsActive) {
-                        for (script in result.added) {
-                            stageListener.executeConsoleScript(targetSprite, script)
+                    try {
+                        if (NeoScriptImporter.hasUnknownBricks(neoScriptFile)) {
+                            NeoScriptImporter.replaceUnknownBricks(neoScriptFile)
                         }
-                    }
-                    if (result.added.isEmpty() && result.skipped.isNotEmpty()) {
-                        showToast("Scripts already present, nothing imported")
+                        val strategy = if (overwrite) NeoScriptImporter.ImportStrategy.REPLACE_DUPLICATES else NeoScriptImporter.ImportStrategy.SKIP_DUPLICATES
+                        val result = NeoScriptImporter.importScripts(neoScriptFile, project, targetSprite, strategy)
+                        if (result.added.isNotEmpty()) {
+                            RuntimeMutationTracker.hasTemporaryMutations = true
+                            val stageListener = StageActivity.getActiveStageListener()
+                            val activeScene = ProjectManager.getInstance().getCurrentlyPlayingScene()
+                            val sceneIsActive = executionScene == null || (activeScene != null && activeScene.getSceneId() == executionScene.getSceneId())
+                            if (stageListener != null && sceneIsActive) {
+                                for (script in result.added) {
+                                    stageListener.executeConsoleScript(targetSprite, script)
+                                }
+                            }
+                        } else if (result.skipped.isNotEmpty()) {
+                            showToast("Scripts already present, nothing imported")
+                        }
+                    } catch (e: NeoScriptException) {
+                        Log.e(TAG, "Failed to import script module: " + e.message, e)
+                        showToast("Failed to import script module: ${e.message}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to import script module", e)
+                        showToast("Failed to import script module")
                     }
                 }
             } catch (e: NeoScriptException) {
@@ -128,7 +140,7 @@ class ImportScriptAction : TemporalAction() {
         return null
     }
 
-    private suspend fun loadNeoScriptFile(path: String) = withContext(Dispatchers.IO) {
+    private suspend fun loadNeoScriptFile(path: String, project: Project) = withContext(Dispatchers.IO) {
         if (path.startsWith("content://")) {
             val context = CatroidApplication.getAppContext()
             val resolver: ContentResolver = context.contentResolver
@@ -143,7 +155,9 @@ class ImportScriptAction : TemporalAction() {
             }
             NeoScriptSerializer.deserializeFromString(builder.toString())
         } else {
-            NeoScriptSerializer.deserializeFromFile(java.io.File(path))
+            val moduleFile = org.catrobat.catroid.neoscript.NeoScriptProjectFiles.resolveModuleFile(path, project)
+                    ?: throw NeoScriptException("Module file not found: $path")
+            NeoScriptSerializer.deserializeFromFile(moduleFile)
         }
     }
 

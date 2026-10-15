@@ -1152,9 +1152,16 @@ if (script == null) {
 					textView.setSingleLine(false);
 					textView.setMaxLines(3);
 				}
-				fieldView.setOnClickListener(v -> {
-					openFormulaEditor2(formulaBrick, field);
-				});
+				if (field == Brick.BrickField.IMPORT_SCRIPT_FILE
+						|| field == Brick.BrickField.ASSIGN_SCRIPTS_FILE) {
+					fieldView.setOnClickListener(v -> {
+						openNeoScriptPicker(formulaBrick, field);
+					});
+				} else {
+					fieldView.setOnClickListener(v -> {
+						openFormulaEditor2(formulaBrick, field);
+					});
+				}
 			}
 		}
 	}
@@ -1555,6 +1562,20 @@ if (brick instanceof VisualPlacementBrick) {
 		} catch (CloneNotSupportedException e) {
 			Toast.makeText(getContext(), " Ошибка вставки", Toast.LENGTH_SHORT).show();
 		}
+	}
+
+	private void openNeoScriptPicker(FormulaBrick formulaBrick, Brick.FormulaField field) {
+		if (!(getContext() instanceof ScriptCanvasActivity)) return;
+		if (formulaBrick.isLocked()) {
+			Toast.makeText(getContext(), R.string.brick_locked, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		if (ProjectManager.getInstance().getCurrentProject() != null
+				&& ProjectManager.getInstance().getCurrentProject().isProtectedProject()) {
+			Toast.makeText(getContext(), R.string.protected_project_cannot_edit, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		((ScriptCanvasActivity) getContext()).openNeoScriptPickerForBrick(formulaBrick, field);
 	}
 
 	private void openFormulaEditor2(FormulaBrick formulaBrick, Brick.FormulaField field) {

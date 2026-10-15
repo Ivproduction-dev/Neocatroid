@@ -41,13 +41,13 @@
             android:elevation="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_close"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/script_canvas_close"
                 android:scaleType="centerInside"
@@ -57,7 +57,7 @@
                 android:id="@+id/script_canvas_title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
@@ -67,53 +67,53 @@
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_undo"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Отмена"
+                android:contentDescription="@string/script_canvas_undo"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_se_minimize" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_redo"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Повтор"
+                android:contentDescription="@string/script_canvas_redo"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_se_add" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_data"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Данные"
+                android:contentDescription="@string/script_canvas_data"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_se_more" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_import_neoscript"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Импорт NeoScript"
+                android:contentDescription="@string/script_canvas_import_neoscript"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_se_scene_switcher" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_export_neoscript"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Экспорт NeoScript"
+                android:contentDescription="@string/script_canvas_export_neoscript"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_se_backpack" />
+                android:src="@drawable/ic_se_save" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_backpack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/script_canvas_backpack"
                 android:scaleType="centerInside"
@@ -121,17 +121,17 @@
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_analysis"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="AI Анализ кода"
+                android:contentDescription="@string/script_canvas_analysis"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_se_more" />
+                android:src="@drawable/ic_se_analysis" />
 
             <ImageButton
                 android:id="@+id/script_canvas_btn_palette"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/script_canvas_palette"
                 android:scaleType="centerInside"

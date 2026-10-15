@@ -49,9 +49,25 @@ data class SerializableTypeface(
         override fun read(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface =
             super.handleVersions(this, kryo, input, type)
 
-        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface {
+        override fun readV2(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface {
             return with(input) {
                 val font = FontType.valueOf(readString())
+                val bold = readBoolean()
+                val underline = readBoolean()
+                val italic = readBoolean()
+                val textSize = readFloat()
+                val textSkewX = readFloat()
+                SerializableTypeface(font, bold, underline, italic, textSize, textSkewX, null)
+            }
+        }
+
+        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface {
+            return with(input) {
+                val font = try {
+                    FontType.valueOf(readString())
+                } catch (e: IllegalArgumentException) {
+                    FontType.SANS_SERIF
+                }
                 val bold = readBoolean()
                 val underline = readBoolean()
                 val italic = readBoolean()

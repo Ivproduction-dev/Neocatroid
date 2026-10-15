@@ -53,7 +53,6 @@ class ZoomWindowSettingsDialog(
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = requireActivity().layoutInflater
         val layout = inflater.inflate(R.layout.dialog_pocketpaint_zoomwindow_settings, null)
-        onViewCreated(layout, savedInstanceState)
 
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)
                 .setTitle(R.string.menu_zoom_settings)

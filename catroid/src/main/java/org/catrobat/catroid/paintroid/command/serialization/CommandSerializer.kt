@@ -88,7 +88,7 @@ import java.io.OutputStream
 open class CommandSerializer(private val activityContext: Context, private val commandManager: CommandManager, private val model: MainActivityContracts.Model) {
 
     companion object {
-        const val CURRENT_IMAGE_VERSION = 2
+        const val CURRENT_IMAGE_VERSION = 3
         const val MAGIC_VALUE = "CATROBAT"
     }
 
@@ -97,12 +97,26 @@ open class CommandSerializer(private val activityContext: Context, private val c
 
     init {
         kryo.isRegistrationRequired = true
-        setRegisterMapVersion(CURRENT_IMAGE_VERSION)
-        registerClasses()
+        setRegisterMapVersion(CURRENT_IMAGE_VERSION, false)
+        registerClasses(kryo, registerMap)
     }
 
-    private fun setRegisterMapVersion(version: Int) {
-        with(registerMap) {
+    private fun buildKryo(version: Int, legacyLayout: Boolean): Kryo {
+        val fresh = Kryo()
+        fresh.isRegistrationRequired = true
+        val map = LinkedHashMap<Class<*>, VersionSerializer<*>?>()
+        fillRegisterMap(map, version, legacyLayout)
+        registerClasses(fresh, map)
+        return fresh
+    }
+
+    private fun setRegisterMapVersion(version: Int, legacyLayout: Boolean) {
+        registerMap.clear()
+        fillRegisterMap(registerMap, version, legacyLayout)
+    }
+
+    private fun fillRegisterMap(map: LinkedHashMap<Class<*>, VersionSerializer<*>?>, version: Int, legacyLayout: Boolean) {
+        with(map) {
             put(Command::class.java, null)
             put(CompositeCommand::class.java, CompositeCommandSerializer(version))
             put(FloatArray::class.java, DataStructuresSerializer.FloatArraySerializer(version))
@@ -140,7 +154,9 @@ open class CommandSerializer(private val activityContext: Context, private val c
             put(RectangleDrawable::class.java, GeometricFillCommandSerializer.RectangleDrawableSerializer(version))
             put(StarDrawable::class.java, GeometricFillCommandSerializer.StarDrawableSerializer(version))
             put(ShapeDrawable::class.java, null)
-            put(PixelDrawable::class.java, null)
+            if (!legacyLayout) {
+                put(PixelDrawable::class.java, null)
+            }
             put(RectF::class.java, DataStructuresSerializer.RectFSerializer(version))
             put(ClipboardCommand::class.java, ClipboardCommandSerializer(version))
             put(SerializableTypeface::class.java, SerializableTypeface.TypefaceSerializer(version))
@@ -158,8 +174,12 @@ open class CommandSerializer(private val activityContext: Context, private val c
     }
 
     private fun registerClasses() {
-        registerMap.forEach { (classRegister, serializer) ->
-            val registration = kryo.register(classRegister)
+        registerClasses(kryo, registerMap)
+    }
+
+    private fun registerClasses(target: Kryo, map: LinkedHashMap<Class<*>, VersionSerializer<*>?>) {
+        map.forEach { (classRegister, serializer) ->
+            val registration = target.register(classRegister)
             serializer?.let {
                 registration.serializer = serializer
             }
@@ -196,8 +216,8 @@ open class CommandSerializer(private val activityContext: Context, private val c
 
     fun overWriteFile(fileName: String, uri: Uri, resolver: ContentResolver): Uri? {
         val result = writeToFile(fileName)
-        if (result != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (result != null && uri.scheme == "content") {
+            for (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val projection = arrayOf(MediaStore.Images.Media._ID)
                 val c = resolver.query(uri, projection, null, null, null)
                 if (c != null) {
@@ -208,9 +228,6 @@ open class CommandSerializer(private val activityContext: Context, private val c
                     }
                     c.close()
                 }
-            } else {
-                val file = File(uri.path.toString())
-                file.delete()
             }
         }
         return result
@@ -227,18 +244,25 @@ open class CommandSerializer(private val activityContext: Context, private val c
             throw NotCatrobatImageException("Magic Value doesn't exist.")
         }
         val imageVersion = input.readInt()
-        if (CURRENT_IMAGE_VERSION != imageVersion) {
-            setRegisterMapVersion(imageVersion)
-            registerClasses()
+        if (imageVersion == CURRENT_IMAGE_VERSION) {
+            return readBody(buildKryo(imageVersion, false), input)
         }
-        val commandModel = kryo.readObject(input, CommandManagerModel::class.java)
+        return try {
+            readBody(buildKryo(imageVersion, false), input)
+        } catch (e: Exception) {
+            if (input is com.esotericsoftware.kryo.io.Input && !input.canReadInt()) {
+                throw e
+            }
+            val buffered = java.io.ByteArrayInputStream(input.toBytes())
+            readBody(buildKryo(imageVersion, true), Input(buffered))
+        }
+    }
+
+    private fun readBody(reader: Kryo, input: Input): Pair<CommandManagerModel, ColorHistory?> {
+        val commandModel = reader.readObject(input, CommandManagerModel::class.java)
         var colorHistory: ColorHistory? = null
         if (input.canReadInt()) {
-            colorHistory = kryo.readObject(input, ColorHistory::class.java)
-        }
-        if (CURRENT_IMAGE_VERSION != imageVersion) {
-            setRegisterMapVersion(CURRENT_IMAGE_VERSION)
-            registerClasses()
+            colorHistory = reader.readObject(input, ColorHistory::class.java)
         }
         return Pair(commandModel, colorHistory)
     }

@@ -92,6 +92,8 @@ interface MainActivityContracts {
 
         fun showSaveErrorDialog()
 
+        fun showSaveErrorDialog(isCatroid: Boolean)
+
         fun showLoadErrorDialog()
 
         fun showRequestPermissionRationaleDialog(

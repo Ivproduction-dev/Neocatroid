@@ -201,6 +201,10 @@ public abstract class FormulaBrick extends BrickBaseType implements View.OnClick
 
 	public void setClickListeners() {
 		for (BiMap.Entry<FormulaField, Integer> entry : brickFieldToTextViewIdMap.entrySet()) {
+			if (entry.getKey() == BrickField.IMPORT_SCRIPT_FILE
+					|| entry.getKey() == BrickField.ASSIGN_SCRIPTS_FILE) {
+				continue;
+			}
 			TextView formulaFieldView = view.findViewById(entry.getValue());
 			if (formulaFieldView == null) {
 				continue;

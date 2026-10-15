@@ -31,31 +31,38 @@ public final class NeoScriptSerializer {
 	private NeoScriptSerializer() {
 	}
 
-	private static volatile boolean xstreamConfigured = false;
+	private static volatile boolean listenerRegistered = false;
 	private static final Object XSTREAM_LOCK = new Object();
 
-	private static XStream configuredXStream() {
-		XstreamSerializer.getInstance();
-		XStream xstream = XstreamSerializer.getInstance().getXstream();
-		if (!xstreamConfigured) {
+	private static void registerListenerOnce() {
+		if (!listenerRegistered) {
 			synchronized (XSTREAM_LOCK) {
-				if (!xstreamConfigured) {
-					xstream.alias(NeoScriptFile.ROOT_ELEMENT, NeoScriptFile.class);
-					xstream.processAnnotations(NeoScriptFile.class);
-					xstream.allowTypes(new Class[] {
-							java.util.HashMap.class,
-							java.util.ArrayList.class,
-							String.class,
-							Double.class,
-							Float.class,
-							Integer.class,
-							Long.class,
-							Boolean.class
+				if (!listenerRegistered) {
+					XstreamSerializer.pluginListeners.add(xstream -> {
+						xstream.alias(NeoScriptFile.ROOT_ELEMENT, NeoScriptFile.class);
+						xstream.processAnnotations(NeoScriptFile.class);
+						xstream.allowTypes(new Class[] {
+								java.util.HashMap.class,
+								java.util.ArrayList.class,
+								String.class,
+								Double.class,
+								Float.class,
+								Integer.class,
+								Long.class,
+								Boolean.class
+						});
 					});
-					xstreamConfigured = true;
+					listenerRegistered = true;
 				}
 			}
 		}
+	}
+
+	private static XStream configuredXStream() {
+		registerListenerOnce();
+		XStream xstream = XstreamSerializer.getInstance().getXstream();
+		xstream.alias(NeoScriptFile.ROOT_ELEMENT, NeoScriptFile.class);
+		xstream.processAnnotations(NeoScriptFile.class);
 		return xstream;
 	}
 
@@ -64,7 +71,19 @@ public final class NeoScriptSerializer {
 	}
 
 	public static void serializeToFile(NeoScriptFile neoScriptFile, File targetFile) throws Exception {
-		StorageOperations.writeToFile(targetFile, serializeToString(neoScriptFile));
+		File parent = targetFile.getParentFile();
+		if (parent != null && !parent.exists() && !parent.mkdirs()) {
+			throw new java.io.IOException("Cannot create directory");
+		}
+		File tmp = new File(parent, targetFile.getName() + ".tmp");
+		StorageOperations.writeToFile(tmp, serializeToString(neoScriptFile));
+		if (tmp.exists() && targetFile.exists() && !targetFile.delete()) {
+			throw new java.io.IOException("Cannot replace file");
+		}
+		if (!tmp.renameTo(targetFile)) {
+			StorageOperations.writeToFile(targetFile, serializeToString(neoScriptFile));
+			tmp.delete();
+		}
 	}
 
 	public static NeoScriptFile deserializeFromString(String xml) throws NeoScriptException {

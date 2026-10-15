@@ -110,7 +110,6 @@ class SaveInformationDialog :
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         inflater = requireActivity().layoutInflater
         val customLayout = inflater.inflate(R.layout.dialog_pocketpaint_save, null)
-        onViewCreated(customLayout, savedInstanceState)
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)
             .setTitle(R.string.dialog_save_image_title)
             .setView(customLayout)
@@ -220,8 +219,10 @@ class SaveInformationDialog :
 
     override fun onNothingSelected(parent: AdapterView<*>?) = Unit
     override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-        percentage.text = progress.toString().plus('%')
-        FileIO.compressQuality = progress
+        if (fromUser) {
+            percentage.text = progress.toString().plus('%')
+            FileIO.compressQuality = progress
+        }
     }
 
     override fun onStartTrackingTouch(seekBar: SeekBar) = Unit

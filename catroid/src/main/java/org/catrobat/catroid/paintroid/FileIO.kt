@@ -143,6 +143,10 @@ object FileIO {
         val uid = UUID.randomUUID()
         val mainActivity = context as? MainActivity
             ?: throw IOException("Context is not MainActivity")
+        val cacheFile = File(
+            File(mainActivity.cacheDir, cacheChildFolder),
+            uid.toString() + fileType.toExtension()
+        )
         val cachedImageUri = saveBitmapToCache(bitmap, mainActivity, uid.toString())
         var cachedFile: File? = null
         cachedImageUri?.let {
@@ -174,6 +178,9 @@ object FileIO {
                 if (it.exists()) {
                     it.delete()
                 }
+            }
+            if (cacheFile.exists()) {
+                cacheFile.delete()
             }
         }
         return uri
@@ -215,7 +222,8 @@ object FileIO {
                         compressor.setDestinationDirectoryPath(file.path)
                     }
                 }
-                compressor.compressToFile(fileToCompress, destination.lastPathSegment)
+                val name = destination.lastPathSegment ?: "image"
+                compressor.compressToFile(fileToCompress, name)
                 true
             } catch (e: IOException) {
                 Log.e("Compression", "Can not compress image file", e)
@@ -256,6 +264,10 @@ object FileIO {
             Uri.fromFile(File(targetDir, fileName))
         }
 
+        val cacheFile = File(
+            File(context.cacheDir, cacheChildFolder),
+            UUID.randomUUID().toString() + fileType.toExtension()
+        )
         val cachedImageUri =
             saveBitmapToCache(bitmap, context as MainActivity, UUID.randomUUID().toString())
         var cachedFile: File? = null
@@ -278,6 +290,9 @@ object FileIO {
                 if (it.exists()) {
                     it.delete()
                 }
+            }
+            if (cacheFile.exists()) {
+                cacheFile.delete()
             }
         }
     }

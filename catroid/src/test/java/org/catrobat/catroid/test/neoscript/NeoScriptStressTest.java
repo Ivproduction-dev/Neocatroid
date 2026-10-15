@@ -123,13 +123,17 @@ public class NeoScriptStressTest {
 
 		assertEquals(60, replaceResult.added.size());
 		assertEquals(60, replaceResult.replaced.size());
-		assertEquals(60, sprite.getScriptList().size());
+		assertEquals(61, sprite.getScriptList().size());
 
+		boolean oldPreserved = false;
 		for (Script s : sprite.getScriptList()) {
 			for (Brick b : s.getBrickList()) {
-				SetVariableBrick setVar = (SetVariableBrick) b;
-				assertTrue(!setVar.getUserVariable().getName().equals("old"));
+				if (b instanceof SetVariableBrick
+						&& ((SetVariableBrick) b).getUserVariable().getName().equals("old")) {
+					oldPreserved = true;
+				}
 			}
 		}
+		assertTrue(oldPreserved);
 	}
 }

@@ -7,16 +7,27 @@
     android:paddingEnd="20dp"
     android:paddingTop="12dp">
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
     <CheckBox
         android:id="@+id/chk_fx_stroke"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:text="@string/text_fx_stroke" />
 
     <Button
         android:id="@+id/btn_fx_stroke_color"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginStart="32dp"
         android:layout_marginBottom="8dp"
         android:contentDescription="@string/text_fx_color" />
@@ -25,6 +36,8 @@
         android:id="@+id/chk_fx_glow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:text="@string/text_fx_glow" />
 
     <LinearLayout
@@ -44,8 +57,8 @@
 
         <Button
             android:id="@+id/btn_fx_glow_color"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="12dp"
             android:contentDescription="@string/text_fx_color" />
     </LinearLayout>
@@ -54,12 +67,14 @@
         android:id="@+id/chk_fx_shadow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:text="@string/text_fx_shadow" />
 
     <Button
         android:id="@+id/btn_fx_shadow_color"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginStart="32dp"
         android:layout_marginBottom="8dp"
         android:contentDescription="@string/text_fx_color" />
@@ -68,6 +83,8 @@
         android:id="@+id/chk_fx_gradient"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:text="@string/text_fx_gradient" />
 
     <LinearLayout
@@ -85,8 +102,8 @@
 
         <Button
             android:id="@+id/btn_fx_grad_top"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:contentDescription="@string/text_fx_color" />
 
@@ -98,8 +115,8 @@
 
         <Button
             android:id="@+id/btn_fx_grad_bottom"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:contentDescription="@string/text_fx_color" />
     </LinearLayout>
@@ -108,12 +125,19 @@
         android:id="@+id/chk_fx_pixel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:text="@string/text_fx_pixel_crisp" />
 
     <CheckBox
         android:id="@+id/chk_fx_dim"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:gravity="center_vertical"
         android:layout_marginBottom="4dp"
         android:text="@string/text_fx_dim_background" />
+
+    </LinearLayout>
+    </ScrollView>
 </LinearLayout>

@@ -144,14 +144,21 @@ public class AssignScriptsBrick extends FormulaBrick {
 			return;
 		}
 		String path = uri.toString();
-		brick.setFormulaWithBrickField(BrickField.ASSIGN_SCRIPTS_FILE, new Formula(path));
 		try {
-			if (brick.view != null) {
-				brick.view.getContext().getContentResolver().takePersistableUriPermission(uri,
-						Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			android.content.Context ctx = brick.view != null ? brick.view.getContext() : null;
+			org.catrobat.catroid.content.Project project =
+					org.catrobat.catroid.ProjectManager.getInstance().getCurrentProject();
+			if (ctx != null && project != null) {
+				path = org.catrobat.catroid.neoscript.NeoScriptProjectFiles.storePickedModule(ctx, uri, project);
+				try {
+					ctx.getContentResolver().takePersistableUriPermission(uri,
+							Intent.FLAG_GRANT_READ_URI_PERMISSION);
+				} catch (Exception ignored) {
+				}
 			}
 		} catch (Exception ignored) {
 		}
+		brick.setFormulaWithBrickField(BrickField.ASSIGN_SCRIPTS_FILE, new Formula(path));
 		try {
 			if (brick.view != null) {
 				TextView fileEdit = brick.view.findViewById(R.id.brick_assign_scripts_file_edit);

@@ -6543,6 +6543,12 @@ Catrobat — это визуальный язык программировани
             <string name="scene_editor_objects">Объекты</string>
             <string name="script_canvas_close">Закрыть</string>
             <string name="script_canvas_palette">Блоки</string>
+            <string name="script_canvas_undo">Отмена</string>
+            <string name="script_canvas_redo">Повтор</string>
+            <string name="script_canvas_data">Данные</string>
+            <string name="script_canvas_import_neoscript">Импорт NeoScript</string>
+            <string name="script_canvas_export_neoscript">Экспорт NeoScript</string>
+            <string name="script_canvas_analysis">AI Анализ кода</string>
             <string name="script_canvas_empty">Скриптов пока нет. Добавь через «Блоки».</string>
             <string name="script_canvas_add_note">Новая заметка</string>
             <string name="script_canvas_note_hint">Изменить заметку</string>

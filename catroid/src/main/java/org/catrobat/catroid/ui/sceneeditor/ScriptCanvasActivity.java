@@ -24,6 +24,7 @@ package org.catrobat.catroid.ui.sceneeditor;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
@@ -53,6 +54,7 @@ import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.bricks.Brick;
 import org.catrobat.catroid.content.bricks.FormulaBrick;
 import org.catrobat.catroid.content.bricks.SubCategoryHeaderBrick;
+import org.catrobat.catroid.formulaeditor.Formula;
 import org.catrobat.catroid.ui.fragment.CategoryBricksFactory;
 
 import java.util.ArrayList;
@@ -464,6 +466,52 @@ canvas = new ScriptCanvasView(this);
 
 	private static final int REQUEST_NEO_SCRIPT = 9021;
 	private static final int REQUEST_FORMULA_EDITOR_2 = 8899;
+	private static final int REQUEST_BRICK_NEO_SCRIPT_IMPORT = 9022;
+	private static final int REQUEST_BRICK_NEO_SCRIPT_ASSIGN = 9023;
+
+	private FormulaBrick pendingNeoScriptBrick;
+	private Brick.FormulaField pendingNeoScriptField;
+
+	public void openNeoScriptPickerForBrick(FormulaBrick brick, Brick.FormulaField field) {
+		pendingNeoScriptBrick = brick;
+		pendingNeoScriptField = field;
+		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		intent.setType("*/*");
+		intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/octet-stream", "text/xml"});
+		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+		int code = field == Brick.BrickField.ASSIGN_SCRIPTS_FILE
+				? REQUEST_BRICK_NEO_SCRIPT_ASSIGN : REQUEST_BRICK_NEO_SCRIPT_IMPORT;
+		startActivityForResult(Intent.createChooser(intent, getString(R.string.script_canvas_choose_neoscript)), code);
+	}
+
+	private void handleBrickNeoScriptPicked(Uri uri) {
+		FormulaBrick brick = pendingNeoScriptBrick;
+		Brick.FormulaField field = pendingNeoScriptField;
+		pendingNeoScriptBrick = null;
+		pendingNeoScriptField = null;
+		if (brick == null || field == null || uri == null) {
+			return;
+		}
+		boolean snapshotCreated = false;
+		try {
+			try {
+				getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			} catch (Exception ignored) {
+			}
+			String stored = org.catrobat.catroid.neoscript.NeoScriptProjectFiles.storePickedModule(this, uri, project);
+			canvas.snapshot();
+			snapshotCreated = true;
+			brick.setFormulaWithBrickField(field, new Formula(stored));
+			canvas.rebuild();
+			Toast.makeText(this, R.string.script_canvas_neoscript_imported, Toast.LENGTH_SHORT).show();
+		} catch (Exception e) {
+			if (snapshotCreated && canvas != null && canvas.canUndo()) {
+				canvas.undo();
+			}
+			Toast.makeText(this, getString(R.string.script_canvas_neoscript_import_error, e.getLocalizedMessage()), Toast.LENGTH_SHORT).show();
+		}
+	}
 
 	private void handleImportNeoScript() {
 		Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -611,6 +659,9 @@ canvas = new ScriptCanvasView(this);
 				}
 				Toast.makeText(this, getString(R.string.script_canvas_neoscript_import_error, e.getLocalizedMessage()), Toast.LENGTH_SHORT).show();
 			}
+		} else if ((requestCode == REQUEST_BRICK_NEO_SCRIPT_IMPORT || requestCode == REQUEST_BRICK_NEO_SCRIPT_ASSIGN)
+				&& resultCode == RESULT_OK && data != null && data.getData() != null) {
+			handleBrickNeoScriptPicked(data.getData());
 		}
 	}
 

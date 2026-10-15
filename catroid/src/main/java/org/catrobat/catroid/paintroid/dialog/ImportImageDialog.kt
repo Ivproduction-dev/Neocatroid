@@ -47,7 +47,6 @@ class ImportImageDialog : MainActivityDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val inflater = requireActivity().layoutInflater
         val layout = inflater.inflate(R.layout.dialog_pocketpaint_import_image, null)
-        onViewCreated(layout, savedInstanceState)
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)
             .setTitle(R.string.dialog_import_image_title)
             .setView(layout)

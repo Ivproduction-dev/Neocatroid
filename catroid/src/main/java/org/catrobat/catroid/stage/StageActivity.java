@@ -109,6 +109,7 @@ import org.catrobat.catroid.content.SafeKeyboardHeightProvider;
 import org.catrobat.catroid.content.Scene;
 import org.catrobat.catroid.content.Script;
 import org.catrobat.catroid.content.Sprite;
+import org.catrobat.catroid.content.actions.PocketPaintAction;
 import org.catrobat.catroid.content.actions.RunJSAction;
 import org.catrobat.catroid.content.actions.ScriptSequenceAction;
 import org.catrobat.catroid.content.bricks.Brick;
@@ -2234,7 +2235,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 
 		if (intentListeners.indexOfKey(requestCode) >= 0) {
 			IntentListener asker = intentListeners.get(requestCode);
-			if (data != null) {
+			if (data != null || asker instanceof PocketPaintAction) {
 				asker.onIntentResult(requestCode, resultCode, data);
 			}
 			intentListeners.remove(requestCode);

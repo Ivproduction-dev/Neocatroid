@@ -351,8 +351,10 @@ open class MainActivityPresenter(
     override fun switchBetweenVersions(@PermissionRequestCode requestCode: Int, isExport: Boolean) {
         this.isExport = isExport
 
-        if (model.isOpenedFromCatroid) {
+        if (model.isOpenedFromCatroid && !isExport) {
             FileIO.storeImageUri = model.savedPictureUri
+        } else if (model.isOpenedFromCatroid && isExport) {
+            FileIO.storeImageUri = null
         }
 
         if (navigator.isSdkAboveOrEqualM) {
@@ -784,6 +786,13 @@ open class MainActivityPresenter(
         model.isOpenedFromFormulaEditorInCatroid = isOpenedFromFormulaEditorInCatroid
         model.savedPictureUri = savedPictureUri
         model.cameraImageUri = cameraImageUri
+        if (isOpenedFromCatroid && savedPictureUri != null) {
+            try {
+                navigator.startLoadImageActivity(REQUEST_CODE_LOAD_PICTURE)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to restore catroid image after process death", e)
+            }
+        }
         navigator.restoreFragmentListeners()
         toolController.resetToolInternalStateOnImageLoaded()
         if (model.isFullscreen) {
@@ -871,7 +880,7 @@ open class MainActivityPresenter(
 
     override fun onCreateFilePostExecute(@CreateFileRequestCode requestCode: Int, file: File?) {
         if (file == null) {
-            navigator.showSaveErrorDialog()
+            navigator.showSaveErrorDialog(model.isOpenedFromCatroid)
             return
         }
         if (requestCode == CREATE_FILE_DEFAULT) {
@@ -954,7 +963,7 @@ open class MainActivityPresenter(
                 if (uri != null) {
                     val name = getFileName(uri)
                     if (name != null) {
-                        if (name.endsWith(FileIO.FileType.JPG.value) || name.endsWith("jpeg")) {
+                        if (name.endsWith(FileIO.FileType.JPG.value) || name.endsWith(".jpeg")) {
                             FileIO.compressFormat = Bitmap.CompressFormat.JPEG
                             FileIO.fileType = FileIO.FileType.JPG
                         } else if (name.endsWith(FileIO.FileType.PNG.value)) {
@@ -1002,7 +1011,7 @@ open class MainActivityPresenter(
     ) {
         view.hideContentLoadingProgressBar()
         if (uri == null) {
-            navigator.showSaveErrorDialog()
+            navigator.showSaveErrorDialog(model.isOpenedFromCatroid)
             return
         }
         if (saveAsCopy) {
@@ -1011,7 +1020,12 @@ open class MainActivityPresenter(
             } else {
                 var msg: String? = context.getString(R.string.copy_to)
                 fileActivity?.let {
-                    msg += getPathFromUri(it, uri)
+                    val displayPath = if (model.isOpenedFromCatroid && isExport) {
+                        getPathFromUri(it, uri).substringAfterLast("/Download/", "")
+                    } else {
+                        getPathFromUri(it, uri)
+                    }
+                    msg += displayPath
                 }
                 navigator.showToast(msg ?: "null", Toast.LENGTH_LONG)
             }

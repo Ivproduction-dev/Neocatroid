@@ -404,10 +404,11 @@ class MainActivityNavigator(
     }
 
     override fun showSaveErrorDialog() {
-        val dialog: AppCompatDialogFragment = InfoDialog.newInstance(
-            InfoDialog.DialogType.WARNING,
-            R.string.dialog_error_sdcard_text, R.string.dialog_error_save_title
-        )
+        showSaveErrorDialog(false)
+    }
+
+    override fun showSaveErrorDialog(isCatroid: Boolean) {
+        val dialog = SaveErrorDialog.newInstance(isCatroid)
         showDialogFragmentSafely(dialog, SAVE_DIALOG_FRAGMENT_TAG)
     }
 

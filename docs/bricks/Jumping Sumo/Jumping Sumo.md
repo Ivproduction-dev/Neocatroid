@@ -1,0 +1,20 @@
+# Jumping Sumo — блоки (`drone_js`)
+
+- Строка категории: `category_jumping_sumo` — RU «Jumping Sumo», EN «Jumping Sumo» (`catroid/src/main/res/values/strings.xml:2912`).
+- Палитра: `setupJumpingSumoCategoryList()` в `catroid/src/main/java/org/catrobat/catroid/ui/fragment/CategoryBricksFactory.kt:3153-3167` (порядок ниже — по ней).
+- Описания RU/EN: `catroid/src/main/java/org/catrobat/catroid/content/BrickInfo.java:823-844`.
+- Дефолты: движение 1000 мс / 80% (`JUMPING_SUMO_MOVE_BRICK_DEFAULT_TIME_MILLISECONDS`, `JUMPING_SUMO_MOVE_BRICK_DEFAULT_MOVE_POWER_PERCENT`), громкость звука 50% (`JUMPING_SUMO_SOUND_BRICK_DEFAULT_VOLUME_PERCENT`), поворот 90° (`JUMPING_SUMO_ROTATE_DEFAULT_DEGREE`) (`catroid/src/main/java/org/catrobat/catroid/common/BrickValues.java:123-126`).
+
+| № | Название RU / EN | Параметры | Класс брика | Класс экшена | Описание |
+|---|---|---|---|---|---|
+| 1 | RU «Переместить Jumping Sumo вперед» / EN «Move Jumping Sumo forward» | Формулы `JUMPING_SUMO_TIME_TO_DRIVE_IN_SECONDS`, `JUMPING_SUMO_SPEED` | `content/bricks/JumpingSumoMoveForwardBrick.java:30` | `content/actions/JumpingSumoMoveForwardAction.java:34` | Движение вперед заданное время с заданной мощностью (%). Требует дрона по Bluetooth. |
+| 2 | RU «Переместить Jumping Sumo назад» / EN «Move Jumping Sumo backward» | Те же 2 формулы | `content/bricks/JumpingSumoMoveBackwardBrick.java:30` | `content/actions/JumpingSumoMoveBackwardAction.java:34` | Движение назад заданное время с заданной мощностью (%). Требует дрона. |
+| 3 | RU «Анимации Jumping Sumo» / EN «Animations Jumping Sumo» | Спиннер `R.array.brick_jumping_sumo_select_animation_spinner`, enum `Animation` (SPIN дефолт, TAB, SLOWSHAKE, METRONOME, ONDULATION, SPINJUMP, SPIRAL, SLALOM) | `content/bricks/JumpingSumoAnimationsBrick.java:38` | `content/actions/JumpingSumoAnimationsAction.java:32` | Проигрывает анимацию дрона. Без подключенного оборудования реальных действий нет. |
+| 4 | RU «Звук … Громкость» / EN «Sound … Volume» | Спиннер `R.array.brick_jumping_sumo_select_sound_spinner`, enum `Sounds` (DEFAULT дефолт, ROBOT, INSECT, MONSTER); формула `JUMPING_SUMO_VOLUME` (дефолт 50). Фабрика `createJumpingSumoSoundAction` (`content/ActionFactory.java:7775`) | `content/bricks/JumpingSumoSoundBrick.java:39` | `content/actions/JumpingSumoSoundAction.java:34` | Проигрывает звук дрона с заданной громкостью (%). Требует дрона. |
+| 5 | RU «Jumping Sumo без звука» / EN «No Jumping Sumo sound» | Нет | `content/bricks/JumpingSumoNoSoundBrick.java:29` | `content/actions/JumpingSumoNoSoundAction.java:32` | Отключает звук дрона. Требует дрона. |
+| 6 | RU «Длинный прыжок Jumping Sumo» / EN «Jump Jumping Sumo long» | Нет | `content/bricks/JumpingSumoJumpLongBrick.java:29` | `content/actions/JumpingSumoJumpLongAction.java:32` | Длинный прыжок вперед. Требует дрона по Bluetooth. |
+| 7 | RU «Высокий прыжок Jumping Sumo» / EN «Jump Jumping Sumo high» | Нет | `content/bricks/JumpingSumoJumpHighBrick.java:29` | `content/actions/JumpingSumoJumpHighAction.java:32` | Высокий прыжок вверх. Требует дрона по Bluetooth. |
+| 8 | RU «Повернуть Jumping Sumo влево … градусов» / EN «Turn Jumping Sumo left … degrees» | Формула `JUMPING_SUMO_ROTATE` (дефолт 90) | `content/bricks/JumpingSumoRotateLeftBrick.java:30` | `content/actions/JumpingSumoRotateLeftAction.java:34` | Поворот влево на градусы. Требует дрона. |
+| 9 | RU «Повернуть Jumping Sumo вправо … градусов» / EN «Turn Jumping Sumo right … degrees» | Формула `JUMPING_SUMO_ROTATE` (дефолт 90) | `content/bricks/JumpingSumoRotateRightBrick.java:30` | `content/actions/JumpingSumoRotateRightAction.java:34` | Поворот вправо на градусы. Требует дрона. |
+| 10 | RU «Перевернуть Jumping Sumo» / EN «Flip Jumping Sumo» | Нет | `content/bricks/JumpingSumoTurnBrick.java:29` | `content/actions/JumpingSumoTurnAction.java:32` | Сальто дрона. Требует дрона по Bluetooth. |
+| 11 | RU «Съемка изображения на Jumping Sumo» / EN «Taking picture Jumping Sumo» | Нет | `content/bricks/JumpingSumoTakingPictureBrick.java:29` | `content/actions/JumpingSumoTakingPictureAction.java:32` | Фото с камеры дрона. Требует дрона по Bluetooth. |

@@ -5616,6 +5616,12 @@ needs read and write access to it. You can always change permissions through you
     <string name="scene_editor_objects">Objects</string>
     <string name="script_canvas_close">Close</string>
     <string name="script_canvas_palette">Blocks</string>
+    <string name="script_canvas_undo">Undo</string>
+    <string name="script_canvas_redo">Redo</string>
+    <string name="script_canvas_data">Data</string>
+    <string name="script_canvas_import_neoscript">Import NeoScript</string>
+    <string name="script_canvas_export_neoscript">Export NeoScript</string>
+    <string name="script_canvas_analysis">AI code analysis</string>
     <string name="script_canvas_empty">No scripts yet. Use Blocks to add one.</string>
     <string name="script_canvas_add_note">New note</string>
     <string name="script_canvas_note_hint">Edit note</string>

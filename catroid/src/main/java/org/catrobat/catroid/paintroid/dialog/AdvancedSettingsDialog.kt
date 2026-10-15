@@ -33,7 +33,7 @@ class AdvancedSettingsDialog : MainActivityDialogFragment() {
         smoothSwitch.isChecked = smoothing
 
         val prefs = UserPreferences(
-            requireContext().getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE)
+            requireContext().getSharedPreferences(MainActivity.SHARED_PREFS_NAME, android.content.Context.MODE_PRIVATE)
         )
         val tablet = resources.configuration.smallestScreenWidthDp >= 600
         ui2Switch.visibility = if (tablet) android.view.View.VISIBLE else android.view.View.GONE
@@ -57,7 +57,6 @@ class AdvancedSettingsDialog : MainActivityDialogFragment() {
 
         val inflater = requireActivity().layoutInflater
         val layout = inflater.inflate(R.layout.dialog_pocketpaint_advanced_settings, null)
-        onViewCreated(layout, savedInstanceState)
 
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)
             .setTitle(R.string.menu_advanced)

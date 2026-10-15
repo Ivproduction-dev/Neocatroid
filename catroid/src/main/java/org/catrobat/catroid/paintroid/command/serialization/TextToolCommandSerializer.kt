@@ -54,6 +54,20 @@ class TextToolCommandSerializer(version: Int, private val activityContext: Conte
     override fun read(kryo: Kryo, input: Input, type: Class<out TextToolCommand>): TextToolCommand =
         super.handleVersions(this, kryo, input, type)
 
+    override fun readV2(kryo: Kryo, input: Input, type: Class<out TextToolCommand>): TextToolCommand {
+        return with(input) {
+            val text = kryo.readObject(input, Array<String>::class.java)
+            val paint = kryo.readObject(input, Paint::class.java)
+            val offset = readFloat()
+            val width = readFloat()
+            val height = readFloat()
+            val position = kryo.readObject(input, PointF::class.java)
+            val rotation = readFloat()
+            val typeFaceInfo = kryo.readObject(input, SerializableTypeface::class.java)
+            TextToolCommand(text, paint, offset, width, height, position, rotation, typeFaceInfo, null)
+        }
+    }
+
     @Suppress("Detekt.TooGenericExceptionCaught")
     override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out TextToolCommand>): TextToolCommand {
         return with(input) {
@@ -90,8 +104,16 @@ class TextToolCommandSerializer(version: Int, private val activityContext: Conte
                         FontType.STC -> ResourcesCompat.getFont(activityContext, R.font.stc_regular)
                         FontType.DUBAI -> ResourcesCompat.getFont(activityContext, R.font.dubai)
                         FontType.PROJECT_FONT -> typeFaceInfo.fontName?.let {
-                            ImportedFontRegistry.getTypeface(activityContext, it)
-                        } ?: Typeface.create(Typeface.SANS_SERIF, style)
+                            try {
+                                ImportedFontRegistry.getTypeface(activityContext, it)
+                            } catch (e: Exception) {
+                                Log.w("TextToolCommandSerializer", "Font '$it' not found, using fallback", e)
+                                Typeface.create(Typeface.SANS_SERIF, style)
+                            }
+                        } ?: run {
+                            Log.w("TextToolCommandSerializer", "Font '$typeFaceInfo.fontName' not found, using fallback")
+                            Typeface.create(Typeface.SANS_SERIF, style)
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e("LoadImageAsync", "Typeface not supported on this mobile phone")

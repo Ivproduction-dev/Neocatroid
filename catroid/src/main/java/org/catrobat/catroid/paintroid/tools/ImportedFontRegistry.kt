@@ -133,7 +133,7 @@ object ImportedFontRegistry {
         }
     }
 
-    fun importFromProject(context: Context, projectDir: File): List<ImportedFont> {
+    fun importFromProject(context: Context, projectDir: File, addToRegistry: Boolean = true): List<ImportedFont> {
         val filesDir = File(projectDir, "files")
         if (!filesDir.isDirectory) return emptyList()
         val dir = fontDir(context)
@@ -148,23 +148,57 @@ object ImportedFontRegistry {
             src.copyTo(dest, overwrite = true)
             val entry = ImportedFont(baseName, destName)
             imported.add(entry)
-            existing.add(entry)
+            if (addToRegistry) {
+                existing.add(entry)
+            }
         }
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit()
-            .putStringSet(KEY_FONTS, existing.map { "${it.name}::${it.fileName}" }.toSet())
-            .apply()
+        if (addToRegistry) {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putStringSet(KEY_FONTS, existing.map { "${it.name}::${it.fileName}" }.toSet())
+                .apply()
+        }
         return imported
     }
 
     private fun uniqueName(existing: List<String>, desired: String): String {
         if (existing.none { it.equals(desired, ignoreCase = true) }) return desired
+        val dot = desired.lastIndexOf('.')
+        val base = if (dot > 0) desired.substring(0, dot) else desired
+        val ext = if (dot > 0) desired.substring(dot) else ""
         var i = 1
         var candidate: String
         do {
-            candidate = "$desired($i)"
+            candidate = "$base($i)$ext"
             i++
         } while (existing.any { it.equals(candidate, ignoreCase = true) })
         return candidate
+    }
+
+    fun removeAll(context: Context, name: String) {
+        val fonts = getAll(context).filter { it.name == name }
+        if (fonts.isEmpty()) return
+        fonts.forEach { File(fontDir(context), it.fileName).delete() }
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val updated = getAll(context).filterNot { it.name == name }
+            .map { "${it.name}::${it.fileName}" }
+            .toSet()
+        prefs.edit().putStringSet(KEY_FONTS, updated).apply()
+    }
+
+    fun getMissingFiles(context: Context): List<ImportedFont> {
+        return getAll(context).filter { !File(fontDir(context), it.fileName).exists() }
+    }
+
+    fun cleanupOrphans(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val raw = prefs.getStringSet(KEY_FONTS, emptySet()) ?: emptySet()
+        val valid = raw.mapNotNull { entry ->
+            val parts = entry.split("::")
+            if (parts.size == 2 && File(fontDir(context), parts[1]).exists()) entry else null
+        }.toSet()
+        if (valid.size != raw.size) {
+            prefs.edit().putStringSet(KEY_FONTS, valid).apply()
+        }
     }
 }

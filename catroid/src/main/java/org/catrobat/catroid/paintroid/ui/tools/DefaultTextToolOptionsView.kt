@@ -134,7 +134,7 @@ class DefaultTextToolOptionsView(rootView: ViewGroup) : TextToolOptionsView {
             val project = ProjectManager.getInstance().getCurrentProject()
             val filesDir = project?.getFilesDir()
             if (project != null && filesDir != null && filesDir.isDirectory) {
-                val imported = ImportedFontRegistry.importFromProject(context, project.directory)
+                val imported = ImportedFontRegistry.importFromProject(context, project.directory, addToRegistry = false)
                 if (imported.isNotEmpty()) {
                     rebuildFontList()
                     return@setOnClickListener
@@ -333,7 +333,7 @@ class DefaultTextToolOptionsView(rootView: ViewGroup) : TextToolOptionsView {
         }
         seekGlow.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                effects.glowIntensity = progress + 1
+                if (fromUser) effects.glowIntensity = progress + 1
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit

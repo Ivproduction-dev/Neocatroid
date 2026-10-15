@@ -325,6 +325,7 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener, Ui2Onboardi
         )
         getAppFragment()
         PaintroidApplication.cacheDir = cacheDir
+        org.catrobat.catroid.paintroid.tools.ImportedFontRegistry.cleanupOrphans(this)
         setContentView(R.layout.activity_pocketpaint_main)
         onCreateGlobals()
         onCreateMainView()
@@ -796,9 +797,6 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener, Ui2Onboardi
                 tool?.onClickOnButton()
             }
             idlingResource.decrement()
-        }
-        val currentTool = toolReference.tool
-        if (currentTool is TextTool) {
         }
 
         topBar.plusButton.setOnClickListener {
