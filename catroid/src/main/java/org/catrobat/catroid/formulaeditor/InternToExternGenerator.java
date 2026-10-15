@@ -49,6 +49,16 @@ public class InternToExternGenerator {
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.MULT.name(), R.string.formula_editor_operator_mult);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.MINUS.name(), R.string.formula_editor_operator_minus);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.PLUS.name(), R.string.formula_editor_operator_plus);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_AND.name(), R.string.formula_editor_bitwise_and);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_OR.name(), R.string.formula_editor_bitwise_or);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_XOR.name(), R.string.formula_editor_bitwise_xor);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_NAND.name(), R.string.formula_editor_bitwise_nand);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_NOR.name(), R.string.formula_editor_bitwise_nor);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_XNOR.name(), R.string.formula_editor_bitwise_xnor);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.BITWISE_NOT.name(), R.string.formula_editor_bitwise_not);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.SHIFT_LEFT.name(), R.string.formula_editor_bitwise_shift_left);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.SHIFT_RIGHT.name(), R.string.formula_editor_bitwise_shift_right);
+		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Operators.UNSIGNED_SHIFT_RIGHT.name(), R.string.formula_editor_bitwise_unsigned_shift_right);
 
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(".", R.string.formula_editor_decimal_mark);
 		INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.SIN.name(), R.string.formula_editor_function_sin);

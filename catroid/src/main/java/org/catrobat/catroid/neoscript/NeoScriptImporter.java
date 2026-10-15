@@ -28,7 +28,6 @@ import org.catrobat.catroid.content.WhenGamepadButtonScript;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 public final class NeoScriptImporter {
@@ -66,12 +65,15 @@ public final class NeoScriptImporter {
 
 		ImportResult result = new ImportResult();
 
+		java.util.Map<String, Object> variableValues = file.getUserVariableValues();
+		java.util.Map<String, java.util.List<Object>> listValues = file.getUserListValues();
+
 		if (strategy == ImportStrategy.REPLACE_ALL) {
 			List<Script> imported = new ArrayList<>();
 			try {
 				for (Script original : file.getScripts()) {
 					Script clone = original.clone();
-					NeoScriptUserData.relink(clone, project, targetSprite);
+					NeoScriptUserData.relink(clone, project, targetSprite, variableValues, listValues);
 					clone.setParents();
 					imported.add(clone);
 				}
@@ -113,7 +115,7 @@ public final class NeoScriptImporter {
 			try {
 				for (Script original : file.getScripts()) {
 					Script clone = original.clone();
-					NeoScriptUserData.relink(clone, project, targetSprite);
+					NeoScriptUserData.relink(clone, project, targetSprite, variableValues, listValues);
 					clone.setParents();
 					cloned.add(clone);
 				}
@@ -131,41 +133,34 @@ public final class NeoScriptImporter {
 			return result;
 		}
 
+		List<Script> prepared = new ArrayList<>();
 		try {
 			for (Script original : file.getScripts()) {
 				Script clone = original.clone();
-				NeoScriptUserData.relink(clone, project, targetSprite);
+				NeoScriptUserData.relink(clone, project, targetSprite, variableValues, listValues);
 				clone.setParents();
-
-				String signature = scriptSignature(clone);
-
-				if (strategy == ImportStrategy.APPEND_ALL) {
-					targetSprite.addScript(clone);
-					result.added.add(clone);
-				} else if (strategy == ImportStrategy.SKIP_DUPLICATES) {
-					boolean duplicate = signature != null && targetSignatures.contains(signature);
-					if (duplicate) {
-						result.skipped.add(clone);
-					} else {
-						targetSprite.addScript(clone);
-						result.added.add(clone);
-					}
-				}
+				prepared.add(clone);
 			}
 		} catch (CloneNotSupportedException e) {
 			throw new NeoScriptException("Failed to clone script: " + e.getMessage(), e);
 		}
-		return result;
-	}
+		for (Script clone : prepared) {
+			String signature = scriptSignature(clone);
 
-	private static void removeScriptBySignature(Sprite sprite, String signature) {
-		List<Script> toRemove = new ArrayList<>();
-		for (Script script : sprite.getScriptList()) {
-			if (Objects.equals(scriptSignature(script), signature)) {
-				toRemove.add(script);
+			if (strategy == ImportStrategy.APPEND_ALL) {
+				targetSprite.addScript(clone);
+				result.added.add(clone);
+			} else if (strategy == ImportStrategy.SKIP_DUPLICATES) {
+				boolean duplicate = signature != null && targetSignatures.contains(signature);
+				if (duplicate) {
+					result.skipped.add(clone);
+				} else {
+					targetSprite.addScript(clone);
+					result.added.add(clone);
+				}
 			}
 		}
-		sprite.getScriptList().removeAll(toRemove);
+		return result;
 	}
 
 	public static String scriptSignature(Script script) {
@@ -205,6 +200,6 @@ public final class NeoScriptImporter {
 			UserDefinedScript uds = (UserDefinedScript) script;
 			return "UserDefinedScript#" + uds.getUserDefinedBrickID();
 		}
-		return null;
+		return script.getClass().getSimpleName();
 	}
 }

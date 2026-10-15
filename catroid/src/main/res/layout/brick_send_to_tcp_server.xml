@@ -24,75 +24,456 @@
             android:text="@string/brick_send_to_tcp_server" />
 
         <TextView
-            android:id="@+id/brick_send_tcp_edit"
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_tcp_server_name" />
+
+        <TextView
+            android:id="@+id/brick_send_tcp_name_edit"
             style="@style/BrickEditText"
             app:layout_newLine="true" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit2"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_newLine="true">
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit3"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="1:" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit4"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/brick_send_tcp_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit5"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/brick_send_tcp_minus"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit6"
-            style="@style/BrickEditText"
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit7"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="2:" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit8"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/brick_send_tcp_edit2"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit9"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/brick_send_tcp_minus2"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit10"
-            style="@style/BrickEditText"
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit11"
-            style="@style/BrickEditText"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="3:" />
 
-        <TextView
-            android:id="@+id/brick_send_tcp_edit12"
-            style="@style/BrickEditText"
+            <TextView
+                android:id="@+id/brick_send_tcp_edit3"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus3"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="4:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit4"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus4"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="5:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit5"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus5"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="6:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit6"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus6"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="7:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit7"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus7"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="8:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit8"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus8"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row9"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="9:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit9"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus9"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="10:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit10"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus10"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row11"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="11:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit11"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus11"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/brick_send_tcp_row12"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="12:" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_edit12"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/brick_send_tcp_minus12"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/brick_send_tcp_add"

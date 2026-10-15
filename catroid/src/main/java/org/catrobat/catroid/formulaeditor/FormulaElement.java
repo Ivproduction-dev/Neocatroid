@@ -3036,6 +3036,8 @@ public class FormulaElement implements Serializable {
                 return -right;
             case LOGICAL_NOT:
                 return booleanToDouble(right == FALSE);
+            case BITWISE_NOT:
+                return (double) ~((long) right);
             default:
                 return FALSE;
         }
@@ -3100,6 +3102,24 @@ public class FormulaElement implements Serializable {
                 return booleanToDouble(left != FALSE && right != FALSE);
             case LOGICAL_OR:
                 return booleanToDouble(left != FALSE || right != FALSE);
+            case BITWISE_AND:
+                return (double) ((long) left & (long) right);
+            case BITWISE_OR:
+                return (double) ((long) left | (long) right);
+            case BITWISE_XOR:
+                return (double) ((long) left ^ (long) right);
+            case BITWISE_NAND:
+                return (double) ~((long) left & (long) right);
+            case BITWISE_NOR:
+                return (double) ~((long) left | (long) right);
+            case BITWISE_XNOR:
+                return (double) ~((long) left ^ (long) right);
+            case SHIFT_LEFT:
+                return (double) ((long) left << ((long) right & 63));
+            case SHIFT_RIGHT:
+                return (double) ((long) left >> ((long) right & 63));
+            case UNSIGNED_SHIFT_RIGHT:
+                return (double) ((long) left >>> ((long) right & 63));
             default:
                 return FALSE;
         }

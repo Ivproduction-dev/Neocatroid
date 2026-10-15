@@ -23,6 +23,15 @@
             style="@style/BrickText.SingleLine"
             android:text="@string/brick_listen_tcp_server" />
 
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_tcp_server_name" />
+
+        <TextView
+            android:id="@+id/listen_tcp_name_edit"
+            style="@style/BrickEditText"
+            app:layout_newLine="true" />
+
         <Spinner
             android:id="@+id/listen_tcp_mode_spinner"
             android:layout_width="wrap_content"
@@ -30,100 +39,448 @@
             android:textDirection="locale"
             app:layout_newLine="true" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner1"
+        <LinearLayout
+            android:id="@+id/listen_tcp_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textDirection="locale"
-            app:layout_newLine="true" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_newLine="true">
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="1:" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <Spinner
+                android:id="@+id/listen_tcp_spinner1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/listen_tcp_minus"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner5"
+        <LinearLayout
+            android:id="@+id/listen_tcp_row2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textDirection="locale"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner6"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="2:" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner7"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <Spinner
+                android:id="@+id/listen_tcp_spinner2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                android:id="@+id/listen_tcp_minus2"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner9"
+        <LinearLayout
+            android:id="@+id/listen_tcp_row3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textDirection="locale"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner10"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="3:" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner11"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textDirection="locale"
-            android:visibility="gone"
-            app:layout_newLine="true" />
+            <Spinner
+                android:id="@+id/listen_tcp_spinner3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
 
-        <Spinner
-            android:id="@+id/listen_tcp_spinner12"
+            <TextView
+                android:id="@+id/listen_tcp_minus3"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row4"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textDirection="locale"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:visibility="gone"
-            app:layout_newLine="true" />
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="4:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus4"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="5:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus5"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="6:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus6"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="7:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus7"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="8:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus8"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row9"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="9:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus9"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="10:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner10"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus10"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row11"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="11:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner11"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus11"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_tcp_row12"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="12:" />
+
+            <Spinner
+                android:id="@+id/listen_tcp_spinner12"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_tcp_minus12"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/brick_listen_tcp_add"

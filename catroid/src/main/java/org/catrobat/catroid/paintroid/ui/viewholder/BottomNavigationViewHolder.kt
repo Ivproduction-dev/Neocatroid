@@ -51,7 +51,8 @@ class BottomNavigationViewHolder(
         bottomNavigation = setAppearance(context)
         val bottomNavigationMenuView =
             bottomNavigationView.getChildAt(0) as BottomNavigationMenuView
-        colorItemView = bottomNavigationMenuView.getChildAt(2) as BottomNavigationItemView
+        colorItemView = findMenuItemView(bottomNavigationMenuView, R.id.action_color_picker)
+            ?: bottomNavigationMenuView.getChildAt(2) as BottomNavigationItemView
         colorButton = colorItemView.findViewById<ImageView>(com.google.android.material.R.id.navigation_bar_item_icon_view)
             ?: findImageViewInChildren(colorItemView)
         initColorButton()
@@ -67,6 +68,7 @@ class BottomNavigationViewHolder(
 
     override fun showCurrentTool(toolType: ToolType?) {
         toolType?.let { bottomNavigation.showCurrentTool(it) }
+        (bottomNavigation as? BottomNavigationLandscape)?.refreshItems()
         onCurrentToolChanged?.invoke(toolType)
     }
 
@@ -99,6 +101,16 @@ class BottomNavigationViewHolder(
         } else {
             BottomNavigationLandscape(context, bottomNavigationView)
         }
+
+    private fun findMenuItemView(menuView: BottomNavigationMenuView, @androidx.annotation.IdRes id: Int): BottomNavigationItemView? {
+        for (i in 0 until menuView.childCount) {
+            val child = menuView.getChildAt(i)
+            if (child.id == id && child is BottomNavigationItemView) {
+                return child
+            }
+        }
+        return null
+    }
 
     private fun findImageViewInChildren(view: View): ImageView? {
         if (view is ImageView) return view

@@ -16,7 +16,7 @@ if ($Project -match '[^\x00-\x7F]') {
     $SafeProject = Join-Path $stage "project.newtrobat"
 }
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
 $jdkJava = "C:\Users\ivanp\AppData\Local\Programs\Eclipse Adoptium\jdk-17.0.19.10-hotspot\bin\java.exe"
 
@@ -28,41 +28,39 @@ function Find-Jars([string]$groupPath, [string]$filter) {
         Select-Object -ExpandProperty FullName
 }
 
-function Find-Jar([string]$groupPath, [string]$name) {
-    Get-ChildItem "$env:USERPROFILE\.gradle\caches\modules-2\files-2.1\$groupPath" -Recurse -Filter $name |
-        Select-Object -First 1 -ExpandProperty FullName
-}
-
-function Find-Jars([string]$groupPath, [string]$filter) {
-    Get-ChildItem "$env:USERPROFILE\.gradle\caches\modules-2\files-2.1\$groupPath" -Recurse -Filter $filter -ErrorAction SilentlyContinue |
-        Select-Object -ExpandProperty FullName
-}
-
-$lwjglJars = @()
-$lwjglJars += Find-Jars "com.badlogicgames.gdx\gdx-backend-lwjgl3" "gdx-backend-lwjgl3-1.13.1.jar"
-$lwjglJars += Find-Jars "com.badlogicgames.gdx\gdx-freetype" "gdx-freetype-1.13.1.jar"
-$lwjglJars += Find-Jars "com.badlogicgames.gdx\gdx-freetype-platform" "*.jar" | Where-Object { $_ -notmatch "sources|javadoc" }
-$lwjglJars += Find-Jars "com.squareup.okhttp3\okhttp" "okhttp-4.12.0.jar"
-$lwjglJars += Find-Jars "com.squareup.okio" "*.jar" | Where-Object { $_ -notmatch "sources|javadoc" }
-$lwjglJars += Find-Jars "org.lwjgl" "*.jar" | Where-Object { $_ -notmatch "sources|javadoc" }
-
 $androidxJars = Get-ChildItem "$env:USERPROFILE\.gradle\caches\8.12\transforms" -Recurse -Filter *.jar -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -match '\\transformed\\' -and $_.Name -notmatch '-api\.jar$|-lint\.jar|inspector\.jar' -and $_.FullName -notmatch 'espresso|uiautomator|robolectric|junit|hamcrest|mockito|runner|rules-|monitor-|test-' } |
     Select-Object -ExpandProperty FullName
 
+$cpLines = & .\gradlew.bat -q ":desktop:printRuntimeClasspath" --offline 2>$null | Where-Object { $_ -and $_.Length -gt 200 }
+$gradleCp = ($cpLines | Sort-Object Length -Descending | Select-Object -First 1)
+if (-not $gradleCp) {
+    Write-Error "Gradle did not return a runtime classpath for :desktop"
+    exit 1
+}
+
+$androidJar = Get-ChildItem "$env:LOCALAPPDATA\Android\Sdk\platforms" -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        $m = [regex]::Match($_.Name, '^android-(\d+)(?:\.(\d+))?$')
+        if ($m.Success -and (Test-Path (Join-Path $_.FullName 'android.jar'))) {
+            [PSCustomObject]@{ Api = [int]$m.Groups[1].Value; Sub = [int]$(if ($m.Groups[2].Success) { $m.Groups[2].Value } else { 0 }); Path = Join-Path $_.FullName 'android.jar' }
+        }
+    } |
+    Sort-Object Api, Sub -Descending |
+    Select-Object -First 1 -ExpandProperty Path
+
+if (-not $androidJar) {
+    Write-Error "android.jar not found in the Android SDK"
+    exit 1
+}
+
 $cp = @(
-    "$root\desktop\build\libs\desktop.jar",
-    "$root\core\build\libs\core.jar",
+    $gradleCp,
     "$root\catroid\build\intermediates\javac\$Variant\$CompileTask\classes",
     "$root\catroid\build\tmp\kotlin-classes\$Variant",
     "$root\catroid\build\intermediates\compile_and_runtime_not_namespaced_r_class_jar\$Variant\$ProcessTask\R.jar",
-    (Find-Jar "org.jetbrains.kotlin\kotlin-stdlib" "kotlin-stdlib-2.0.21.jar"),
-    (Find-Jar "com.badlogicgames.gdx\gdx" "gdx-1.13.1.jar"),
-    (Find-Jar "com.thoughtworks.xstream\xstream" "xstream-1.4.20.jar"),
-    (Find-Jar "io.github.x-stream\mxparser" "mxparser-1.2.2.jar"),
-    (Find-Jar "xmlpull\xmlpull" "xmlpull-1.1.3.1.jar"),
-    (Find-Jar "com.google.guava\guava\33.4.0-android" "guava-33.4.0-android.jar")
-) + $lwjglJars + $androidxJars -join ";"
+    (Find-Jars "com.google.guava\guava" "guava-33.4.0-android.jar")
+) + $androidxJars + $androidJar
 
 $argFile = "$env:TEMP\neocatroid-v2-args.txt"
 $escapedCp = ($cp -join ";").Replace("\", "\\")

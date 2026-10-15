@@ -492,11 +492,32 @@ android {
                 abiFilters 'arm64-v8a'
             }
         }
+
+        // Тот же chat, но с отладочным пакетом для параллельной установки
+        debugChat {
+            applicationId "org.ivproduction.neocatroid.debug.chat"
+            versionNameSuffix '-chat-debug'
+
+            // Python/QEMU блоки скрываются из палитры редактора
+            buildConfigField "boolean", "FEATURE_PYQEMU_BRICKS_ENABLED", "false"
+
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+        }
+    }
+
+    sourceSets {
+        debugChat {
+            java.srcDirs += 'src/chat/java'
+            res.srcDirs += 'src/chat/res'
+        }
     }
 
     def fullAssetsDir = 'src/full/assets'
+    def lightFlavors = ['chat', 'debugChat']
     android.productFlavors.all { flavor ->
-        if (flavor.name != 'chat') {
+        if (!(flavor.name in lightFlavors)) {
             def ss = android.sourceSets.findByName(flavor.name)
             if (ss != null) {
                 ss.assets.srcDirs += fullAssetsDir
@@ -604,7 +625,7 @@ android.applicationVariants.all { variant ->
         }
     }
 
-    if (variant.flavorName == 'chat') {
+    if (variant.flavorName == 'chat' || variant.flavorName == 'debugChat') {
         def mergeNativeLibsTask = tasks.findByName("merge${variant.name.capitalize()}NativeLibs")
         if (mergeNativeLibsTask != null) {
             mergeNativeLibsTask.doNotTrackState("chat strips native libs after merge")

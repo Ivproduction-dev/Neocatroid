@@ -3,6 +3,7 @@ package org.catrobat.catroid.content.actions
 import com.badlogic.gdx.scenes.scene2d.Action
 import org.catrobat.catroid.content.LocalServer
 import org.catrobat.catroid.content.Scope
+import org.catrobat.catroid.formulaeditor.Formula
 import org.catrobat.catroid.formulaeditor.UserVariable
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -63,6 +64,7 @@ class ListenTcpServerAction() : Action() {
     var scope: Scope? = null
     var variables: List<UserVariable>? = null
     var listenMode: Int = 0
+    var serverName: Formula? = null
 
     private var oneShotFuture: ScheduledFuture<*>? = null
 
@@ -89,7 +91,8 @@ class ListenTcpServerAction() : Action() {
         if (vars.isEmpty()) {
             return false
         }
-        val messages = LocalServer.getMessages()
+        val name = serverName?.interpretString(scope).orEmpty()
+        val messages = LocalServer.getMessagesNamed(name)
         if (messages.isEmpty()) {
             return false
         }

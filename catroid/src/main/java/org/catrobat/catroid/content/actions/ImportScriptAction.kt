@@ -3,6 +3,7 @@ package org.catrobat.catroid.content.actions
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,11 @@ class ImportScriptAction : TemporalAction() {
         }
 
         val sceneStr = sceneName?.interpretString(scope)
+        if (!sceneStr.isNullOrEmpty() && project.getSceneByName(sceneStr) == null) {
+            Log.e(TAG, "Scene not found: $sceneStr")
+            showToast("Scene not found: $sceneStr")
+            return
+        }
         val targetScene = resolveScene(project, sceneStr)
 
         val targetSprite = if (targetScene != null) {
@@ -56,8 +62,10 @@ class ImportScriptAction : TemporalAction() {
         }
         if (targetSprite == null) {
             Log.e(TAG, "Object not found: $targetName" + if (targetScene != null) " in scene ${targetScene.name}" else "")
+            showToast("Object not found: $targetName")
             return
         }
+        val executionScene = targetScene ?: findSceneOf(project, targetSprite)
 
         ioScope.launch {
             try {
@@ -67,21 +75,47 @@ class ImportScriptAction : TemporalAction() {
                 RuntimeMutationTracker.hasTemporaryMutations = true
                 withContext(Dispatchers.Main) {
                     val stageListener = StageActivity.getActiveStageListener()
-                    for (script in result.added) {
-                        stageListener?.executeConsoleScript(targetSprite, script)
+                    val activeScene = ProjectManager.getInstance().getCurrentlyPlayingScene()
+                    val sceneIsActive = executionScene == null || (activeScene != null && activeScene.getSceneId() == executionScene.getSceneId())
+                    if (stageListener != null && sceneIsActive) {
+                        for (script in result.added) {
+                            stageListener.executeConsoleScript(targetSprite, script)
+                        }
+                    }
+                    if (result.added.isEmpty() && result.skipped.isNotEmpty()) {
+                        showToast("Scripts already present, nothing imported")
                     }
                 }
             } catch (e: NeoScriptException) {
                 Log.e(TAG, "Failed to import script module: " + e.message, e)
+                withContext(Dispatchers.Main) {
+                    showToast("Failed to import script module: ${e.message}")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to import script module", e)
+                withContext(Dispatchers.Main) {
+                    showToast("Failed to import script module")
+                }
             }
         }
     }
 
     private fun resolveScene(project: Project, sceneStr: String?): Scene? {
-        if (sceneStr.isNullOrEmpty()) return null
+        if (sceneStr.isNullOrEmpty()) {
+            val current = ProjectManager.getInstance().getCurrentlyPlayingScene()
+            if (current != null) return current
+            return project.defaultScene
+        }
         return project.getSceneByName(sceneStr)
+    }
+
+    private fun findSceneOf(project: Project, sprite: Sprite): Scene? {
+        for (scene: Scene in project.sceneList) {
+            if (scene.spriteList != null && scene.spriteList.contains(sprite)) {
+                return scene
+            }
+        }
+        return null
     }
 
     private fun findSprite(project: Project, name: String): Sprite? {
@@ -117,5 +151,24 @@ class ImportScriptAction : TemporalAction() {
         private const val TAG = "ImportScriptAction"
 
         private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        private fun showToast(message: String) {
+            try {
+                val looper = android.os.Looper.getMainLooper()
+                if (android.os.Looper.myLooper() == looper) {
+                    Toast.makeText(CatroidApplication.getAppContext(), message, Toast.LENGTH_LONG).show()
+                } else {
+                    android.os.Handler(looper).post {
+                        try {
+                            Toast.makeText(CatroidApplication.getAppContext(), message, Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Cannot show toast", e)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot show toast", e)
+            }
+        }
     }
 }

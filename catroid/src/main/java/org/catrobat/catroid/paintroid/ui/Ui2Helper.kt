@@ -26,6 +26,7 @@ object Ui2Helper {
             ToolType.MAGIC_WAND -> R.drawable.ic_pocketpaint_v2_magic_wand
             ToolType.LAYER -> R.drawable.ic_pocketpaint_v2_layers
             ToolType.COLORCHOOSER -> R.drawable.ic_pocketpaint_v2_color
+            ToolType.LIGHT2D -> R.drawable.ic_pocketpaint_tool_light2d
             else -> toolType.drawableResource
         }
     }

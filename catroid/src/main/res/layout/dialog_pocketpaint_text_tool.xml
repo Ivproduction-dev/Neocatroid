@@ -127,7 +127,8 @@
     <RelativeLayout
         android:id="@+id/pocketpaint_text_bottom_layout"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_below="@id/pocketpaint_text_top_layout">
 
         <RelativeLayout
             android:layout_width="wrap_content"

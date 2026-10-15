@@ -39,15 +39,15 @@ class BigAskAction : Action() {
     var cancel: Formula? = null
     var standardText: Formula? = null
     var answerVariable: UserVariable? = null
-    var questionAsked = false
-    private var answerReceived = false
+    @Volatile var questionAsked = false
+    @Volatile private var answerReceived = false
 
     private fun askQuestion() {
         StageActivity.messageHandler ?: return
         var question = ""
         var msgs = "Enter your answer"
-        var sumbs = "Ok"
-        var canels = "Canel"
+        var sumbs = "OK"
+        var canels = "Cancel"
         var standard = ""
         try {
             question = questionFormula?.interpretString(scope) ?: ""
@@ -73,6 +73,9 @@ class BigAskAction : Action() {
     }
 
     override fun act(delta: Float): Boolean {
+        if (answerVariable == null) {
+            return true
+        }
         if (!questionAsked) {
             askQuestion()
         }

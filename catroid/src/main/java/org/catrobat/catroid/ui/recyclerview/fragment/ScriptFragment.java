@@ -1611,6 +1611,7 @@ case R.string.brick_context_dialog_system_info:
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
 		intent.setType("*/*");
 		intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/octet-stream", "text/xml"});
+		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
 		((AppCompatActivity) getActivity())
 				.startActivityForResult(intent, SpriteActivity.REQUEST_NEO_SCRIPT_IMPORT);
 	}

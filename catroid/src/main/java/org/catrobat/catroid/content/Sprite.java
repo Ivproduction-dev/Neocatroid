@@ -481,6 +481,12 @@ public class Sprite implements Nameable, Serializable {
 		}
 	}
 
+	public void resetDrawingState() {
+		penConfiguration = new PenConfiguration();
+		plot = new Plot();
+		runningStitch = new RunningStitch();
+	}
+
 	public void resetSprite() {
 		Brick.ResourcesSet resourcesSet = new Brick.ResourcesSet();
 		addRequiredResources(resourcesSet);
@@ -502,9 +508,7 @@ public class Sprite implements Nameable, Serializable {
 
 		variableCache.clear();
 
-		penConfiguration = new PenConfiguration();
-		plot = new Plot();
-		runningStitch = new RunningStitch();
+		resetDrawingState();
 	}
 
 	public void invalidate() {

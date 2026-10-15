@@ -48,6 +48,72 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/pocketpaint_shape_tool_dialog_title"
+                style="@style/PocketPaintToolSubtitle"
+                android:text="@string/shape_tool_dialog_rect_title" />
+
+            <View style="@style/PocketPaintToolSectionDivider" />
+
+            <LinearLayout
+                android:id="@+id/pocketpaint_shapes_container"
+                style="@style/PocketPaintToolSection">
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_square_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_rect_title"
+                    android:src="@drawable/ic_pocketpaint_rectangle" />
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_circle_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_ellipse_title"
+                    android:src="@drawable/ic_pocketpaint_circle" />
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_heart_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_heart_title"
+                    android:src="@drawable/ic_pocketpaint_heart" />
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_star_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_star_title"
+                    android:src="@drawable/ic_pocketpaint_star" />
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_pixel_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_pixel_title"
+                    android:src="@drawable/ic_pocketpaint_pixel" />
+
+                <ImageButton
+                    android:id="@+id/pocketpaint_shapes_triangle_btn"
+                    style="@style/PocketPaintSelectableButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/shape_tool_dialog_triangle_title"
+                    android:src="@drawable/ic_pocketpaint_triangle" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -119,62 +185,8 @@
                         android:src="@drawable/ic_pocketpaint_rectangle_out" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/pocketpaint_shape_tool_dialog_title"
-                    style="@style/PocketPaintToolSubtitle"
-                    android:text="@string/shape_tool_dialog_rect_title" />
-
                 <View style="@style/PocketPaintToolSectionDivider" />
 
-                <LinearLayout
-                    android:id="@+id/pocketpaint_shapes_container"
-                    style="@style/PocketPaintToolSection">
-
-                    <ImageButton
-                        android:id="@+id/pocketpaint_shapes_square_btn"
-                        style="@style/PocketPaintSelectableButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="@string/shape_tool_dialog_rect_title"
-                        android:src="@drawable/ic_pocketpaint_rectangle" />
-
-                    <ImageButton
-                        android:id="@+id/pocketpaint_shapes_circle_btn"
-                        style="@style/PocketPaintSelectableButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="@string/shape_tool_dialog_ellipse_title"
-                        android:src="@drawable/ic_pocketpaint_circle" />
-
-                    <ImageButton
-                        android:id="@+id/pocketpaint_shapes_heart_btn"
-                        style="@style/PocketPaintSelectableButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="@string/shape_tool_dialog_heart_title"
-                        android:src="@drawable/ic_pocketpaint_heart" />
-
-                    <ImageButton
-                        android:id="@+id/pocketpaint_shapes_star_btn"
-                        style="@style/PocketPaintSelectableButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="@string/shape_tool_dialog_star_title"
-                        android:src="@drawable/ic_pocketpaint_star" />
-
-                    <ImageButton
-                        android:id="@+id/pocketpaint_shapes_pixel_btn"
-                        style="@style/PocketPaintSelectableButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:contentDescription="@string/shape_tool_dialog_pixel_title"
-                        android:src="@drawable/ic_pocketpaint_pixel" />
-                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
         <RelativeLayout

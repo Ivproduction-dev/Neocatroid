@@ -3,6 +3,7 @@ package org.catrobat.catroid.content.actions
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,13 +52,15 @@ class AssignScriptsAction : TemporalAction() {
         val sceneStr = sceneName?.interpretString(scope)
         val scene = resolveScene(project, sceneStr)
         if (scene == null) {
-            Log.e(TAG, "Scene not found")
+            Log.e(TAG, "Scene not found" + if (!sceneStr.isNullOrEmpty()) ": $sceneStr" else "")
+            showToast("Scene not found" + if (!sceneStr.isNullOrEmpty()) ": $sceneStr" else "")
             return
         }
 
         val targetSprite = scene.getSprite(targetName)
         if (targetSprite == null) {
             Log.e(TAG, "Object '$targetName' not found in scene '${scene.name}'")
+            showToast("Object '$targetName' not found in scene '${scene.name}'")
             return
         }
 
@@ -101,8 +104,14 @@ class AssignScriptsAction : TemporalAction() {
                 }
             } catch (e: NeoScriptException) {
                 Log.e(TAG, "Failed to assign scripts: " + e.message, e)
+                withContext(Dispatchers.Main) {
+                    showToast("Failed to assign scripts: ${e.message}")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to assign scripts", e)
+                withContext(Dispatchers.Main) {
+                    showToast("Failed to assign scripts")
+                }
             }
         }
     }
@@ -166,5 +175,24 @@ class AssignScriptsAction : TemporalAction() {
         private const val TAG = "AssignScriptsAction"
 
         private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        private fun showToast(message: String) {
+            try {
+                val looper = android.os.Looper.getMainLooper()
+                if (android.os.Looper.myLooper() == looper) {
+                    Toast.makeText(CatroidApplication.getAppContext(), message, Toast.LENGTH_LONG).show()
+                } else {
+                    android.os.Handler(looper).post {
+                        try {
+                            Toast.makeText(CatroidApplication.getAppContext(), message, Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Cannot show toast", e)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot show toast", e)
+            }
+        }
     }
 }

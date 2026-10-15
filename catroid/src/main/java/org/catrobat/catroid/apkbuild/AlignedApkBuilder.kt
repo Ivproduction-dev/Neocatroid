@@ -437,21 +437,22 @@ object AlignedApkBuilder {
                     }
                     val deflater = java.util.zip.Deflater(java.util.zip.Deflater.DEFAULT_COMPRESSION, true)
                     val tmp = ByteArray(8192)
+                    val out = ByteArray(8192)
                     val buf = ByteArrayOutputStream()
                     file.inputStream().use { input ->
                         var len: Int
                         while (input.read(tmp).also { len = it } != -1) {
                             deflater.setInput(tmp, 0, len)
                             while (!deflater.needsInput()) {
-                                val n = deflater.deflate(tmp)
-                                if (n > 0) buf.write(tmp, 0, n)
+                                val n = deflater.deflate(out)
+                                if (n > 0) buf.write(out, 0, n)
                             }
                         }
                     }
                     deflater.finish()
                     while (!deflater.finished()) {
-                        val n = deflater.deflate(tmp)
-                        if (n > 0) buf.write(tmp, 0, n)
+                        val n = deflater.deflate(out)
+                        if (n > 0) buf.write(out, 0, n)
                     }
                     deflater.end()
                     val comp = buf.toByteArray()

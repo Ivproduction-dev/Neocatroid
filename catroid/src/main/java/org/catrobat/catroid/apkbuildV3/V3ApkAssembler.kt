@@ -516,20 +516,21 @@ object V3ApkAssembler {
                                     minOf(maxOf(64, uncompSize.toInt() / 2), 8 * 1024 * 1024)
                                 )
                                 val deflater = Deflater(Deflater.DEFAULT_COMPRESSION, true)
+                                val outBuf = ByteArray(64 * 1024)
                                 tmpEntry.inputStream().use { ins ->
                                     var len: Int
                                     while (ins.read(buf).also { len = it } != -1) {
                                         deflater.setInput(buf, 0, len)
                                         while (!deflater.needsInput()) {
-                                            val n = deflater.deflate(buf)
-                                            if (n > 0) compOut.write(buf, 0, n)
+                                            val n = deflater.deflate(outBuf)
+                                            if (n > 0) compOut.write(outBuf, 0, n)
                                         }
                                     }
                                 }
                                 deflater.finish()
                                 while (!deflater.finished()) {
-                                    val n = deflater.deflate(buf)
-                                    if (n > 0) compOut.write(buf, 0, n)
+                                    val n = deflater.deflate(outBuf)
+                                    if (n > 0) compOut.write(outBuf, 0, n)
                                 }
                                 deflater.end()
                                 tmpEntry.delete()

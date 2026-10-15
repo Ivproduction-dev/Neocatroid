@@ -164,6 +164,7 @@ public class SpriteActivity extends BaseActivity {
 	public static final int EDIT_LOOK = 2020;
 	public static final int REQUEST_NEO_SCRIPT_FILE = 2030;
 	public static final int REQUEST_NEO_SCRIPT_IMPORT = 2031;
+	public static final int REQUEST_NEO_SCRIPT_FILE_ASSIGN = 2032;
 
 	public static final String EXTRA_FRAGMENT_POSITION = "fragmentPosition";
 	public static final String EXTRA_FORCE_LEGACY_EDITOR = "force_legacy_editor";
@@ -531,7 +532,22 @@ public class SpriteActivity extends BaseActivity {
 				break;
 			case REQUEST_NEO_SCRIPT_FILE:
 				if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+					try {
+						getContentResolver().takePersistableUriPermission(data.getData(),
+								Intent.FLAG_GRANT_READ_URI_PERMISSION);
+					} catch (Exception ignored) {
+					}
 					ImportScriptBrick.onFilePicked(data.getData());
+				}
+				break;
+			case REQUEST_NEO_SCRIPT_FILE_ASSIGN:
+				if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+					try {
+						getContentResolver().takePersistableUriPermission(data.getData(),
+								Intent.FLAG_GRANT_READ_URI_PERMISSION);
+					} catch (Exception ignored) {
+					}
+					org.catrobat.catroid.content.bricks.AssignScriptsBrick.onFilePicked(data.getData());
 				}
 				break;
 			case REQUEST_NEO_SCRIPT_IMPORT:
@@ -618,6 +634,11 @@ public class SpriteActivity extends BaseActivity {
 		Project project = ProjectManager.getInstance().getCurrentProject();
 		Sprite sprite = ProjectManager.getInstance().getCurrentSprite();
 		try {
+			try {
+				getContentResolver().takePersistableUriPermission(uri,
+						Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			} catch (Exception ignored) {
+			}
 			String xml = readUriToString(uri);
 			NeoScriptFile neoScriptFile = NeoScriptSerializer.deserializeFromString(xml);
 			if (!scriptFragment.copyProjectForUndoOption()) {

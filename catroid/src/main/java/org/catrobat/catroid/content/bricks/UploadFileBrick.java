@@ -50,6 +50,7 @@ public class UploadFileBrick extends FormulaBrick {
                 context, R.array.upload_file_types, android.R.layout.simple_spinner_item);
         fileTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         fileTypeSpinner.setAdapter(fileTypeAdapter);
+        fileTypeSelection = Math.max(0, Math.min(fileTypeSelection, fileTypeAdapter.getCount() - 1));
         fileTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -64,6 +65,7 @@ public class UploadFileBrick extends FormulaBrick {
                 context, R.array.upload_storage_types, android.R.layout.simple_spinner_item);
         storageTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         storageTypeSpinner.setAdapter(storageTypeAdapter);
+        storageTypeSelection = Math.max(0, Math.min(storageTypeSelection, storageTypeAdapter.getCount() - 1));
         storageTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -78,6 +80,8 @@ public class UploadFileBrick extends FormulaBrick {
 
     @Override
     public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
+        fileTypeSelection = Math.max(0, Math.min(fileTypeSelection, 1));
+        storageTypeSelection = Math.max(0, Math.min(storageTypeSelection, 1));
         sequence.addAction(sprite.getActionFactory()
                 .createUploadFileAction(sprite, sequence,
                         getFormulaWithBrickField(BrickField.URL),

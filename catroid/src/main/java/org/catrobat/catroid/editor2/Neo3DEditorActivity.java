@@ -39,6 +39,7 @@ import androidx.preference.PreferenceManager;
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.editor.ThreeDEditorRouter;
+import org.catrobat.catroid.neo3d.Neo3DCamera;
 import org.catrobat.catroid.neo3d.Neo3DGameObject;
 import org.catrobat.catroid.neo3d.Neo3DLight;
 import org.catrobat.catroid.neo3d.Neo3DMath;
@@ -96,6 +97,7 @@ public final class Neo3DEditorActivity extends Activity {
     private Runnable pendingLiveApply;
     private boolean gestureChanged;
     private String gestureObjectId;
+    private boolean draggingGizmo;
     private Button undoButton;
     private Button redoButton;
     private final Button[] transformButtons = new Button[4];
@@ -440,6 +442,9 @@ public final class Neo3DEditorActivity extends Activity {
     private void setMoveAxis(int axis) {
         moveAxis = axis;
         updateAxisBar();
+        if (document != null) {
+            document.updateGizmo(document.selectedObject(), transformTool, moveAxis);
+        }
     }
 
     private void updateAxisBar() {
@@ -620,12 +625,23 @@ public final class Neo3DEditorActivity extends Activity {
             draggingCamera = false;
             gestureChanged = false;
             gestureObjectId = document.selectedId();
+            int touchedAxis = hitTestGizmo(event.getX(), event.getY());
+            if (touchedAxis >= 0) {
+                moveAxis = touchedAxis;
+                updateAxisBar();
+                draggingGizmo = true;
+                if (document != null) {
+                    document.updateGizmo(document.selectedObject(), transformTool, moveAxis);
+                }
+            } else {
+                draggingGizmo = false;
+            }
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             float dx = event.getX() - lastX, dy = event.getY() - lastY;
             if (draggingCamera || Math.hypot(event.getX() - downX, event.getY() - downY)
                     > ViewConfiguration.get(this).getScaledTouchSlop()) {
                 draggingCamera = true;
-                if (transformTool != 0 && gestureObjectId != null) {
+                if ((draggingGizmo || transformTool != 0) && gestureObjectId != null) {
                     transformSelectedObject(dx, dy);
                     gestureChanged = true;
                 } else {
@@ -634,6 +650,7 @@ public final class Neo3DEditorActivity extends Activity {
             }
             lastX = event.getX(); lastY = event.getY();
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            draggingGizmo = false;
             if (gestureChanged && gestureObjectId != null) {
                 java.util.List<Neo3DGameObject> changed = document.selectedObjects();
                 if (changed.isEmpty()) {
@@ -648,10 +665,105 @@ public final class Neo3DEditorActivity extends Activity {
                 if (objectId != null && document.data(objectId) != null) {
                     document.select(objectId);
                     refreshPanels();
+                } else if (objectId == null) {
+                    document.clearSelection();
+                    refreshPanels();
                 }
             }
         }
         return true;
+    }
+
+    private int hitTestGizmo(float touchX, float touchY) {
+        if (transformTool == 0 || document == null) return -1;
+        Neo3DGameObject selected = document.selectedObject();
+        Neo3DGameObject camera = document.viewportCamera();
+        if (selected == null || camera == null || camera.getCamera() == null || surface == null) return -1;
+        float width = Math.max(1f, surface.getWidth());
+        float height = Math.max(1f, surface.getHeight());
+
+        float[] viewProj = computeViewProjectionMatrix(camera, width, height);
+        if (viewProj == null) return -1;
+
+        float[] objPos = selected.getTransform().getPosition();
+        float[] centerScreen = Neo3DMath.projectToScreen(objPos, viewProj, width, height);
+        if (centerScreen == null) return -1;
+
+        float distToCam = Neo3DMath.distance3(objPos, camera.getTransform().getPosition());
+        float gizmoScale = Math.max(0.1f, distToCam * 0.14f);
+        float handleLen = 1.15f * gizmoScale;
+
+        float[] tipX = {objPos[0] + handleLen, objPos[1], objPos[2]};
+        float[] tipY = {objPos[0], objPos[1] + handleLen, objPos[2]};
+        float[] tipZ = {objPos[0], objPos[1], objPos[2] + handleLen};
+
+        float[] screenX = Neo3DMath.projectToScreen(tipX, viewProj, width, height);
+        float[] screenY = Neo3DMath.projectToScreen(tipY, viewProj, width, height);
+        float[] screenZ = Neo3DMath.projectToScreen(tipZ, viewProj, width, height);
+
+        float threshold = dp(32);
+
+        float dCenter = (float) Math.hypot(touchX - centerScreen[0], touchY - centerScreen[1]);
+        if (dCenter < dp(22)) {
+            return 0;
+        }
+
+        float bestDist = threshold;
+        int bestAxis = -1;
+
+        if (screenX != null) {
+            float d = distanceToSegment(touchX, touchY, centerScreen[0], centerScreen[1], screenX[0], screenX[1]);
+            if (d < bestDist) {
+                bestDist = d;
+                bestAxis = 1;
+            }
+        }
+        if (screenY != null) {
+            float d = distanceToSegment(touchX, touchY, centerScreen[0], centerScreen[1], screenY[0], screenY[1]);
+            if (d < bestDist) {
+                bestDist = d;
+                bestAxis = 2;
+            }
+        }
+        if (screenZ != null) {
+            float d = distanceToSegment(touchX, touchY, centerScreen[0], centerScreen[1], screenZ[0], screenZ[1]);
+            if (d < bestDist) {
+                bestDist = d;
+                bestAxis = 3;
+            }
+        }
+
+        return bestAxis;
+    }
+
+    private static float distanceToSegment(float px, float py, float x1, float y1, float x2, float y2) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float lenSq = dx * dx + dy * dy;
+        if (lenSq < 1e-4f) return (float) Math.hypot(px - x1, py - y1);
+        float t = Math.max(0f, Math.min(1f, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+        float projX = x1 + t * dx;
+        float projY = y1 + t * dy;
+        return (float) Math.hypot(px - projX, py - projY);
+    }
+
+    private float[] computeViewProjectionMatrix(Neo3DGameObject cameraObject, float width, float height) {
+        Neo3DCamera camera = cameraObject.getCamera();
+        if (camera == null) return null;
+        float[] eye = cameraObject.getTransform().getPosition();
+        float[] view;
+        if (camera.isUseTransformOrientation()) {
+            float[] world = cameraObject.getTransform().getWorldMatrix();
+            float[] forward = {world[8], world[9], world[10]};
+            float[] target = {eye[0] - forward[0], eye[1] - forward[1], eye[2] - forward[2]};
+            float[] up = {world[4], world[5], world[6]};
+            view = Neo3DMath.mat4LookAt(eye, target, up);
+        } else {
+            view = Neo3DMath.mat4LookAt(eye, camera.getLookAtTarget(), camera.getUp());
+        }
+        float[] proj = Neo3DMath.mat4Perspective(camera.getFovDeg(), width / height,
+                camera.getNear(), camera.getFar());
+        return Neo3DMath.mat4Mul(proj, view);
     }
 
     private void transformSelectedObject(float dx, float dy) {
@@ -669,50 +781,62 @@ public final class Neo3DEditorActivity extends Activity {
     }
 
     private void applyDragToObject(Neo3DGameObject object, float dx, float dy) {
+        Neo3DGameObject camera = document != null ? document.viewportCamera() : null;
+        float width = surface != null ? Math.max(1f, surface.getWidth()) : 1000f;
+        float height = surface != null ? Math.max(1f, surface.getHeight()) : 1000f;
+        float[] viewProj = camera != null ? computeViewProjectionMatrix(camera, width, height) : null;
+
         if (transformTool == 1) {
-            float[] position = object.getTransform().getPosition();
-            float unitsPerDp = 2f * dragGain() / Math.max(1f, surface.getHeight());
-            float nx = position[0];
-            float ny = position[1];
-            float nz = position[2];
-            if (moveAxis == 1) {
-                nx = position[0] + dx * unitsPerDp;
-            } else if (moveAxis == 2) {
-                ny = position[1] - dy * unitsPerDp;
-            } else if (moveAxis == 3) {
-                nz = position[2] - dy * unitsPerDp;
+            float[] pos = object.getTransform().getPosition();
+            if (moveAxis == 0 || viewProj == null) {
+                float unitsPerDp = 2f * dragGain() / height;
+                float nx = pos[0] + dx * unitsPerDp;
+                float ny = pos[1] - dy * unitsPerDp;
+                object.getTransform().setPosition(snapf(nx), snapf(ny), pos[2]);
             } else {
-                nx = position[0] + dx * unitsPerDp;
-                ny = position[1] - dy * unitsPerDp;
+                float[] axisDir = {
+                        moveAxis == 1 ? 1f : 0f,
+                        moveAxis == 2 ? 1f : 0f,
+                        moveAxis == 3 ? 1f : 0f
+                };
+                float[] p0 = Neo3DMath.projectToScreen(pos, viewProj, width, height);
+                float[] p1 = Neo3DMath.projectToScreen(
+                        new float[]{pos[0] + axisDir[0], pos[1] + axisDir[1], pos[2] + axisDir[2]},
+                        viewProj, width, height);
+                if (p0 != null && p1 != null) {
+                    float sx = p1[0] - p0[0];
+                    float sy = p1[1] - p0[1];
+                    float sLen = (float) Math.hypot(sx, sy);
+                    if (sLen > 1e-3f) {
+                        float deltaWorld = (dx * sx + dy * sy) / (sLen * sLen);
+                        float nx = pos[0] + axisDir[0] * deltaWorld;
+                        float ny = pos[1] + axisDir[1] * deltaWorld;
+                        float nz = pos[2] + axisDir[2] * deltaWorld;
+                        object.getTransform().setPosition(snapf(nx), snapf(ny), snapf(nz));
+                    }
+                }
             }
-            object.getTransform().setPosition(snapf(nx), snapf(ny), snapf(nz));
         } else if (transformTool == 2) {
-            float[] rotation = object.getTransform().getEulerDeg();
+            float[] rot = object.getTransform().getEulerDeg();
+            float rotSpeed = 0.5f;
             if (moveAxis == 1) {
-                object.getTransform().setRotationEulerDeg(rotation[0],
-                        rotation[1] + dy * 0.5f, rotation[2]);
+                object.getTransform().setRotationEulerDeg(rot[0], rot[1] + dy * rotSpeed, rot[2]);
             } else if (moveAxis == 2) {
-                object.getTransform().setRotationEulerDeg(rotation[0] + dx * 0.5f,
-                        rotation[1], rotation[2]);
+                object.getTransform().setRotationEulerDeg(rot[0] + dx * rotSpeed, rot[1], rot[2]);
             } else if (moveAxis == 3) {
-                object.getTransform().setRotationEulerDeg(rotation[0], rotation[1],
-                        rotation[2] + dx * 0.5f);
+                object.getTransform().setRotationEulerDeg(rot[0], rot[1], rot[2] + (dx - dy) * 0.5f * rotSpeed);
             } else {
-                object.getTransform().setRotationEulerDeg(rotation[0] + dx * 0.5f,
-                        rotation[1] + dy * 0.5f, rotation[2]);
+                object.getTransform().setRotationEulerDeg(rot[0] + dx * rotSpeed, rot[1] + dy * rotSpeed, rot[2]);
             }
         } else if (transformTool == 3) {
             float[] scale = object.getTransform().getScale();
             float factor = (float) Math.exp((dx - dy) * 0.01f);
             if (moveAxis == 1) {
-                object.getTransform().setScale(clamp(scale[0] * factor, 0.01f, 1000f),
-                        scale[1], scale[2]);
+                object.getTransform().setScale(clamp(scale[0] * factor, 0.01f, 1000f), scale[1], scale[2]);
             } else if (moveAxis == 2) {
-                object.getTransform().setScale(scale[0],
-                        clamp(scale[1] * factor, 0.01f, 1000f), scale[2]);
+                object.getTransform().setScale(scale[0], clamp(scale[1] * factor, 0.01f, 1000f), scale[2]);
             } else if (moveAxis == 3) {
-                object.getTransform().setScale(scale[0], scale[1],
-                        clamp(scale[2] * factor, 0.01f, 1000f));
+                object.getTransform().setScale(scale[0], scale[1], clamp(scale[2] * factor, 0.01f, 1000f));
             } else {
                 object.getTransform().setScale(clamp(scale[0] * factor, 0.01f, 1000f),
                         clamp(scale[1] * factor, 0.01f, 1000f),
@@ -730,6 +854,9 @@ public final class Neo3DEditorActivity extends Activity {
             }
         }
         updateAxisBar();
+        if (document != null) {
+            document.updateGizmo(document.selectedObject(), transformTool, moveAxis);
+        }
     }
 
     private void undo() {
@@ -1064,17 +1191,19 @@ public final class Neo3DEditorActivity extends Activity {
     private void confirmDeleteSelected() {
         int count = document.selectionCount();
         if (count == 0) return;
-        new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
+        AlertDialog dialog = new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
                 .setTitle(R.string.editor_3d_delete_object)
                 .setMessage(getString(R.string.editor_3d_delete_selected_confirm, count))
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.delete, (dialog, which) -> {
+                .setPositiveButton(R.string.delete, (d, which) -> {
                     for (Neo3DGameObject item : document.selectedObjects()) {
                         document.remove(item.getId());
                     }
                     document.clearSelection();
                     refreshPanels();
-                }).show();
+                }).create();
+        trackDialog(dialog);
+        dialog.show();
     }
 
     private void addKeyframeEditor(Neo3DGameObject object, Neo3DPersistedObject data) {
@@ -2393,6 +2522,9 @@ public final class Neo3DEditorActivity extends Activity {
         previousFrameNs = frameTimeNs;
         applyCameraVelocity(delta);
         tickKeyframes(delta);
+        if (document != null) {
+            document.updateGizmo(document.selectedObject(), transformTool, moveAxis);
+        }
         document.engine().update(document.scene().getId(), delta, frameTimeNs);
         if (status != null && frameTimeNs - lastFpsStatusNs > FPS_STATUS_INTERVAL_NS) {
             lastFpsStatusNs = frameTimeNs;

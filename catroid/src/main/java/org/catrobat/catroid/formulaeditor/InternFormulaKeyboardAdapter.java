@@ -1092,6 +1092,26 @@ case R.string.formula_editor_function_state_time:
 				return buildOperator(Operators.LOGICAL_OR);
 			case R.string.formula_editor_logic_not:
 				return buildOperator(Operators.LOGICAL_NOT);
+			case R.string.formula_editor_bitwise_and:
+				return buildOperator(Operators.BITWISE_AND);
+			case R.string.formula_editor_bitwise_or:
+				return buildOperator(Operators.BITWISE_OR);
+			case R.string.formula_editor_bitwise_xor:
+				return buildOperator(Operators.BITWISE_XOR);
+			case R.string.formula_editor_bitwise_nand:
+				return buildOperator(Operators.BITWISE_NAND);
+			case R.string.formula_editor_bitwise_nor:
+				return buildOperator(Operators.BITWISE_NOR);
+			case R.string.formula_editor_bitwise_xnor:
+				return buildOperator(Operators.BITWISE_XNOR);
+			case R.string.formula_editor_bitwise_not:
+				return buildOperator(Operators.BITWISE_NOT);
+			case R.string.formula_editor_bitwise_shift_left:
+				return buildOperator(Operators.SHIFT_LEFT);
+			case R.string.formula_editor_bitwise_shift_right:
+				return buildOperator(Operators.SHIFT_RIGHT);
+			case R.string.formula_editor_bitwise_unsigned_shift_right:
+				return buildOperator(Operators.UNSIGNED_SHIFT_RIGHT);
 
 			case R.id.formula_editor_keyboard_bracket_open:
 				return buildBracketOpen();

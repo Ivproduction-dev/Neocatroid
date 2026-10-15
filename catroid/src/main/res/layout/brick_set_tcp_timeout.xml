@@ -24,8 +24,18 @@
             android:text="@string/brick_set_tcp_timeout" />
 
         <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_tcp_server_name" />
+
+        <TextView
+            android:id="@+id/brick_tcp_timeout_name_edit"
+            style="@style/BrickEditText"
+            app:layout_newLine="true" />
+
+        <TextView
             android:id="@+id/brick_tcp_timeout_edit"
-            style="@style/BrickEditText" />
+            style="@style/BrickEditText"
+            app:layout_newLine="true" />
 
     </org.catrobat.catroid.ui.BrickLayout>
 

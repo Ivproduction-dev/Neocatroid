@@ -128,3 +128,7 @@ target_include_directories(neo2d_box2d PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/box2d/src)
 target_compile_options(neo2d_box2d PRIVATE -O3)
 target_link_libraries(neo2d_box2d PRIVATE ${log-lib})
+
+add_library(net_udp SHARED net_udp.cpp)
+target_compile_options(net_udp PRIVATE -O3)
+target_link_libraries(net_udp PRIVATE ${log-lib})

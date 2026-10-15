@@ -68,10 +68,15 @@ class ListenServerAction() : Action() {
 
     var scope: Scope? = null
     var variable: UserVariable? = null
+    var listenMode: Int = 0
 
     override fun act(delta: Float): Boolean {
         val v = variable ?: return true
 
+        if (listenMode == 1) {
+            v.value = LocalServer.getValue()
+            return true
+        }
         register(this)
 
         return true

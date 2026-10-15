@@ -1747,6 +1747,10 @@ public class StageListener implements ApplicationListener {
 
 		Gdx.input.setInputProcessor(inputMultiplexer != null ? inputMultiplexer : stage);
 
+		for (Sprite sprite : scene.getSpriteList()) {
+			sprite.resetDrawingState();
+		}
+
 		scene.firstStart = true;
 		create();
 		resume();
@@ -2077,6 +2081,11 @@ public class StageListener implements ApplicationListener {
 				return;
 			}
 			neo3DSceneId = Neo3DFacade.facadeCreateScene("Scene");
+			Neo3DFacade.facadeLoadScene(project, scene, neo3DSceneId);
+			StageActivity stageActivity = StageActivity.activeStageActivity.get();
+			if (stageActivity != null) {
+				stageActivity.updateNeo3DSurfaceVisibility();
+			}
 		} catch (Throwable t) {
 			Log.e("StageListener", "neo3D init failed", t);
 			neo3DSceneId = null;
@@ -2172,6 +2181,9 @@ public class StageListener implements ApplicationListener {
 		UserDataWrapper.resetAllUserData(ProjectManager.getInstance().getCurrentProject());
 
 		for (Scene scene : ProjectManager.getInstance().getCurrentProject().getSceneList()) {
+			for (Sprite sprite : scene.getSpriteList()) {
+				sprite.resetDrawingState();
+			}
 			scene.firstStart = true;
 		}
 		globalScriptsStarted = false;

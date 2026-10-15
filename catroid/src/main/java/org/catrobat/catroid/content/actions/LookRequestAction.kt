@@ -54,7 +54,7 @@ open class LookRequestAction : WebAction() {
             scope?.sprite?.look?.lookData = this
             collisionInformation?.collisionPolygonCalculationThread?.join()
             file?.delete()
-            isWebRequest = false
+            isWebRequest = true
         }
     }
 

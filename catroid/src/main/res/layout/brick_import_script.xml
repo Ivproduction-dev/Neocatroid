@@ -42,7 +42,10 @@
             android:id="@+id/brick_import_script_scene_checkbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical" />
+            android:gravity="center_vertical"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:padding="8dp" />
 
         <TextView
             android:id="@+id/brick_import_script_scene_edit"

@@ -545,6 +545,11 @@
         <item>@string/listen_tcp_mode_once</item>
     </string-array>
 
+    <string-array name="udp_send_modes">
+        <item>@string/udp_send_mode_auto</item>
+        <item>@string/udp_send_mode_custom</item>
+    </string-array>
+
     <string-array name="mouse_buttons">
         <item>Left</item>
         <item>Right</item>

@@ -9,12 +9,14 @@ class SendToTcpClientsAction : TemporalAction() {
     var scope: Scope? = null
     var values: List<Formula>? = null
     var echoMode: Int = 0
+    var serverName: Formula? = null
 
     override fun update(percent: Float) {
         val vals = values?.mapNotNull { it?.interpretString(scope) }
         if (!vals.isNullOrEmpty()) {
             val prefix = if (echoMode == 1) "ALL_ECHO:" else "ALL:"
-            LocalServer.sendAll(listOf("$prefix${vals.joinToString(LocalServer.VALUE_SEPARATOR.toString())}"))
+            val name = serverName?.interpretString(scope).orEmpty()
+            LocalServer.sendAllTo(name, listOf("$prefix${vals.joinToString(LocalServer.VALUE_SEPARATOR.toString())}"))
         }
     }
 }

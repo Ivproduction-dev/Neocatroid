@@ -283,6 +283,10 @@ public class Neo3DEngine {
         if (obj == null) {
             return;
         }
+        if (glbBytes != null && !Neo3DAssetManager.isModelWithinBudget(glbBytes)) {
+            Log.w(TAG, "Model exceeds Neo3D limits (128 MiB or 2000000 triangles): " + assetKey);
+            return;
+        }
         releaseObjectAssets(obj);
         if (glbBytes == null) {
             obj.setModelPath(null);

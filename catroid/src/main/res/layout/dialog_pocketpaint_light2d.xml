@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/light_2d_type"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/light_2d_type_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/light_2d_point"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/light_2d_point" />
+
+        <RadioButton
+            android:id="@+id/light_2d_aura"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/light_2d_aura" />
+
+        <RadioButton
+            android:id="@+id/light_2d_spot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/light_2d_spot" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/light_2d_intensity_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/light_2d_intensity_format" />
+
+    <SeekBar
+        android:id="@+id/light_2d_intensity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="75" />
+
+    <TextView
+        android:id="@+id/light_2d_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:text="@string/light_2d_resize_hint" />
+</LinearLayout>

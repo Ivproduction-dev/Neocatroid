@@ -236,7 +236,8 @@ public class InternFormulaParser {
 		FormulaElement loopTermTree;
 		String operatorStringValue;
 
-		while ((currentToken.isOperator() && !currentToken.getTokenStringValue().equals(Operators.LOGICAL_NOT.name()))
+		while ((currentToken.isOperator() && !currentToken.getTokenStringValue().equals(Operators.LOGICAL_NOT.name())
+				&& !currentToken.getTokenStringValue().equals(Operators.BITWISE_NOT.name()))
 				|| (currentToken.isString() && "..".equals(currentToken.getTokenStringValue()))) {
 			if (currentToken.isString() && "..".equals(currentToken.getTokenStringValue())) {
 				operatorStringValue = Operators.CONCAT.name();
@@ -261,10 +262,12 @@ public class InternFormulaParser {
 			termTree.replaceElement(new FormulaElement(FormulaElement.ElementType.OPERATOR, Operators.MINUS.name(),
 					null, null, currentElement));
 			getNextToken();
-		} else if (currentToken.isOperator() && currentToken.getTokenStringValue().equals(Operators.LOGICAL_NOT.name())) {
+		} else if (currentToken.isOperator() && (currentToken.getTokenStringValue().equals(Operators.LOGICAL_NOT.name())
+				|| currentToken.getTokenStringValue().equals(Operators.BITWISE_NOT.name()))) {
 			currentElement = new FormulaElement(FormulaElement.ElementType.NUMBER, null, termTree, null, null);
-			termTree.replaceElement(new FormulaElement(FormulaElement.ElementType.OPERATOR, Operators.LOGICAL_NOT
-					.name(), null, null, currentElement));
+			String unaryOperator = currentToken.getTokenStringValue();
+			termTree.replaceElement(new FormulaElement(FormulaElement.ElementType.OPERATOR, unaryOperator,
+					null, null, currentElement));
 
 			getNextToken();
 		}

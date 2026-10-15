@@ -26,6 +26,10 @@ class DrawableFactory {
             DrawableShape.HEART -> HeartDrawable()
             DrawableShape.STAR -> StarDrawable()
             DrawableShape.PIXEL -> PixelDrawable()
+            DrawableShape.TRIANGLE -> TriangleDrawable()
+            DrawableShape.POINT_LIGHT -> LightDrawable(LightDrawable.Type.POINT)
+            DrawableShape.AURA_LIGHT -> LightDrawable(LightDrawable.Type.AURA)
+            DrawableShape.SPOT_LIGHT -> LightDrawable(LightDrawable.Type.SPOT)
         }
     }
 }

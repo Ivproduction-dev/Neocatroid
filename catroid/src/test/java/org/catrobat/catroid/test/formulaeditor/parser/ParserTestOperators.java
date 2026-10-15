@@ -266,6 +266,44 @@ public class ParserTestOperators {
 	}
 
 	@Test
+	public void testBitwiseOperators() {
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_AND,
+				InternTokenType.NUMBER, "3", 1d, scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_OR,
+				InternTokenType.NUMBER, "3", 7d, scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_XOR,
+				InternTokenType.NUMBER, "3", 6d, scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_NAND,
+				InternTokenType.NUMBER, "3", (double) ~(5L & 3L), scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_NOR,
+				InternTokenType.NUMBER, "3", (double) ~(5L | 3L), scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.BITWISE_XNOR,
+				InternTokenType.NUMBER, "3", (double) ~(5L ^ 3L), scope);
+	}
+
+	@Test
+	public void testBitwiseShifts() {
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.SHIFT_LEFT,
+				InternTokenType.NUMBER, "1", 10d, scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "5", Operators.SHIFT_RIGHT,
+				InternTokenType.NUMBER, "1", 2d, scope);
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "-1", Operators.UNSIGNED_SHIFT_RIGHT,
+				InternTokenType.NUMBER, "1", (double) (-1L >>> 1), scope);
+	}
+
+	@Test
+	public void testBitwiseNot() {
+		FormulaEditorTestUtil.testUnaryOperator(Operators.BITWISE_NOT, InternTokenType.NUMBER, "5", (double) ~5L, scope);
+	}
+
+	@Test
+	public void testBitwisePrecedenceMatchesJavaOperators() {
+		List<InternToken> and = FormulaEditorTestUtil.buildBinaryOperator(InternTokenType.NUMBER, "3",
+				Operators.BITWISE_AND, InternTokenType.NUMBER, "2");
+		FormulaEditorTestUtil.testBinaryOperator(InternTokenType.NUMBER, "1", Operators.BITWISE_OR, and, 3d, scope);
+	}
+
+	@Test
 	public void testAddition() {
 		String firstOperand = "1.3";
 		String secondOperand = "3";

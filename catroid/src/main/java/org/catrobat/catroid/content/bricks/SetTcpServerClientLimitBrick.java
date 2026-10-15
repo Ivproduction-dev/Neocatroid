@@ -10,6 +10,8 @@ public class SetTcpServerClientLimitBrick extends FormulaBrick {
 	private static final long serialVersionUID = 1L;
 
 	public SetTcpServerClientLimitBrick() {
+		addAllowedBrickField(BrickField.TEXT, R.id.brick_tcp_limit_name_edit);
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(""));
 		addAllowedBrickField(BrickField.VALUE, R.id.brick_tcp_limit_edit);
 	}
 
@@ -34,6 +36,6 @@ public class SetTcpServerClientLimitBrick extends FormulaBrick {
 	@Override
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
 		sequence.addAction(sprite.getActionFactory().createSetTcpServerClientLimitAction(sprite, sequence,
-				getFormulaWithBrickField(BrickField.VALUE)));
+				getFormulaWithBrickField(BrickField.VALUE), getFormulaWithBrickField(BrickField.TEXT)));
 	}
 }

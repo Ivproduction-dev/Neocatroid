@@ -73,9 +73,13 @@ public class ShowTextColorSizeAlignmentAction extends TemporalAction {
 				}
 				actor = new ShowTextActor(false, variableToShow, xPosition, yPosition, relativeTextSize,
 						color, scope.getSprite(), alignment, androidStringProvider);
+				if (relativeTextSize <= 0.f) {
+					variableToShow.setVisible(false);
+				} else {
+					StageActivity.getActiveStageListener().addActor(actor);
+					variableToShow.setVisible(true);
+				}
 			}
-			StageActivity.getActiveStageListener().addActor(actor);
-			variableToShow.setVisible(true);
 		} catch (InterpretationException e) {
 			Log.d(TAG, "InterpretationException: " + e);
 		}

@@ -42,6 +42,16 @@ public final class NeoScriptSerializer {
 				if (!xstreamConfigured) {
 					xstream.alias(NeoScriptFile.ROOT_ELEMENT, NeoScriptFile.class);
 					xstream.processAnnotations(NeoScriptFile.class);
+					xstream.allowTypes(new Class[] {
+							java.util.HashMap.class,
+							java.util.ArrayList.class,
+							String.class,
+							Double.class,
+							Float.class,
+							Integer.class,
+							Long.class,
+							Boolean.class
+					});
 					xstreamConfigured = true;
 				}
 			}
@@ -106,6 +116,18 @@ public final class NeoScriptSerializer {
 		}
 		if (neoScriptFile.getScripts() == null || neoScriptFile.getScripts().isEmpty()) {
 			throw new NeoScriptException("No scripts found in file");
+		}
+		if (neoScriptFile.getUserVariables() == null) {
+			neoScriptFile.setUserVariables(new java.util.ArrayList<>());
+		}
+		if (neoScriptFile.getUserLists() == null) {
+			neoScriptFile.setUserLists(new java.util.ArrayList<>());
+		}
+		if (neoScriptFile.getUserVariableValues() == null) {
+			neoScriptFile.setUserVariableValues(new java.util.HashMap<>());
+		}
+		if (neoScriptFile.getUserListValues() == null) {
+			neoScriptFile.setUserListValues(new java.util.HashMap<>());
 		}
 	}
 }

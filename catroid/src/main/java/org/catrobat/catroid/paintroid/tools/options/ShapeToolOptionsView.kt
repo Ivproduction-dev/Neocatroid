@@ -29,6 +29,8 @@ interface ShapeToolOptionsView {
 
     fun setShapeOutlineWidth(outlineWidth: Int)
 
+    fun setLightIntensity(intensity: Int) { }
+
     fun setCallback(callback: Callback)
 
     fun setShapeSizeText(shapeSize: String)
@@ -43,5 +45,7 @@ interface ShapeToolOptionsView {
         fun setDrawType(drawType: DrawableStyle)
 
         fun setOutlineWidth(outlineWidth: Int)
+
+        fun setLightIntensity(intensity: Int) { }
     }
 }

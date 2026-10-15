@@ -25,10 +25,12 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import org.catrobat.catroid.paintroid.command.implementation.GeometricFillCommand
 import org.catrobat.catroid.paintroid.tools.drawable.HeartDrawable
+import org.catrobat.catroid.paintroid.tools.drawable.LightDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.OvalDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.RectangleDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.ShapeDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.StarDrawable
+import org.catrobat.catroid.paintroid.tools.drawable.TriangleDrawable
 
 class GeometricFillCommandSerializer(version: Int) : VersionSerializer<GeometricFillCommand>(version) {
     override fun write(kryo: Kryo, output: Output, command: GeometricFillCommand) {
@@ -103,5 +105,27 @@ class GeometricFillCommandSerializer(version: Int) : VersionSerializer<Geometric
 
         override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out StarDrawable>): StarDrawable =
             StarDrawable()
+    }
+
+    class TriangleDrawableSerializer(version: Int) : VersionSerializer<TriangleDrawable>(version) {
+        override fun write(kryo: Kryo, output: Output, command: TriangleDrawable) = Unit
+
+        override fun read(kryo: Kryo, input: Input, type: Class<out TriangleDrawable>): TriangleDrawable =
+            super.handleVersions(this, kryo, input, type)
+
+        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out TriangleDrawable>): TriangleDrawable =
+            TriangleDrawable()
+    }
+
+    class LightDrawableSerializer(version: Int) : VersionSerializer<LightDrawable>(version) {
+        override fun write(kryo: Kryo, output: Output, command: LightDrawable) {
+            output.writeInt(command.type.ordinal)
+        }
+
+        override fun read(kryo: Kryo, input: Input, type: Class<out LightDrawable>): LightDrawable =
+            super.handleVersions(this, kryo, input, type)
+
+        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out LightDrawable>): LightDrawable =
+            LightDrawable(LightDrawable.Type.values()[input.readInt()])
     }
 }

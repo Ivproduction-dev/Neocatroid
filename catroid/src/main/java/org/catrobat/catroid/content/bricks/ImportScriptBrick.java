@@ -51,6 +51,11 @@ public class ImportScriptBrick extends FormulaBrick {
 		this.overwriteSelection = overwrite ? 1 : 0;
 	}
 
+	@Override
+	public Brick clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
 	public boolean isOverwrite() {
 		return overwriteSelection == 1;
 	}
@@ -124,6 +129,7 @@ public class ImportScriptBrick extends FormulaBrick {
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
 		intent.setType("*/*");
 		intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/octet-stream", "text/xml"});
+		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
 		activity.startActivityForResult(intent, org.catrobat.catroid.ui.SpriteActivity.REQUEST_NEO_SCRIPT_FILE);
 	}
 
@@ -139,6 +145,22 @@ public class ImportScriptBrick extends FormulaBrick {
 		}
 		String path = uri.toString();
 		brick.setFormulaWithBrickField(BrickField.IMPORT_SCRIPT_FILE, new Formula(path));
+		try {
+			if (brick.view != null) {
+				brick.view.getContext().getContentResolver().takePersistableUriPermission(uri,
+						Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			}
+		} catch (Exception ignored) {
+		}
+		try {
+			if (brick.view != null) {
+				TextView fileEdit = brick.view.findViewById(R.id.brick_import_script_file_edit);
+				if (fileEdit != null) {
+					fileEdit.setText(path);
+				}
+			}
+		} catch (Exception ignored) {
+		}
 	}
 
 	@Override

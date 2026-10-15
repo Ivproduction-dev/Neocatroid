@@ -22,6 +22,9 @@
  */
 package org.catrobat.catroid.content.bricks;
 
+import android.content.Context;
+import android.view.View;
+
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.actions.ScriptSequenceAction;
@@ -30,6 +33,8 @@ import org.catrobat.catroid.formulaeditor.UserVariable;
 public class ListenServerBrick extends UserVariableBrickWithFormula {
 
     private static final long serialVersionUID = 1L;
+
+    private int listenModeSelection;
 
     public ListenServerBrick() {
 
@@ -40,9 +45,44 @@ public class ListenServerBrick extends UserVariableBrickWithFormula {
         this.userVariable = userVariable;
     }
 
+    public int getListenModeSelection() {
+        return listenModeSelection;
+    }
+
+    public void setListenModeSelection(int listenModeSelection) {
+        this.listenModeSelection = listenModeSelection;
+    }
+
     @Override
     public int getViewResource() {
         return R.layout.brick_listen_server;
+    }
+
+    @Override
+    public View getView(Context context) {
+        View view = super.getView(context);
+        android.widget.Spinner modeSpinner = view.findViewById(R.id.listen_server_mode_spinner);
+        if (modeSpinner != null) {
+            android.widget.ArrayAdapter<CharSequence> modeAdapter =
+                    android.widget.ArrayAdapter.createFromResource(context,
+                            R.array.listen_tcp_modes, android.R.layout.simple_spinner_item);
+            modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            modeSpinner.setAdapter(modeAdapter);
+            modeSpinner.setOnItemSelectedListener(
+                    new android.widget.AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(android.widget.AdapterView<?> parent,
+                                View selectedView, int position, long id) {
+                            listenModeSelection = position;
+                        }
+
+                        @Override
+                        public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                        }
+                    });
+            modeSpinner.setSelection(listenModeSelection);
+        }
+        return view;
     }
 
     @Override
@@ -52,6 +92,7 @@ public class ListenServerBrick extends UserVariableBrickWithFormula {
 
     @Override
     public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
-        sequence.addAction(sprite.getActionFactory().createListenServerAction(sprite, sequence, userVariable));
+        sequence.addAction(sprite.getActionFactory().createListenServerAction(sprite, sequence,
+                userVariable, listenModeSelection));
     }
 }

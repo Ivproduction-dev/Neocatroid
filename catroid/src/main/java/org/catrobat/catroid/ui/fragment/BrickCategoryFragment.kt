@@ -76,7 +76,26 @@ class BrickCategoryFragment : ListFragment() {
         setUpActionBar()
         hideBottomBar(activity)
         setupBrickCategories()
+        showGroupingV2DialogIfNeeded()
         return rootView
+    }
+
+    private fun showGroupingV2DialogIfNeeded() {
+        val context = context ?: return
+        if (CategoryBricksFactory.isGroupingV2Asked(context)) {
+            return
+        }
+        androidx.appcompat.app.AlertDialog.Builder(context, R.style.Theme_NeoCatroid_Dialog)
+            .setTitle(R.string.grouping_v2_dialog_title)
+            .setMessage(R.string.grouping_v2_dialog_message)
+            .setPositiveButton(R.string.grouping_v2_dialog_yes) { _, _ ->
+                CategoryBricksFactory.setGroupingV2(context, true)
+            }
+            .setNegativeButton(R.string.grouping_v2_dialog_no) { _, _ ->
+                CategoryBricksFactory.setGroupingV2(context, false)
+            }
+            .setCancelable(false)
+            .show()
     }
 
     override fun onStart() {

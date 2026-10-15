@@ -940,7 +940,7 @@ private Sprite pendingLookSprite;
 		});
 
 		items.add("3D Редактор");
-		actions.add(() -> org.catrobat.catroid.editor.ThreeDEditorRouter.open(this));
+		actions.add(() -> startActivity(new Intent(this, EditorActivity.class)));
 
 		items.add("Управление сценами");
 		actions.add(this::showSceneSwitcher);

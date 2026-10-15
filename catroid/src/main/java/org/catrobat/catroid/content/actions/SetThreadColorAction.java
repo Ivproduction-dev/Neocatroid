@@ -30,6 +30,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import org.catrobat.catroid.content.Scope;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.formulaeditor.Formula;
+import org.catrobat.catroid.utils.ShowTextUtils;
 
 public class SetThreadColorAction extends TemporalAction {
 
@@ -46,15 +47,9 @@ public class SetThreadColorAction extends TemporalAction {
 				colorStringInterpretation = color.interpretString(scope);
 			}
 
-			String red = "0x" + colorStringInterpretation.substring(1, 3);
-			String green = "0x" + colorStringInterpretation.substring(3, 5);
-			String blue = "0x" + colorStringInterpretation.substring(5, 7);
-			int redInt = Integer.decode(red);
-			int greenInt = Integer.decode(green);
-			int blueInt = Integer.decode(blue);
-
+			int[] rgb = ShowTextUtils.calculateColorRGBs(colorStringInterpretation);
 			Color colorInterpretation = new Color();
-			Color.argb8888ToColor(colorInterpretation, android.graphics.Color.argb(0xFF, redInt, greenInt, blueInt));
+			Color.argb8888ToColor(colorInterpretation, android.graphics.Color.argb(0xFF, rgb[0], rgb[1], rgb[2]));
 			sprite.setEmbroideryThreadColor(colorInterpretation);
 		} catch (Exception exception) {
 			Log.d(getClass().getSimpleName(), "Formula interpretation for this specific Brick failed.", exception);

@@ -10,6 +10,8 @@ public class SetTcpServerTimeoutBrick extends FormulaBrick {
 	private static final long serialVersionUID = 1L;
 
 	public SetTcpServerTimeoutBrick() {
+		addAllowedBrickField(BrickField.TEXT, R.id.brick_tcp_timeout_name_edit);
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(""));
 		addAllowedBrickField(BrickField.VALUE, R.id.brick_tcp_timeout_edit);
 	}
 
@@ -34,6 +36,6 @@ public class SetTcpServerTimeoutBrick extends FormulaBrick {
 	@Override
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
 		sequence.addAction(sprite.getActionFactory().createSetTcpServerTimeoutAction(sprite, sequence,
-				getFormulaWithBrickField(BrickField.VALUE)));
+				getFormulaWithBrickField(BrickField.VALUE), getFormulaWithBrickField(BrickField.TEXT)));
 	}
 }

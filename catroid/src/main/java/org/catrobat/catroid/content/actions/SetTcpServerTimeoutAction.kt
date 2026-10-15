@@ -8,9 +8,11 @@ import org.catrobat.catroid.formulaeditor.Formula
 class SetTcpServerTimeoutAction() : TemporalAction() {
     var scope: Scope? = null
     var timeout: Formula? = null
+    var serverName: Formula? = null
 
     override fun update(percent: Float) {
         val value = timeout?.interpretString(scope)?.toIntOrNull() ?: return
-        LocalServer.serverTimeoutSeconds = value.coerceAtLeast(1)
+        val name = serverName?.interpretString(scope).orEmpty()
+        LocalServer.node(name).serverTimeoutSeconds = value.coerceAtLeast(1)
     }
 }

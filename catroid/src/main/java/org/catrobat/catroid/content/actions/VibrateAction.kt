@@ -29,7 +29,7 @@ import org.catrobat.catroid.formulaeditor.Formula
 import org.catrobat.catroid.formulaeditor.InterpretationException
 import org.catrobat.catroid.runtime.RuntimeServicesHolder
 
-const val MAX_TIME_TO_VIBRATE: Long = 60
+const val MAX_TIME_TO_VIBRATE: Long = 10_000_000_000
 const val UNIT_CONVERSION: Long = 1000
 
 class VibrateAction : TemporalAction() {

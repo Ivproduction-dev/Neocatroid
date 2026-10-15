@@ -24,13 +24,10 @@ package org.catrobat.catroid.content.actions
 
 import android.util.Log
 import com.badlogic.gdx.scenes.scene2d.Action
-import org.catrobat.catroid.CatroidApplication
 import org.catrobat.catroid.formulaeditor.UserVariable
 import org.catrobat.catroid.stage.OnSpeechRecognitionResultCallback
 import org.catrobat.catroid.stage.SpeechRecognitionHolderFactory
-import org.catrobat.catroid.stage.StageActivity
 import org.koin.java.KoinJavaComponent.get
-import java.util.ArrayList
 
 class StartListeningAction : Action(), OnSpeechRecognitionResultCallback {
 
@@ -57,11 +54,6 @@ class StartListeningAction : Action(), OnSpeechRecognitionResultCallback {
         super.restart()
     }
 
-    fun toast(value: String) {
-        val params = ArrayList<Any>(listOf(value))
-        StageActivity.messageHandler.obtainMessage(StageActivity.SHOW_TOAST, params).sendToTarget()
-    }
-
     private fun requestStartListening() {
         speechRecognitionHolder.apply {
             callback = this@StartListeningAction
@@ -71,7 +63,7 @@ class StartListeningAction : Action(), OnSpeechRecognitionResultCallback {
     }
 
     override fun onResult(spokenWords: String) {
-        toast("recived")
+        Log.d(TAG, "received: $spokenWords")
         userVariable?.value = spokenWords
         spokenWordsReceived = true
     }

@@ -71,6 +71,39 @@ class V3NormalizeRoundTripTest {
     }
 
     @Test
+    fun normalize_preservesEncryptedPayload_decryptsAfter() {
+        val random = SecureRandom()
+        val original = ByteArray(280_000).also { random.nextBytes(it) }
+        val src = File(tmp.root, "payload_raw.zip").apply { writeBytes(original) }
+        val enc = File(tmp.root, "project.ncv3")
+        val key = ByteArray(32).also { random.nextBytes(it) }
+        ProjectEncryptorV3.encrypt(src, enc, key)
+        assertTrue(IntegrityValidator.validate(enc, key, tmp.root))
+        val encBytes = enc.readBytes()
+
+        val input = File(tmp.root, "in.apk")
+        ZipOutputStream(input.outputStream()).use { zos ->
+            storedEntry(zos, "AndroidManifest.xml", "<manifest package=\"org.test\"/>".toByteArray())
+            deflatedEntry(zos, "classes.dex", ByteArray(100_000) { it.toByte() })
+            deflatedEntry(zos, "assets/project.ncv3", encBytes)
+        }
+
+        val output = File(tmp.root, "out.apk")
+        V3ApkAssembler.normalizeApkForInstall(input, output, File(tmp.root, "norm_tmp"))
+        V3ApkAssembler.assertNoDataDescriptors(output)
+
+        val roundTripped = ZipFile(output).use { zf ->
+            zf.getInputStream(zf.getEntry("assets/project.ncv3")).readBytes()
+        }
+        assertEquals(encBytes.toList(), roundTripped.toList())
+
+        val extracted = File(tmp.root, "final.ncv3").apply { writeBytes(roundTripped) }
+        val dec = File(tmp.root, "payload.out.bin")
+        assertTrue(ProjectEncryptorV3.decryptAll(extracted, key, dec))
+        assertEquals(original.toList(), dec.readBytes().toList())
+    }
+
+    @Test
     fun verifyInstallable_rejectsApkWithoutPayloadOrKeys() {
         val input = File(tmp.root, "bare.apk")
         ZipOutputStream(input.outputStream()).use { zos ->

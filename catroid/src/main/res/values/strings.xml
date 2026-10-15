@@ -674,6 +674,12 @@
     <string name="subcategory_event_system">System</string>
     <string name="subcategory_event_notifications">Notifications</string>
     <string name="subcategory_event_admob">AdMob</string>
+    <string name="subcategory_v2_events">Events</string>
+
+    <string name="grouping_v2_dialog_title">Enable block grouping 2.0?</string>
+    <string name="grouping_v2_dialog_message">Grouping 2.0 keeps only launch events in Events (on start, on tap, broadcasts) and moves the rest into their categories: looks, motion, network, AI, ads, device. Old projects keep working.</string>
+    <string name="grouping_v2_dialog_yes">Enable forever</string>
+    <string name="grouping_v2_dialog_no">Not now</string>
 
     <string name="subcategory_motion_coordinates">Coordinates &amp; Sliding</string>
     <string name="subcategory_motion_rotation">Rotation &amp; Direction</string>
@@ -712,6 +718,8 @@
     <string name="preference_description_grouping_device">Enable grouping in Device category</string>
     <string name="preference_title_grouping_threed">3D Category</string>
     <string name="preference_description_grouping_threed">Enable grouping in 3D category (Recommended)</string>
+    <string name="preference_title_grouping_v2">Grouping 2.0</string>
+    <string name="preference_description_grouping_v2">Move category events out of Events into their categories (Looks, Motion, Internet, AI, AdMob, Device)</string>
     <string name="preference_title_redrawn_brick_mode">Redrawn block mode</string>
     <string name="preference_description_redrawn_brick_mode">Use softer rounded surfaces and borders for all blocks</string>
 
@@ -1244,7 +1252,7 @@
 <string formatted="false" name="brick_import_script_object">into object</string>
 <string formatted="false" name="brick_import_script_file">from file</string>
 <string formatted="false" name="brick_import_script_file_hint">tap to choose .neoscript file</string>
-<string formatted="false" name="brick_import_script_overwrite">if object already contains imported scripts?</string>
+<string formatted="false" name="brick_import_script_overwrite">overwrite duplicates?</string>
     <string formatted="false" name="brick_import_script_scene">in scene</string>
 <string formatted="false" name="menu_save_as_script">Save as Script...</string>
 <string formatted="false" name="menu_import_script_module">Import Script Module...</string>
@@ -1855,7 +1863,7 @@
 <string name="formula_pt_shape_param" formatted="false">(\'tensor\')</string>
 <string name="formula_pt_value_param" formatted="false">(\'tensor\', index)</string>
 <string name="formula_pt_valuend_param" formatted="false">(\'tensor\', \'10,2\')</string>
-<string name="formula_intersect_list" formatted="false">object intercect list</string>
+<string name="formula_intersect_list" formatted="false">is intersect list</string>
 <string name="formula_collision_list" formatted="false">object collision list</string>
 <string name="native_layer_front">In front of stage</string>
 <string name="native_layer_back">Behind stage</string>
@@ -2103,6 +2111,28 @@
     <string formatted="false" name="brick_when_tcp_message">When TCP message received</string>
     <string formatted="false" name="brick_when_tcp_disconnected">When disconnected by TCP server timeout</string>
 <string formatted="false" name="brick_listen_tcp_server">Listen TCP server and store</string>
+<string formatted="false" name="brick_tcp_server_name">server</string>
+<string formatted="false" name="brick_start_tcp_server_named">Start TCP server</string>
+<string formatted="false" name="brick_start_tcp_server_named2">with port</string>
+<string formatted="false" name="brick_stop_tcp_server_named">Stop TCP server</string>
+<string formatted="false" name="brick_connect_tcp_server_named">Connect to TCP server</string>
+<string formatted="false" name="brick_disconnect_tcp_server_named">Disconnect from TCP server</string>
+<string formatted="false" name="brick_clear_tcp_variable">Clear TCP message in</string>
+<string formatted="false" name="brick_tcp_ping">PING-PONG TCP server</string>
+<string formatted="false" name="brick_tcp_ping2">store answer in</string>
+<string formatted="false" name="brick_tcp_measure_ping">Measure PING-PONG of TCP server</string>
+<string formatted="false" name="brick_tcp_measure_ping2">store value in</string>
+<string formatted="false" name="brick_tcp_ping_timeout">wait reply (ms)</string>
+<string formatted="false" name="udp_send_mode_auto">automatic</string>
+<string formatted="false" name="udp_send_mode_custom">custom</string>
+<string formatted="false" name="brick_start_udp">Start UDP endpoint</string>
+<string formatted="false" name="brick_start_udp2">with port</string>
+<string formatted="false" name="brick_stop_udp">Stop UDP endpoint</string>
+<string formatted="false" name="brick_connect_udp">Connect UDP</string>
+<string formatted="false" name="brick_disconnect_udp">Disconnect UDP</string>
+<string formatted="false" name="brick_send_udp">Send UDP</string>
+<string formatted="false" name="brick_listen_udp">Listen UDP and store</string>
+<string formatted="false" name="brick_when_udp_message">When UDP message received</string>
 <string formatted="false" name="formula_external_ip">External_ip</string>
 <string formatted="false" name="brick_screenshot">Take screenshot and store it as look</string>
 <string formatted="false" name="formula_editor_function_distance">levenshtein distance</string>
@@ -3017,8 +3047,8 @@
 <string formatted="false" name="brick_ask_background">Background color (empty = default)</string>
 <string formatted="false" name="brick_ask_buttons">Buttons color (empty = default)</string>
 <string formatted="false" name="brick_ask_label2">Set clue</string>
-<string formatted="false" name="brick_ask_label3">Set text "Оk"</string>
-<string formatted="false" name="brick_ask_label4">Set text "Canel"</string>
+<string formatted="false" name="brick_ask_label3">Set text "Ok"</string>
+<string formatted="false" name="brick_ask_label4">Set text "Cancel"</string>
 <string formatted="false" name="brick_ask_label5">Default value</string>
 <string formatted="false" name="brick_ask_store">and store written answer in</string>
 <string formatted="false" name="brick_ask_default_question">What\'s your name?</string>
@@ -4295,6 +4325,17 @@
 <string name="button_line">Line</string>
 <string name="button_text">Text</string>
 <string name="button_shape">Shapes</string>
+<string name="button_light_2d">Light 2D</string>
+<string name="help_content_light_2d">Place, move, resize, and rotate a light</string>
+<string name="light_2d_type">Light type</string>
+<string name="light_2d_point">Point</string>
+<string name="light_2d_aura">Aura</string>
+<string name="light_2d_spot">Spot</string>
+<string name="light_2d_intensity_format">Intensity: %1$d%%</string>
+<string name="light_2d_resize_hint">Size: %1$s</string>
+<string name="tools_page_indicator">%1$d / %2$d</string>
+<string name="tools_previous_page">Previous tools</string>
+<string name="tools_next_page">More tools</string>
 <string name="button_hand">Hand</string>
 <string name="button_watercolor">Watercolor</string>
 <string name="button_spray_can">Spray can</string>
@@ -4407,6 +4448,7 @@
 <string name="shape_tool_dialog_star_title">Star</string>
 <string name="shape_tool_dialog_heart_title">Heart</string>
 <string name="shape_tool_dialog_pixel_title">Pixels</string>
+<string name="shape_tool_dialog_triangle_title">Triangle</string>
 <string name="shape_tool_dialog_fill_title">Fill</string>
 <string name="shape_tool_dialog_outline_title">Outline</string>
 <string name="fill_tool_dialog_color_tolerance_title">Color tolerance</string>
@@ -6305,4 +6347,15 @@ needs read and write access to it. You can always change permissions through you
     <string name="editor_3d_pasted">Pasted %1$d object(s)</string>
     <string name="editor_3d_selected_count">%1$d objects selected</string>
     <string name="editor_3d_delete_selected_confirm">Delete %1$d selected objects?</string>
+    <string name="formula_editor_bitwise_and" formatted="false">&amp;</string>
+    <string name="formula_editor_bitwise_or" formatted="false">|</string>
+    <string name="formula_editor_bitwise_xor" formatted="false">XOR</string>
+    <string name="formula_editor_bitwise_nand" formatted="false">NAND</string>
+    <string name="formula_editor_bitwise_nor" formatted="false">NOR</string>
+    <string name="formula_editor_bitwise_xnor" formatted="false">XNOR</string>
+    <string name="formula_editor_bitwise_not" formatted="false">~</string>
+    <string name="formula_editor_bitwise_shift_left" formatted="false">&lt;&lt;</string>
+    <string name="formula_editor_bitwise_shift_right" formatted="false">&gt;&gt;</string>
+    <string name="formula_editor_bitwise_unsigned_shift_right" formatted="false">&gt;&gt;&gt;</string>
+    <string name="formula_editor_bitwise_category" formatted="false">Bitwise</string>
 </resources>

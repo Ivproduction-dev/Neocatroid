@@ -47,6 +47,13 @@
             android:text="@string/brick_listen_server" />
 
         <Spinner
+            android:id="@+id/listen_server_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale"
+            app:layout_newLine="true" />
+
+        <Spinner
             android:id="@+id/listen_server_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

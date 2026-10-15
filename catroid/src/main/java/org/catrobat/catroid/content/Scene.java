@@ -66,7 +66,12 @@ import androidx.annotation.NonNull;
 		"exitTransitionType",
 		"exitTransitionDuration",
 		"sceneVariables",
-		"neo3DObjects"
+		"neo3DObjects",
+		"neo3DSkyRed",
+		"neo3DSkyGreen",
+		"neo3DSkyBlue",
+		"neo3DIblIntensity",
+		"neo3DShadowsEnabled"
 	})
 @LunoClass
 public class Scene implements Nameable, Serializable {

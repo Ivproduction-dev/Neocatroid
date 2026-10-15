@@ -44,6 +44,7 @@ class ChooseFileBrick : UserVariableBrickWithFormula() {
 
         view.findViewById<Spinner>(R.id.brick_choose_file_type_spinner).apply {
             adapter = createFileTypeAdapter(context)
+            fileTypeSelection = fileTypeSelection.coerceIn(0, adapter.count - 1)
             onItemSelectedListener = AdapterViewOnItemSelectedListenerImpl { position ->
                 fileTypeSelection = position
             }
@@ -61,6 +62,7 @@ class ChooseFileBrick : UserVariableBrickWithFormula() {
     }
 
     override fun addActionToSequence(sprite: Sprite, sequence: ScriptSequenceAction) {
+        fileTypeSelection = fileTypeSelection.coerceIn(0, 4)
         userVariable?.let { variable ->
             sequence.addAction(
                 sprite.actionFactory.createChooseFileAction(sprite, sequence, fileTypeSelection, variable)

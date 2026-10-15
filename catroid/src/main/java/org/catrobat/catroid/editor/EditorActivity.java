@@ -760,9 +760,6 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         } else if (id == R.id.action_exit) {
             showExitConfirmationDialog();
             return true;
-        } else if (id == R.id.action_switch_3d_editor) {
-            ThreeDEditorRouter.switchEditor(this, ThreeDEditorRouter.NEO3D);
-            return true;
         }
         return super.onOptionsItemSelected(item);
     }

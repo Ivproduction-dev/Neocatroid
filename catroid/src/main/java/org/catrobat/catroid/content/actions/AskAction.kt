@@ -37,10 +37,10 @@ class AskAction : Action() {
     var backgroundColorFormula: Formula? = null
     var buttonColorFormula: Formula? = null
     var answerVariable: UserVariable? = null
-    var questionAsked = false
+    @Volatile var questionAsked = false
     var askBackgroundColor: Int? = null
     var askButtonColor: Int? = null
-    private var answerReceived = false
+    @Volatile private var answerReceived = false
     private fun askQuestion() {
         StageActivity.messageHandler ?: return
         var question = ""
@@ -83,6 +83,9 @@ class AskAction : Action() {
     }
 
     override fun act(delta: Float): Boolean {
+        if (answerVariable == null) {
+            return true
+        }
         if (!questionAsked) {
             askQuestion()
         }

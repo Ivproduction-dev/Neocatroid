@@ -16,6 +16,7 @@
 package org.catrobat.catroid.neoscript;
 
 import org.catrobat.catroid.content.Project;
+import org.catrobat.catroid.content.Scene;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.bricks.Brick;
 import org.catrobat.catroid.content.bricks.CompositeBrick;
@@ -24,7 +25,9 @@ import org.catrobat.catroid.formulaeditor.UserVariable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,6 +67,12 @@ public final class NeoScriptUserData {
 	}
 
 	public static void relink(org.catrobat.catroid.content.Script script, Project project, Sprite sprite) {
+		relink(script, project, sprite, null, null);
+	}
+
+	public static void relink(org.catrobat.catroid.content.Script script, Project project, Sprite sprite,
+			Map<String, Object> variableValues, Map<String, List<Object>> listValues) {
+		Scene scene = findScene(project, sprite);
 		VariableResolver relinker = new VariableResolver() {
 			@Override
 			public UserVariable resolve(UserVariable variable) {
@@ -71,13 +80,28 @@ public final class NeoScriptUserData {
 					return null;
 				}
 				UserVariable existing = sprite.getUserVariable(variable.getName());
+				if (existing == null && scene != null) {
+					existing = scene.getSceneVariable(variable.getName());
+				}
 				if (existing == null) {
 					existing = project.getUserVariable(variable.getName());
 				}
 				if (existing == null) {
+					existing = project.getMultiplayerVariable(variable.getName());
+				}
+				if (existing == null) {
 					existing = new UserVariable(variable.getName());
-					if (variable.getValue() != null) {
-						existing.setValue(variable.getValue());
+					Object restored = null;
+					boolean hasRestored = false;
+					if (variableValues != null && variableValues.containsKey(variable.getName())) {
+						restored = variableValues.get(variable.getName());
+						hasRestored = true;
+					} else if (variable.getValue() != null) {
+						restored = variable.getValue();
+						hasRestored = true;
+					}
+					if (hasRestored) {
+						existing.setValue(restored);
 					}
 					if (!sprite.addUserVariable(existing)) {
 						project.addUserVariable(existing);
@@ -97,6 +121,16 @@ public final class NeoScriptUserData {
 				}
 				if (existing == null) {
 					existing = new UserList(list.getName());
+					List<Object> restored = null;
+					if (listValues != null && listValues.containsKey(list.getName())
+							&& listValues.get(list.getName()) != null) {
+						restored = new ArrayList<>(listValues.get(list.getName()));
+					} else if (list.getValue() != null) {
+						restored = new ArrayList<>(list.getValue());
+					} else {
+						restored = new ArrayList<>();
+					}
+					existing.setValue(restored);
 					if (!sprite.addUserList(existing)) {
 						project.addUserList(existing);
 					}
@@ -107,6 +141,18 @@ public final class NeoScriptUserData {
 		for (Brick brick : script.getBrickList()) {
 			process(brick, relinker, new java.util.HashSet<>());
 		}
+	}
+
+	private static Scene findScene(Project project, Sprite sprite) {
+		if (project == null || sprite == null || project.getSceneList() == null) {
+			return null;
+		}
+		for (Scene scene : project.getSceneList()) {
+			if (scene != null && scene.getSpriteList() != null && scene.getSpriteList().contains(sprite)) {
+				return scene;
+			}
+		}
+		return null;
 	}
 
 	private static void process(Brick brick, VariableResolver resolver, Set<Object> visited) {

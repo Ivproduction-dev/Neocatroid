@@ -4,6 +4,8 @@ import static com.crashinvaders.vfx.effects.util.MixEffect.Method.MIX;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.audio.Music;
@@ -23,6 +25,7 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.BufferUtils;
+import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -351,6 +354,7 @@ public class ThreeDManager implements Disposable {
     private IBLBuilderCompat iblBuilderCompat;
 
     private Map<String, ModelInstance> sceneObjects = new HashMap<>();
+    private final Map<String, FrustumCulledScene> objectRenderProviders = new HashMap<>();
     private final Map<String, com.badlogic.gdx.graphics.glutils.ShaderProgram> objectShaderPrograms = new HashMap<>();
     private final Map<String, Map<String, Object>> objectShaderUniformValues = new HashMap<>();
 
@@ -2631,6 +2635,9 @@ public class ThreeDManager implements Disposable {
         if (objectWorldBounds.containsKey(oldId)) {
             objectWorldBounds.put(newId, objectWorldBounds.remove(oldId));
         }
+        if (objectRenderProviders.containsKey(oldId)) {
+            objectRenderProviders.put(newId, objectRenderProviders.remove(oldId));
+        }
 
         if (physicsBodies.containsKey(oldId)) {
             physicsBodies.put(newId, physicsBodies.remove(oldId));
@@ -3422,7 +3429,7 @@ public class ThreeDManager implements Disposable {
                 com.badlogic.gdx.math.collision.BoundingBox world = objectWorldBounds.get(id);
                 if (world != null && !camera.frustum.boundsInFrustum(world)) continue;
                 try {
-                    modelBatch.render(entry.getValue(), environment);
+                    modelBatch.render(getObjectRenderProvider(id, entry.getValue()), environment);
                 } catch (Throwable t) {
                     Gdx.app.error("3DManager", "Render failed for object '" + id + "' — removing it to keep the game running", t);
                     failedObjects.add(id);
@@ -3432,6 +3439,7 @@ public class ThreeDManager implements Disposable {
 
             for (String id : failedObjects) {
                 sceneObjects.remove(id);
+                objectRenderProviders.remove(id);
                 gltfObjectIds.remove(id);
                 animationControllers.remove(id);
             }
@@ -3587,7 +3595,7 @@ public class ThreeDManager implements Disposable {
                             continue;
                         }
 
-                        depthBatch.render(inst);
+                        depthBatch.render(getObjectRenderProvider(id, inst));
                     }
 
                     depthBatch.end();
@@ -3654,7 +3662,9 @@ public class ThreeDManager implements Disposable {
                     if (realisticMode && sceneManager != null) {
                         materialBatch.render(sceneManager.getRenderableProviders());
                     }
-                    materialBatch.render(sceneObjects.values());
+                    for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
+                        materialBatch.render(getObjectRenderProvider(entry.getKey(), entry.getValue()));
+                    }
 
                     materialBatch.end();
                     materialFbo.end();
@@ -3808,7 +3818,7 @@ public class ThreeDManager implements Disposable {
                             if (inactiveRenderObjects.contains(id)) continue;
                             com.badlogic.gdx.math.collision.BoundingBox world = objectWorldBounds.get(id);
                             if (world != null && !camera.frustum.boundsInFrustum(world)) continue;
-                            modelBatch.render(entry.getValue(), environment);
+                            modelBatch.render(getObjectRenderProvider(id, entry.getValue()), environment);
                         }
                         modelBatch.end();
                     }
@@ -4146,6 +4156,107 @@ public class ThreeDManager implements Disposable {
 
     private static final Set<String> UNSUPPORTED_GLTF_EXTENSIONS = new HashSet<>(java.util.Arrays.asList(
             "KHR_draco_mesh_compression", "EXT_meshopt_compression", "KHR_texture_basisu"));
+    private static final long MAX_LEGACY_MODEL_BYTES = 128L * 1024L * 1024L;
+    private static final long MAX_LEGACY_MODEL_TRIANGLES = 2_000_000L;
+
+    private final class FrustumCulledScene extends net.mgsx.gltf.scene3d.scene.Scene {
+        private final BoundingBox renderableBounds = new BoundingBox();
+
+        FrustumCulledScene(net.mgsx.gltf.scene3d.scene.SceneModel sceneModel) {
+            super(sceneModel);
+            updateMeshBounds(modelInstance.nodes);
+        }
+
+        FrustumCulledScene(ModelInstance instance) {
+            super(instance);
+            updateMeshBounds(modelInstance.nodes);
+        }
+
+        private void updateMeshBounds(Array<Node> nodes) {
+            for (Node node : nodes) {
+                for (NodePart part : node.parts) part.meshPart.update();
+                updateMeshBounds(node.getChildren());
+            }
+        }
+
+        @Override
+        public void getRenderables(Array<Renderable> renderables, Pool<Renderable> pool) {
+            int startIndex = renderables.size;
+            super.getRenderables(renderables, pool);
+            Camera frustumCamera = realisticMode && sceneManager != null ? sceneManager.camera : camera;
+            if (frustumCamera == null) return;
+
+            for (int index = renderables.size - 1; index >= startIndex; index--) {
+                Renderable renderable = renderables.get(index);
+                if (renderable.bones != null) continue;
+
+                renderableBounds.set(renderable.meshPart.center, renderable.meshPart.halfExtents);
+                renderableBounds.mul(renderable.worldTransform);
+                if (!frustumCamera.frustum.boundsInFrustum(renderableBounds)) {
+                    pool.free(renderable);
+                    renderables.removeIndex(index);
+                }
+            }
+        }
+    }
+
+    private RenderableProvider getObjectRenderProvider(String objectId, ModelInstance instance) {
+        FrustumCulledScene provider = objectRenderProviders.get(objectId);
+        return provider == null ? instance : provider;
+    }
+
+    private boolean isLegacyModelWithinBudget(FileHandle fileHandle, String lowerCasePath) {
+        long fileBytes = fileHandle.length();
+        if (fileBytes > MAX_LEGACY_MODEL_BYTES) {
+            Gdx.app.error("3DManager", "Model exceeds legacy 3D limit of 128 MiB: " + fileHandle.path());
+            return false;
+        }
+
+        if (!lowerCasePath.endsWith(".glb") && !lowerCasePath.endsWith(".gltf")) return true;
+
+        String json = lowerCasePath.endsWith(".glb")
+                ? readGltfJsonChunk(fileHandle)
+                : fileHandle.readString("UTF-8");
+        if (json == null) return true;
+
+        try {
+            JSONObject modelJson = new JSONObject(json);
+            JSONArray accessors = modelJson.optJSONArray("accessors");
+            JSONArray meshes = modelJson.optJSONArray("meshes");
+            if (accessors == null || meshes == null) return true;
+
+            long triangles = 0;
+            for (int meshIndex = 0; meshIndex < meshes.length(); meshIndex++) {
+                JSONArray primitives = meshes.getJSONObject(meshIndex).optJSONArray("primitives");
+                if (primitives == null) continue;
+                for (int primitiveIndex = 0; primitiveIndex < primitives.length(); primitiveIndex++) {
+                    JSONObject primitive = primitives.getJSONObject(primitiveIndex);
+                    int mode = primitive.optInt("mode", 4);
+                    if (mode != 4 && mode != 5 && mode != 6) continue;
+
+                    int accessorIndex = primitive.optInt("indices", -1);
+                    if (accessorIndex < 0) {
+                        JSONObject attributes = primitive.optJSONObject("attributes");
+                        accessorIndex = attributes == null ? -1 : attributes.optInt("POSITION", -1);
+                    }
+                    if (accessorIndex < 0 || accessorIndex >= accessors.length()) continue;
+
+                    long elementCount = accessors.getJSONObject(accessorIndex).optLong("count", 0);
+                    long primitiveTriangles = mode == 4 ? elementCount / 3 : Math.max(0, elementCount - 2);
+                    triangles += primitiveTriangles;
+                    if (triangles > MAX_LEGACY_MODEL_TRIANGLES) {
+                        Gdx.app.error("3DManager", "Model exceeds legacy 3D limit of 2000000 triangles: "
+                                + fileHandle.path());
+                        return false;
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            Gdx.app.error("3DManager", "Could not inspect model complexity; continuing with loader: "
+                    + fileHandle.path(), exception);
+        }
+        return true;
+    }
 
     private boolean hasUnsupportedGltfExtensions(FileHandle fileHandle) {
         String json = readGltfJsonChunk(fileHandle);
@@ -4204,9 +4315,9 @@ public class ThreeDManager implements Disposable {
                 Gdx.app.error("3DManager", "Model file not found: " + fileHandle.path());
                 return false;
             }
+            String lowerCasePath = modelPath.toLowerCase(java.util.Locale.ROOT);
+            if (!isLegacyModelWithinBudget(fileHandle, lowerCasePath)) return false;
             final String modelCacheKey = fileHandle.path();
-
-            String lowerCasePath = modelPath.toLowerCase();
 
             if (lowerCasePath.endsWith(".glb") || lowerCasePath.endsWith(".gltf")) {
                 if (hasUnsupportedGltfExtensions(fileHandle)) {
@@ -4225,10 +4336,11 @@ public class ThreeDManager implements Disposable {
 
                 if (sceneAsset != null) {
 
-                    net.mgsx.gltf.scene3d.scene.Scene scene = new net.mgsx.gltf.scene3d.scene.Scene(sceneAsset.scene);
+                    FrustumCulledScene scene = new FrustumCulledScene(sceneAsset.scene);
 
                     sceneManager.addScene(scene);
                     sceneObjects.put(objectId, scene.modelInstance);
+                    objectRenderProviders.put(objectId, scene);
 
                     gltfObjectIds.add(objectId);
 
@@ -4285,8 +4397,11 @@ public class ThreeDManager implements Disposable {
                         mat.set(net.mgsx.gltf.scene3d.attributes.PBRFloatAttribute.createRoughness(1.0f));
                     }
 
-                    net.mgsx.gltf.scene3d.scene.Scene pbrScene = new net.mgsx.gltf.scene3d.scene.Scene(instance);
-                    sceneManager.addScene(pbrScene);
+                    FrustumCulledScene renderProvider = new FrustumCulledScene(instance);
+                    objectRenderProviders.put(objectId, renderProvider);
+                    sceneManager.addScene(renderProvider);
+                } else {
+                    objectRenderProviders.put(objectId, new FrustumCulledScene(instance));
                 }
 
                 if (hiddenSpawnIds.contains(objectId)) { hiddenSpawnIds.remove(objectId); setObjectVisibility(objectId, false); }
@@ -4902,6 +5017,7 @@ public class ThreeDManager implements Disposable {
     public boolean removeObject(String objectId) {
         manager.removeGameObject(manager.findGameObject(objectId));
         ModelInstance instance = sceneObjects.remove(objectId);
+        objectRenderProviders.remove(objectId);
         objectLocalBounds.remove(objectId);
         objectWorldBounds.remove(objectId);
         objectShaderPrograms.remove(objectId);
@@ -5952,6 +6068,7 @@ public class ThreeDManager implements Disposable {
             removeObject(id);
         }
         sceneObjects.clear();
+        objectRenderProviders.clear();
 
         Array<String> bodyIds = new Array<>();
         for (String id : physicsBodies.keySet()) {
@@ -6268,7 +6385,7 @@ public class ThreeDManager implements Disposable {
                 modelBatch.begin(customCamera);
                 for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
                     if (!inactiveRenderObjects.contains(entry.getKey())) {
-                        modelBatch.render(entry.getValue(), environment);
+                        modelBatch.render(getObjectRenderProvider(entry.getKey(), entry.getValue()), environment);
                     }
                 }
                 modelBatch.end();
@@ -6513,7 +6630,8 @@ public class ThreeDManager implements Disposable {
                 return;
             }
 
-            String lowerCasePath = modelPath.toLowerCase();
+            String lowerCasePath = modelPath.toLowerCase(java.util.Locale.ROOT);
+            if (!isLegacyModelWithinBudget(fileHandle, lowerCasePath)) return;
             Model newModel;
 
             if (lowerCasePath.endsWith(".glb") || lowerCasePath.endsWith(".gltf")) {
@@ -6531,7 +6649,7 @@ public class ThreeDManager implements Disposable {
                 }
                 if (sceneAsset == null) return;
 
-                net.mgsx.gltf.scene3d.scene.Scene scene = new net.mgsx.gltf.scene3d.scene.Scene(sceneAsset.scene);
+                net.mgsx.gltf.scene3d.scene.Scene scene = new FrustumCulledScene(sceneAsset.scene);
                 ModelInstance newInstance = scene.modelInstance;
                 newInstance.transform.set(oldInstance.transform);
 
@@ -6550,6 +6668,7 @@ public class ThreeDManager implements Disposable {
                 newInstance.calculateTransforms();
                 newInstance.calculateBoundingBox(new BoundingBox());
                 sceneObjects.put(objectId, newInstance);
+                objectRenderProviders.put(objectId, scene);
 
                 if (!gltfObjectIds.contains(objectId)) gltfObjectIds.add(objectId);
                 if (scene.modelInstance.animations.size > 0) {
@@ -6587,7 +6706,8 @@ public class ThreeDManager implements Disposable {
                         mat.set(PBRFloatAttribute.createMetallic(0.0f));
                         mat.set(PBRFloatAttribute.createRoughness(1.0f));
                     }
-                    net.mgsx.gltf.scene3d.scene.Scene pbrScene = new net.mgsx.gltf.scene3d.scene.Scene(newInstance);
+                    FrustumCulledScene pbrScene = new FrustumCulledScene(newInstance);
+                    objectRenderProviders.put(objectId, pbrScene);
                     if (sceneManager != null) {
                         for (RenderableProvider p : sceneManager.getRenderableProviders()) {
                             if (p instanceof net.mgsx.gltf.scene3d.scene.Scene) {
@@ -6599,6 +6719,8 @@ public class ThreeDManager implements Disposable {
                         }
                         sceneManager.addScene(pbrScene);
                     }
+                } else {
+                    objectRenderProviders.put(objectId, new FrustumCulledScene(newInstance));
                 }
 
                 newInstance.calculateTransforms();

@@ -1,5 +1,8 @@
 package org.catrobat.catroid.neo3d.assets;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,6 +37,8 @@ public class Neo3DAssetManager {
 
     public static final int DEFAULT_MAX_TEXTURE_DIMENSION = 2048;
     public static final int DEFAULT_MAX_ENTRIES = 128;
+    public static final long MAX_MODEL_BYTES = 128L * 1024L * 1024L;
+    public static final long MAX_MODEL_TRIANGLES = 2_000_000L;
 
     private final int maxEntries;
     private final int maxTextureDimension;
@@ -159,6 +164,49 @@ public class Neo3DAssetManager {
             }
         }
         return false;
+    }
+
+    public static boolean isModelWithinBudget(byte[] glbBytes) {
+        if (glbBytes == null || glbBytes.length > MAX_MODEL_BYTES) {
+            return false;
+        }
+        if (glbBytes.length < 20 || glbBytes[0] != 'g' || glbBytes[1] != 'l'
+                || glbBytes[2] != 'T' || glbBytes[3] != 'F') {
+            return true;
+        }
+        int jsonLength = readLe32(glbBytes, 12);
+        if (jsonLength <= 0 || jsonLength > glbBytes.length - 20) {
+            return true;
+        }
+        try {
+            JSONObject gltf = new JSONObject(new String(glbBytes, 20, jsonLength, "UTF-8"));
+            JSONArray accessors = gltf.optJSONArray("accessors");
+            JSONArray meshes = gltf.optJSONArray("meshes");
+            if (accessors == null || meshes == null) {
+                return true;
+            }
+            long triangles = 0;
+            for (int meshIndex = 0; meshIndex < meshes.length(); meshIndex++) {
+                JSONArray primitives = meshes.getJSONObject(meshIndex).optJSONArray("primitives");
+                if (primitives == null) continue;
+                for (int primitiveIndex = 0; primitiveIndex < primitives.length(); primitiveIndex++) {
+                    JSONObject primitive = primitives.getJSONObject(primitiveIndex);
+                    int mode = primitive.optInt("mode", 4);
+                    if (mode != 4 && mode != 5 && mode != 6) continue;
+                    int accessorIndex = primitive.optInt("indices", -1);
+                    if (accessorIndex < 0) {
+                        JSONObject attributes = primitive.optJSONObject("attributes");
+                        accessorIndex = attributes == null ? -1 : attributes.optInt("POSITION", -1);
+                    }
+                    if (accessorIndex < 0 || accessorIndex >= accessors.length()) continue;
+                    long count = accessors.getJSONObject(accessorIndex).optLong("count", 0);
+                    triangles += mode == 4 ? count / 3 : Math.max(0, count - 2);
+                    if (triangles > MAX_MODEL_TRIANGLES) return false;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return true;
     }
 
     private static int readLe32(byte[] b, int off) {

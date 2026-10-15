@@ -63,6 +63,182 @@ public final class Neo3DPrimitiveMeshes {
         idx.add(base + 3);
     }
 
+    public static final String ASSET_KEY_GIZMO_ARROW_X = "embedded:neo-gizmo-arrow-x";
+    public static final String ASSET_KEY_GIZMO_ARROW_Y = "embedded:neo-gizmo-arrow-y";
+    public static final String ASSET_KEY_GIZMO_ARROW_Z = "embedded:neo-gizmo-arrow-z";
+    public static final String ASSET_KEY_GIZMO_RING_X = "embedded:neo-gizmo-ring-x";
+    public static final String ASSET_KEY_GIZMO_RING_Y = "embedded:neo-gizmo-ring-y";
+    public static final String ASSET_KEY_GIZMO_RING_Z = "embedded:neo-gizmo-ring-z";
+    public static final String ASSET_KEY_GIZMO_SCALE_X = "embedded:neo-gizmo-scale-x";
+    public static final String ASSET_KEY_GIZMO_SCALE_Y = "embedded:neo-gizmo-scale-y";
+    public static final String ASSET_KEY_GIZMO_SCALE_Z = "embedded:neo-gizmo-scale-z";
+
+    public static byte[] buildGizmoArrow(int axis, float[] colorRgba) {
+        List<Float> pos = new ArrayList<>();
+        List<Float> nor = new ArrayList<>();
+        List<Float> uv = new ArrayList<>();
+        List<Integer> idx = new ArrayList<>();
+        addCylinderAlongAxis(pos, nor, uv, idx, axis, 0f, 0.85f, 0.025f, 0.025f, 10);
+        addDiskAlongAxis(pos, nor, uv, idx, axis, 0.85f, 0.075f, 10, true);
+        addCylinderAlongAxis(pos, nor, uv, idx, axis, 0.85f, 1.15f, 0.075f, 0.002f, 10);
+        return packGlb("GizmoArrow" + axis, pos, nor, uv, idx, colorRgba);
+    }
+
+    public static byte[] buildGizmoScale(int axis, float[] colorRgba) {
+        List<Float> pos = new ArrayList<>();
+        List<Float> nor = new ArrayList<>();
+        List<Float> uv = new ArrayList<>();
+        List<Integer> idx = new ArrayList<>();
+        addCylinderAlongAxis(pos, nor, uv, idx, axis, 0f, 0.90f, 0.025f, 0.025f, 10);
+        addCubeAtAxis(pos, nor, uv, idx, axis, 0.98f, 0.12f);
+        return packGlb("GizmoScale" + axis, pos, nor, uv, idx, colorRgba);
+    }
+
+    public static byte[] buildGizmoRing(int axis, float[] colorRgba) {
+        List<Float> pos = new ArrayList<>();
+        List<Float> nor = new ArrayList<>();
+        List<Float> uv = new ArrayList<>();
+        List<Integer> idx = new ArrayList<>();
+        addTorusAroundAxis(pos, nor, uv, idx, axis, 1.0f, 0.022f, 28, 8);
+        return packGlb("GizmoRing" + axis, pos, nor, uv, idx, colorRgba);
+    }
+
+    private static float[] makeAxisPoint(int axis, float primary, float u, float v) {
+        if (axis == 0) return new float[]{primary, u, v};
+        if (axis == 1) return new float[]{u, primary, v};
+        return new float[]{u, v, primary};
+    }
+
+    private static void addCylinderAlongAxis(List<Float> pos, List<Float> nor, List<Float> uv,
+            List<Integer> idx, int axis, float t0, float t1, float r0, float r1, int seg) {
+        int baseIdx = pos.size() / 3;
+        for (int i = 0; i <= seg; i++) {
+            float phi = (float) (i * 2.0 * Math.PI / seg);
+            float cos = (float) Math.cos(phi);
+            float sin = (float) Math.sin(phi);
+            float u = (float) i / seg;
+
+            float[] p0 = makeAxisPoint(axis, t0, cos * r0, sin * r0);
+            float[] n0 = makeAxisPoint(axis, 0f, cos, sin);
+            pos.add(p0[0]); pos.add(p0[1]); pos.add(p0[2]);
+            nor.add(n0[0]); nor.add(n0[1]); nor.add(n0[2]);
+            uv.add(u); uv.add(0f);
+
+            float[] p1 = makeAxisPoint(axis, t1, cos * r1, sin * r1);
+            pos.add(p1[0]); pos.add(p1[1]); pos.add(p1[2]);
+            nor.add(n0[0]); nor.add(n0[1]); nor.add(n0[2]);
+            uv.add(u); uv.add(1f);
+        }
+        for (int i = 0; i < seg; i++) {
+            int b0 = baseIdx + i * 2;
+            int t0_idx = baseIdx + i * 2 + 1;
+            int b1 = baseIdx + (i + 1) * 2;
+            int t1_idx = baseIdx + (i + 1) * 2 + 1;
+            idx.add(b0); idx.add(t0_idx); idx.add(b1);
+            idx.add(b1); idx.add(t0_idx); idx.add(t1_idx);
+        }
+    }
+
+    private static void addDiskAlongAxis(List<Float> pos, List<Float> nor, List<Float> uv,
+            List<Integer> idx, int axis, float t, float r, int seg, boolean flipNormal) {
+        int centerIdx = pos.size() / 3;
+        float sign = flipNormal ? -1f : 1f;
+        float[] cp = makeAxisPoint(axis, t, 0f, 0f);
+        float[] cn = makeAxisPoint(axis, sign, 0f, 0f);
+        pos.add(cp[0]); pos.add(cp[1]); pos.add(cp[2]);
+        nor.add(cn[0]); nor.add(cn[1]); nor.add(cn[2]);
+        uv.add(0.5f); uv.add(0.5f);
+
+        int ringStart = pos.size() / 3;
+        for (int i = 0; i <= seg; i++) {
+            float phi = (float) (i * 2.0 * Math.PI / seg);
+            float cos = (float) Math.cos(phi);
+            float sin = (float) Math.sin(phi);
+            float[] p = makeAxisPoint(axis, t, cos * r, sin * r);
+            pos.add(p[0]); pos.add(p[1]); pos.add(p[2]);
+            nor.add(cn[0]); nor.add(cn[1]); nor.add(cn[2]);
+            uv.add(0.5f + cos * 0.5f); uv.add(0.5f + sin * 0.5f);
+        }
+        for (int i = 0; i < seg; i++) {
+            if (flipNormal) {
+                idx.add(centerIdx); idx.add(ringStart + i + 1); idx.add(ringStart + i);
+            } else {
+                idx.add(centerIdx); idx.add(ringStart + i); idx.add(ringStart + i + 1);
+            }
+        }
+    }
+
+    private static void addCubeAtAxis(List<Float> pos, List<Float> nor, List<Float> uv,
+            List<Integer> idx, int axis, float centerT, float size) {
+        float h = size * 0.5f;
+        float[] center = makeAxisPoint(axis, centerT, 0f, 0f);
+        float[][] faces = {
+                {h, -h, -h, h, h, -h, h, h, h, h, -h, h},
+                {-h, -h, h, -h, h, h, -h, h, -h, -h, -h, -h},
+                {-h, h, -h, -h, h, h, h, h, h, h, h, -h},
+                {-h, -h, h, -h, -h, -h, h, -h, -h, h, -h, h},
+                {-h, -h, h, h, -h, h, h, h, h, -h, h, h},
+                {h, -h, -h, -h, -h, -h, -h, h, -h, h, h, -h},
+        };
+        float[][] normals = {
+                {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
+        };
+        float[] quadUv = {0, 0, 1, 0, 1, 1, 0, 1};
+        int baseIdx = pos.size() / 3;
+        for (int f = 0; f < 6; f++) {
+            int fBase = baseIdx + f * 4;
+            for (int v = 0; v < 4; v++) {
+                pos.add(center[0] + faces[f][v * 3]);
+                pos.add(center[1] + faces[f][v * 3 + 1]);
+                pos.add(center[2] + faces[f][v * 3 + 2]);
+                nor.add(normals[f][0]); nor.add(normals[f][1]); nor.add(normals[f][2]);
+                uv.add(quadUv[v * 2]); uv.add(quadUv[v * 2 + 1]);
+            }
+            idx.add(fBase); idx.add(fBase + 1); idx.add(fBase + 2);
+            idx.add(fBase); idx.add(fBase + 2); idx.add(fBase + 3);
+        }
+    }
+
+    private static void addTorusAroundAxis(List<Float> pos, List<Float> nor, List<Float> uv,
+            List<Integer> idx, int axis, float majorR, float minorR, int segR, int segTube) {
+        int baseIdx = pos.size() / 3;
+        for (int i = 0; i <= segR; i++) {
+            float theta = (float) (i * 2.0 * Math.PI / segR);
+            float cosT = (float) Math.cos(theta);
+            float sinT = (float) Math.sin(theta);
+            float u = (float) i / segR;
+            for (int j = 0; j <= segTube; j++) {
+                float phi = (float) (j * 2.0 * Math.PI / segTube);
+                float cosP = (float) Math.cos(phi);
+                float sinP = (float) Math.sin(phi);
+                float v = (float) j / segTube;
+
+                float r = majorR + minorR * cosP;
+                float radialU = r * cosT;
+                float radialV = r * sinT;
+                float axial = minorR * sinP;
+
+                float[] p = makeAxisPoint(axis, axial, radialU, radialV);
+                float[] n = makeAxisPoint(axis, sinP, cosP * cosT, cosP * sinT);
+
+                pos.add(p[0]); pos.add(p[1]); pos.add(p[2]);
+                nor.add(n[0]); nor.add(n[1]); nor.add(n[2]);
+                uv.add(u); uv.add(v);
+            }
+        }
+        int stride = segTube + 1;
+        for (int i = 0; i < segR; i++) {
+            for (int j = 0; j < segTube; j++) {
+                int a = baseIdx + i * stride + j;
+                int b = baseIdx + (i + 1) * stride + j;
+                int c = baseIdx + (i + 1) * stride + (j + 1);
+                int d = baseIdx + i * stride + (j + 1);
+                idx.add(a); idx.add(b); idx.add(c);
+                idx.add(a); idx.add(c); idx.add(d);
+            }
+        }
+    }
+
     private Neo3DPrimitiveMeshes() {
     }
 

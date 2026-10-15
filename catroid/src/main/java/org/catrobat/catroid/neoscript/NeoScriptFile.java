@@ -21,7 +21,9 @@ import org.catrobat.catroid.formulaeditor.UserVariable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NeoScriptFile implements Serializable {
 
@@ -42,6 +44,8 @@ public class NeoScriptFile implements Serializable {
 	private List<Script> scripts = new ArrayList<>();
 	private List<UserVariable> userVariables = new ArrayList<>();
 	private List<UserList> userLists = new ArrayList<>();
+	private Map<String, Object> userVariableValues = new HashMap<>();
+	private Map<String, List<Object>> userListValues = new HashMap<>();
 
 	public NeoScriptFile() {
 	}
@@ -100,5 +104,27 @@ public class NeoScriptFile implements Serializable {
 
 	public void setUserLists(List<UserList> userLists) {
 		this.userLists = userLists;
+	}
+
+	public Map<String, Object> getUserVariableValues() {
+		if (userVariableValues == null) {
+			userVariableValues = new HashMap<>();
+		}
+		return userVariableValues;
+	}
+
+	public void setUserVariableValues(Map<String, Object> userVariableValues) {
+		this.userVariableValues = userVariableValues;
+	}
+
+	public Map<String, List<Object>> getUserListValues() {
+		if (userListValues == null) {
+			userListValues = new HashMap<>();
+		}
+		return userListValues;
+	}
+
+	public void setUserListValues(Map<String, List<Object>> userListValues) {
+		this.userListValues = userListValues;
 	}
 }

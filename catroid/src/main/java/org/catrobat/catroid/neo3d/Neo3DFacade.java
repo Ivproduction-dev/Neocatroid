@@ -293,6 +293,15 @@ public final class Neo3DFacade {
         return engine;
     }
 
+    public static void facadeLoadScene(org.catrobat.catroid.content.Project project,
+            org.catrobat.catroid.content.Scene scene, String sceneId) {
+        Neo3DSceneLoader.loadScene(project, scene, sceneId);
+    }
+
+    public static void facadeSyncScene(String sceneId) {
+        require().syncScene(sceneId);
+    }
+
     public static float[] facadeGetObjectPosition(String sceneId, String objectId) {
         Neo3DEngine e = require();
         Neo3DScene scene = e.getScene(sceneId);

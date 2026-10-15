@@ -401,7 +401,7 @@ class ProjectActivity : BaseCastActivity() {
                         .addToBackStack(ProjectLibsFragment.TAG).commit()
                 }
             R.id.editor3d -> {
-                org.catrobat.catroid.editor.ThreeDEditorRouter.open(this)
+                startActivity(Intent(this, org.catrobat.catroid.editor.EditorActivity::class.java))
             }
             R.id.collab -> {
                 if (org.catrobat.catroid.collab.CollabUi.ENABLED) {

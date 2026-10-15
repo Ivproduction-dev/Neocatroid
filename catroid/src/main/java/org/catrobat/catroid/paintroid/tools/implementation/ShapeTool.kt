@@ -42,6 +42,7 @@ private const val DEFAULT_OUTLINE_WIDTH = 25
 private const val BUNDLE_BASE_SHAPE = "BASE_SHAPE"
 private const val BUNDLE_SHAPE_DRAW_TYPE = "SHAPE_DRAW_TYPE"
 private const val BUNDLE_OUTLINE_WIDTH = "OUTLINE_WIDTH"
+private const val BUNDLE_LIGHT_INTENSITY = "LIGHT_INTENSITY"
 private const val STROKE_MITER_MULTIPLICATOR: Int = 4
 
 class ShapeTool(
@@ -52,7 +53,8 @@ class ShapeTool(
     workspace: Workspace,
     idlingResource: CountingIdlingResource,
     commandManager: CommandManager,
-    override var drawTime: Long
+    override var drawTime: Long,
+    private val selectedToolType: ToolType = ToolType.SHAPE
 ) : BaseToolWithRectangleShape(
     contextCallback, toolOptionsViewController, toolPaint, workspace, idlingResource, commandManager
 ), BaseToolWithRectangleShape.ShapeSizeChangedListener {
@@ -64,10 +66,11 @@ class ShapeTool(
     private var shapeDrawType = DrawableStyle.FILL
     private var shapeDrawable = drawableFactory.createDrawable(baseShape)
     private var shapeOutlineWidth = DEFAULT_OUTLINE_WIDTH
+    private var lightIntensity = 75
     val shapeBitmapPaint = Paint()
 
     override val toolType: ToolType
-        get() = ToolType.SHAPE
+        get() = selectedToolType
 
     override fun handleUpAnimations(coordinate: PointF?) {
         super.handleUp(coordinate)
@@ -81,6 +84,9 @@ class ShapeTool(
 
     init {
         rotationEnabled = true
+        if (selectedToolType == ToolType.LIGHT2D) {
+            setBaseShape(DrawableShape.POINT_LIGHT)
+        }
         this.shapeToolOptionsView = shapeToolOptionsView
         this.shapeToolOptionsView.setCallback(
             object : ShapeToolOptionsView.Callback {
@@ -96,6 +102,11 @@ class ShapeTool(
 
                 override fun setOutlineWidth(outlineWidth: Int) {
                     shapeOutlineWidth = outlineWidth
+                    workspace.invalidate()
+                }
+
+                override fun setLightIntensity(intensity: Int) {
+                    lightIntensity = intensity.coerceIn(1, 100)
                     workspace.invalidate()
                 }
             })
@@ -122,6 +133,7 @@ class ShapeTool(
             putSerializable(BUNDLE_BASE_SHAPE, baseShape)
             putSerializable(BUNDLE_SHAPE_DRAW_TYPE, shapeDrawType)
             putInt(BUNDLE_OUTLINE_WIDTH, shapeOutlineWidth)
+            putInt(BUNDLE_LIGHT_INTENSITY, lightIntensity)
         }
     }
 
@@ -131,6 +143,8 @@ class ShapeTool(
         val newShapeDrawType =
             bundle?.getSerializable(BUNDLE_SHAPE_DRAW_TYPE) as DrawableStyle? ?: return
         val newShapeOutlineWidth = bundle?.getInt(BUNDLE_OUTLINE_WIDTH) ?: return
+        lightIntensity = bundle.getInt(BUNDLE_LIGHT_INTENSITY, lightIntensity)
+        shapeToolOptionsView.setLightIntensity(lightIntensity)
         if (baseShape != newBaseShape || shapeDrawType != newShapeDrawType) {
             baseShape = newBaseShape
             shapeDrawType = newShapeDrawType
@@ -145,6 +159,7 @@ class ShapeTool(
     override fun drawBitmap(canvas: Canvas, boxWidth: Float, boxHeight: Float) {
         shapePreviewPaint.set(toolPaint.previewPaint)
         preparePaint(shapePreviewPaint)
+        applyLightIntensity(shapePreviewPaint)
         prepareShapeRectangle(shapePreviewRect, boxWidth, boxHeight)
         shapeDrawable.draw(canvas, shapePreviewRect, shapePreviewPaint)
     }
@@ -183,6 +198,7 @@ class ShapeTool(
             shapeBitmapPaint.set(toolPaint.paint)
             val shapeRect = RectF()
             preparePaint(shapeBitmapPaint)
+            applyLightIntensity(shapeBitmapPaint)
             prepareShapeRectangle(shapeRect, boxWidth, boxHeight)
             val command = commandFactory.createGeometricFillCommand(
                 shapeDrawable,
@@ -193,6 +209,15 @@ class ShapeTool(
             )
             commandManager.addCommand(command)
             highlightBox()
+        }
+    }
+
+    private fun applyLightIntensity(paint: Paint) {
+        if (baseShape == DrawableShape.POINT_LIGHT ||
+            baseShape == DrawableShape.AURA_LIGHT ||
+            baseShape == DrawableShape.SPOT_LIGHT
+        ) {
+            paint.alpha = paint.alpha * lightIntensity / 100
         }
     }
 

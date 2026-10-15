@@ -3259,6 +3259,195 @@ public class ActionFactory extends Actions {
 		return action;
 	}
 
+	public Action createListenTcpServerAction(Sprite sprite, SequenceAction sequence,
+											  List<UserVariable> variables, int listenMode, Formula serverName) {
+		ListenTcpServerAction action = action(ListenTcpServerAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setVariables(variables);
+		action.setListenMode(listenMode);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createSendToTcpServerAction(Sprite sprite, SequenceAction sequence,
+											  List<Formula> values, Formula serverName) {
+		SendToTcpServerAction action = action(SendToTcpServerAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setValues(values);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createSendToTcpClientsAction(Sprite sprite, SequenceAction sequence,
+											  List<Formula> values, int echoMode, Formula serverName) {
+		SendToTcpClientsAction action = action(SendToTcpClientsAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setValues(values);
+		action.setEchoMode(echoMode);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createSetTcpServerClientLimitAction(Sprite sprite, SequenceAction sequence,
+													  Formula limit, Formula serverName) {
+		SetTcpServerClientLimitAction action = action(SetTcpServerClientLimitAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setLimit(limit);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createSetTcpServerTimeoutAction(Sprite sprite, SequenceAction sequence,
+												  Formula timeout, Formula serverName) {
+		SetTcpServerTimeoutAction action = action(SetTcpServerTimeoutAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setTimeout(timeout);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createListenServerAction(Sprite sprite, SequenceAction sequence,
+										  UserVariable variable, int listenMode) {
+		ListenServerAction action = action(ListenServerAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setVariable(variable);
+		action.setListenMode(listenMode);
+		return action;
+	}
+
+	public Action createStartTcpServerNamedAction(Sprite sprite, SequenceAction sequence,
+												  Formula serverName, Formula port) {
+		StartTcpServerNamedAction action = action(StartTcpServerNamedAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setPort(port);
+		return action;
+	}
+
+	public Action createStopTcpServerNamedAction(Sprite sprite, SequenceAction sequence,
+												 Formula serverName) {
+		StopTcpServerNamedAction action = action(StopTcpServerNamedAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createConnectTcpServerNamedAction(Sprite sprite, SequenceAction sequence,
+													Formula serverName, Formula ip, Formula port) {
+		ConnectTcpServerNamedAction action = action(ConnectTcpServerNamedAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setIp(ip);
+		action.setPort(port);
+		return action;
+	}
+
+	public Action createDisconnectTcpServerNamedAction(Sprite sprite, SequenceAction sequence,
+													   Formula serverName) {
+		DisconnectTcpServerNamedAction action = action(DisconnectTcpServerNamedAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createClearTcpVariableAction(Sprite sprite, SequenceAction sequence,
+											   UserVariable variable) {
+		ClearTcpVariableAction action = action(ClearTcpVariableAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setVariable(variable);
+		return action;
+	}
+
+	public Action createTcpPingAction(Sprite sprite, SequenceAction sequence,
+									  Formula serverName, Formula ip, Formula port,
+									  UserVariable variable, boolean measure, Formula timeout) {
+		TcpPingAction action = action(TcpPingAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setIp(ip);
+		action.setPort(port);
+		action.setVariable(variable);
+		action.setMeasure(measure);
+		action.setTimeout(timeout);
+		return action;
+	}
+
+	public Action createStartUdpAction(Sprite sprite, SequenceAction sequence,
+									  Formula serverName, Formula port) {
+		StartUdpAction action = action(StartUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setPort(port);
+		return action;
+	}
+
+	public Action createStopUdpAction(Sprite sprite, SequenceAction sequence,
+									  Formula serverName) {
+		StopUdpAction action = action(StopUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createConnectUdpAction(Sprite sprite, SequenceAction sequence,
+										 Formula serverName, Formula ip, Formula port) {
+		ConnectUdpAction action = action(ConnectUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setIp(ip);
+		action.setPort(port);
+		return action;
+	}
+
+	public Action createDisconnectUdpAction(Sprite sprite, SequenceAction sequence,
+											Formula serverName) {
+		DisconnectUdpAction action = action(DisconnectUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		return action;
+	}
+
+	public Action createSendUdpAction(Sprite sprite, SequenceAction sequence,
+									  Formula serverName, Formula ip, Formula port,
+									  List<Formula> values, int sendMode) {
+		SendUdpAction action = action(SendUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setIp(ip);
+		action.setPort(port);
+		action.setValues(values);
+		action.setSendMode(sendMode);
+		return action;
+	}
+
+	public Action createListenUdpAction(Sprite sprite, SequenceAction sequence,
+										List<UserVariable> variables, int listenMode, Formula serverName) {
+		ListenUdpAction action = action(ListenUdpAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setVariables(variables);
+		action.setListenMode(listenMode);
+		action.setServerName(serverName);
+		return action;
+	}
+
 	public static String generateRandomString(int length) {
 
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

@@ -26,6 +26,7 @@ import org.catrobat.catroid.R
 import org.catrobat.catroid.content.Sprite
 import org.catrobat.catroid.content.actions.ScriptSequenceAction
 import org.catrobat.catroid.content.bricks.Brick.BrickField
+import org.catrobat.catroid.content.bricks.Brick.ResourcesSet
 import org.catrobat.catroid.formulaeditor.Formula
 
 class WriteVariableToFileBrick() : UserVariableBrickWithFormula() {
@@ -49,6 +50,11 @@ class WriteVariableToFileBrick() : UserVariableBrickWithFormula() {
                 sprite.actionFactory.createWriteVariableToFileAction(
                     sprite, sequence, getFormulaWithBrickField(BrickField.WRITE_FILENAME), userVariable))
         }
+    }
+
+    override fun addRequiredResources(requiredResourcesSet: ResourcesSet) {
+        requiredResourcesSet.addAll(listOf(Brick.STORAGE_READ, Brick.STORAGE_WRITE))
+        super.addRequiredResources(requiredResourcesSet)
     }
 
 }

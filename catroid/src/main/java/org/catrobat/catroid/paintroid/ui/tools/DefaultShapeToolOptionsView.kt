@@ -53,6 +53,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
     private val heartButton: AppCompatImageButton
     private val starButton: AppCompatImageButton
     private val pixelButton: AppCompatImageButton
+    private val triangleButton: AppCompatImageButton
     private val fillButton: AppCompatImageButton
     private val outlineButton: AppCompatImageButton
     private val outlineView: View
@@ -75,6 +76,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
             heartButton = findViewById(R.id.pocketpaint_shapes_heart_btn)
             starButton = findViewById(R.id.pocketpaint_shapes_star_btn)
             pixelButton = findViewById(R.id.pocketpaint_shapes_pixel_btn)
+            triangleButton = findViewById(R.id.pocketpaint_shapes_triangle_btn)
             fillButton = findViewById(R.id.pocketpaint_shape_ibtn_fill)
             outlineButton = findViewById(R.id.pocketpaint_shape_ibtn_outline)
             shapeToolDialogTitle = findViewById(R.id.pocketpaint_shape_tool_dialog_title)
@@ -103,6 +105,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
         heartButton.setOnClickListener { onShapeClicked(DrawableShape.HEART) }
         starButton.setOnClickListener { onShapeClicked(DrawableShape.STAR) }
         pixelButton.setOnClickListener { onShapeClicked(DrawableShape.PIXEL) }
+        triangleButton.setOnClickListener { onShapeClicked(DrawableShape.TRIANGLE) }
         fillButton.setOnClickListener { onDrawTypeClicked(DrawableStyle.FILL) }
         outlineButton.setOnClickListener { onDrawTypeClicked(DrawableStyle.STROKE) }
         outlineWidthSeekBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
@@ -155,7 +158,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
     }
 
     private fun resetShapeActivated() {
-        val buttons = arrayOf<View>(squareButton, circleButton, heartButton, starButton, pixelButton)
+        val buttons = arrayOf<View>(squareButton, circleButton, heartButton, starButton, pixelButton, triangleButton)
         for (button in buttons) {
             button.isSelected = false
         }
@@ -193,6 +196,10 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
                 pixelButton.isSelected = true
                 setShapeToolDialogTitle(R.string.shape_tool_dialog_pixel_title)
             }
+            DrawableShape.TRIANGLE -> {
+                triangleButton.isSelected = true
+                setShapeToolDialogTitle(R.string.shape_tool_dialog_triangle_title)
+            }
         }
     }
 
@@ -203,6 +210,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
         heartButtonResource: Int,
         starButtonResource: Int,
         pixelButtonResource: Int,
+        triangleButtonResource: Int,
         visibility: Int
     ) {
         shapeToolFillOutline.setText(fillTitle)
@@ -211,6 +219,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
         heartButton.setImageResource(heartButtonResource)
         starButton.setImageResource(starButtonResource)
         pixelButton.setImageResource(pixelButtonResource)
+        triangleButton.setImageResource(triangleButtonResource)
         outlineWidthSeekBar.visibility = visibility
         outlineWidthEditText.visibility = visibility
         outlineView.visibility = visibility
@@ -229,6 +238,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
                     R.drawable.ic_pocketpaint_heart,
                     R.drawable.ic_pocketpaint_star,
                     R.drawable.ic_pocketpaint_pixel,
+                    R.drawable.ic_pocketpaint_triangle,
                     View.GONE
                 )
             }
@@ -241,6 +251,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
                     R.drawable.ic_pocketpaint_heart_out,
                     R.drawable.ic_pocketpaint_star_out,
                     R.drawable.ic_pocketpaint_pixel_out,
+                    R.drawable.ic_pocketpaint_triangle_out,
                     View.VISIBLE
                 )
             }

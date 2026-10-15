@@ -44,9 +44,12 @@ import org.catrobat.catroid.content.bricks.RepeatUntilBrick
 import org.catrobat.catroid.content.bricks.SceneStartBrick
 import org.catrobat.catroid.content.bricks.SetBrightnessBrick
 import org.catrobat.catroid.content.bricks.SetLookBrick
+import org.catrobat.catroid.content.bricks.SetLookByIndexBrick
 import org.catrobat.catroid.content.bricks.SetSizeToBrick
 import org.catrobat.catroid.content.bricks.SetTransparencyBrick
 import org.catrobat.catroid.content.bricks.SetVariableBrick
+import org.catrobat.catroid.content.bricks.SetXBrick
+import org.catrobat.catroid.content.bricks.SetYBrick
 import org.catrobat.catroid.content.bricks.ShowBrick
 import org.catrobat.catroid.content.bricks.StopScriptBrick
 import org.catrobat.catroid.content.bricks.TurnLeftBrick
@@ -77,9 +80,21 @@ class DesktopSpriteState(val project: Project?, val sprite: Sprite) {
     var opacity = 1f
     var lookIndex = 0
     val scope = Scope(project, sprite, null)
+
+    fun resetToDefaults() {
+        x = 0f
+        y = 0f
+        visible = true
+        sizePct = 100f
+        rotation = 90f
+        opacity = 1f
+        lookIndex = 0
+    }
 }
 
 class DesktopStage(val project: Project, val filesDir: File, private val overlays: OverlayCallbacks) {
+
+    private val waitUntilTimeoutNanos = 10_000_000_000L
 
     val states = HashMap<String, DesktopSpriteState>()
     var activeSceneName = ""
@@ -101,6 +116,8 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
         var timedWait = false
         var waitUntilNanos = 0L
         var waitingOn = mutableListOf<ScriptThread>()
+        var timeoutWait = false
+        var timedOut = false
         var done = false
     }
 
@@ -147,6 +164,9 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
         messageQueue.clear()
         states.clear()
         states.putAll(map)
+        for (state in states.values) {
+            state.resetToDefaults()
+        }
         activeSceneName = name
         overlays.onSceneStart()
         log("SCENE -> " + name)
@@ -243,6 +263,10 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
                 }
                 thread.waiting = false
                 thread.timedWait = false
+                if (thread.timeoutWait) {
+                    thread.timeoutWait = false
+                    thread.timedOut = true
+                }
                 thread.waitingOn.clear()
             }
             step(thread)
@@ -288,7 +312,8 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
                 }
                 val until = frame.untilFormula
                 if (until != null) {
-                    if (asBool(evalFormula(thread, until))) {
+                    val untilValue = evalDoubleOrNull(thread, until)
+                    if (untilValue == null || asBool(untilValue)) {
                         thread.stack.removeAt(thread.stack.size - 1)
                         if (thread.stack.isEmpty()) {
                             thread.pc++
@@ -337,10 +362,11 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
             }
             if (brick is RepeatUntilBrick) {
                 val cond = field(brick, Brick.BrickField.REPEAT_UNTIL_CONDITION)
-                if (cond == null || !asBool(evalFormula(thread, cond))) {
-                    thread.stack.add(LoopFrame(nested(brick), 0, Int.MAX_VALUE, false, cond))
-                } else {
+                val condValue = cond?.let { evalDoubleOrNull(thread, it) }
+                if (condValue == null || asBool(condValue)) {
                     advance(thread, frame)
+                } else {
+                    thread.stack.add(LoopFrame(nested(brick), 0, Int.MAX_VALUE, false, cond))
                 }
                 continue
             }
@@ -389,11 +415,16 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
                 continue
             }
             if (brick is WaitUntilBrick) {
-                if (asBool(evalDouble(thread, brick, Brick.BrickField.IF_CONDITION))) {
+                val cond = field(brick, Brick.BrickField.IF_CONDITION)
+                val condValue = cond?.let { evalDoubleOrNull(thread, it) }
+                if (thread.timedOut || condValue == null || asBool(condValue)) {
+                    thread.timedOut = false
                     advance(thread, frame)
                 } else {
                     thread.waiting = true
-                    thread.timedWait = false
+                    thread.timedWait = true
+                    thread.timeoutWait = true
+                    thread.waitUntilNanos = System.nanoTime() + waitUntilTimeoutNanos
                 }
                 continue
             }
@@ -488,18 +519,43 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
                 state.x = evalDouble(thread, brick, Brick.BrickField.X_POSITION).toFloat()
                 state.y = evalDouble(thread, brick, Brick.BrickField.Y_POSITION).toFloat()
             }
+            is SetXBrick -> state.x = evalDouble(thread, brick, Brick.BrickField.X_POSITION).toFloat()
+            is SetYBrick -> state.y = evalDouble(thread, brick, Brick.BrickField.Y_POSITION).toFloat()
+            is SetLookByIndexBrick -> {
+                val index = evalDouble(thread, brick, Brick.BrickField.LOOK_INDEX).toInt()
+                val size = state.sprite.lookList.size
+                if (size > 0 && index in 1..size) {
+                    state.lookIndex = index - 1
+                }
+            }
             is ChangeXByNBrick -> state.x += evalDouble(thread, brick, Brick.BrickField.X_POSITION_CHANGE).toFloat()
             is ChangeYByNBrick -> state.y += evalDouble(thread, brick, Brick.BrickField.Y_POSITION_CHANGE).toFloat()
             is HideBrick -> state.visible = false
             is ShowBrick -> state.visible = true
-            is SetSizeToBrick -> state.sizePct = evalDouble(thread, brick, Brick.BrickField.SIZE).toFloat()
-            is ChangeSizeByNBrick -> state.sizePct += evalDouble(thread, brick, Brick.BrickField.SIZE_CHANGE).toFloat()
-            is SetTransparencyBrick ->
-                state.opacity = (1f - evalDouble(thread, brick, Brick.BrickField.TRANSPARENCY).toFloat() / 100f).coerceIn(0f, 1f)
-            is ChangeTransparencyByNBrick ->
-                state.opacity = (state.opacity - evalDouble(thread, brick, Brick.BrickField.TRANSPARENCY_CHANGE).toFloat() / 100f).coerceIn(0f, 1f)
-            is TurnLeftBrick -> state.rotation -= evalDouble(thread, brick, Brick.BrickField.TURN_LEFT_DEGREES).toFloat()
-            is TurnRightBrick -> state.rotation += evalDouble(thread, brick, Brick.BrickField.TURN_RIGHT_DEGREES).toFloat()
+            is SetSizeToBrick ->
+                state.sizePct = evalDouble(thread, brick, Brick.BrickField.SIZE).toFloat().coerceAtLeast(0f)
+            is ChangeSizeByNBrick ->
+                state.sizePct = (state.sizePct +
+                        evalDouble(thread, brick, Brick.BrickField.SIZE_CHANGE).toFloat()).coerceAtLeast(0f)
+            is SetTransparencyBrick -> {
+                val transparency = evalDouble(thread, brick, Brick.BrickField.TRANSPARENCY).toFloat()
+                    .coerceAtLeast(0f)
+                state.opacity = (1f - transparency / 100f).coerceIn(0f, 1f)
+                state.visible = transparency < 100f
+            }
+            is ChangeTransparencyByNBrick -> {
+                val transparency = ((1f - state.opacity) * 100f +
+                        evalDouble(thread, brick, Brick.BrickField.TRANSPARENCY_CHANGE).toFloat())
+                    .coerceAtLeast(0f)
+                state.opacity = (1f - transparency / 100f).coerceIn(0f, 1f)
+                state.visible = transparency < 100f
+            }
+            is TurnLeftBrick ->
+                state.rotation = normalizeDegrees(state.rotation -
+                        evalDouble(thread, brick, Brick.BrickField.TURN_LEFT_DEGREES).toFloat())
+            is TurnRightBrick ->
+                state.rotation = normalizeDegrees(state.rotation +
+                        evalDouble(thread, brick, Brick.BrickField.TURN_RIGHT_DEGREES).toFloat())
             is PointInDirectionBrick -> state.rotation = evalDouble(thread, brick, Brick.BrickField.DEGREES).toFloat()
             is SetLookBrick -> {
                 val want = brick.look?.name ?: ""
@@ -653,6 +709,21 @@ class DesktopStage(val project: Project, val filesDir: File, private val overlay
     }
 
     private fun asBool(value: Double): Boolean = value != 0.0 && !value.isNaN()
+
+    private fun normalizeDegrees(degrees: Float): Float {
+        val wrapped = degrees % 360f
+        return if (wrapped < 0f) wrapped + 360f else wrapped
+    }
+
+    private fun evalDoubleOrNull(thread: ScriptThread, formula: Formula): Double? {
+        return try {
+            formula.interpretDouble(thread.state.scope)
+        } catch (e: InterpretationException) {
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     private fun coerceVariable(raw: Any): Any {
         if (raw is Boolean) return raw

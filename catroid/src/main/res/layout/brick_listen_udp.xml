@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <CheckBox
+        android:id="@+id/brick_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:visibility="gone" />
+
+    <org.catrobat.catroid.ui.BrickLayout
+        android:id="@+id/brick_listen_udp_layout"
+        style="@style/BrickContainer.Internet.Big">
+
+        <include layout="@layout/icon_brick_category_internet" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_listen_udp" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_tcp_server_name" />
+
+        <TextView
+            android:id="@+id/listen_udp_name_edit"
+            style="@style/BrickEditText"
+            app:layout_newLine="true" />
+
+        <Spinner
+            android:id="@+id/listen_udp_mode_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textDirection="locale"
+            app:layout_newLine="true" />
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="1:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="2:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus2"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="3:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus3"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="4:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus4"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="5:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus5"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row6"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="6:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus6"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="7:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus7"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="8:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner8"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus8"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row9"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="9:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner9"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus9"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="10:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner10"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus10"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row11"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="11:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner11"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus11"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/listen_udp_row12"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_newLine="true">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="12:" />
+
+            <Spinner
+                android:id="@+id/listen_udp_spinner12"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/listen_udp_minus12"
+                style="@style/BrickText.SingleLine"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_else_if_btn"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:text="-"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/brick_listen_udp_add"
+            style="@style/BrickText.SingleLine"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_else_if_btn"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:text="+"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_newLine="true" />
+
+    </org.catrobat.catroid.ui.BrickLayout>
+
+</LinearLayout>

@@ -19,5 +19,5 @@
 package org.catrobat.catroid.paintroid.tools.drawable
 
 enum class DrawableShape {
-    RECTANGLE, OVAL, HEART, STAR, PIXEL
+    RECTANGLE, OVAL, HEART, STAR, PIXEL, TRIANGLE, POINT_LIGHT, AURA_LIGHT, SPOT_LIGHT
 }

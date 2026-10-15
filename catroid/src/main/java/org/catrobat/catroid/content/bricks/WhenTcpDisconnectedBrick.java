@@ -1,14 +1,17 @@
 package org.catrobat.catroid.content.bricks;
 
+import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
+import org.catrobat.catroid.content.Scope;
 import org.catrobat.catroid.content.Script;
 import org.catrobat.catroid.content.Sprite;
 import org.catrobat.catroid.content.WhenTcpDisconnectedScript;
 import org.catrobat.catroid.content.actions.ScriptSequenceAction;
+import org.catrobat.catroid.formulaeditor.Formula;
 
 import java.util.List;
 
-public class WhenTcpDisconnectedBrick extends BrickBaseType implements ScriptBrick {
+public class WhenTcpDisconnectedBrick extends FormulaBrick implements ScriptBrick {
 
 	private static final long serialVersionUID = 1L;
 
@@ -19,9 +22,25 @@ public class WhenTcpDisconnectedBrick extends BrickBaseType implements ScriptBri
 	}
 
 	public WhenTcpDisconnectedBrick(WhenTcpDisconnectedScript script) {
+		addAllowedBrickField(BrickField.TEXT, R.id.brick_when_tcp_disconnected_name_edit);
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(""));
 		script.setScriptBrick(this);
 		commentedOut = script.isCommentedOut();
 		this.script = script;
+	}
+
+	public String resolveServerName(Sprite sprite) {
+		Formula name = getFormulaWithBrickField(BrickField.TEXT);
+		if (name == null) {
+			return "";
+		}
+		try {
+			String value = name.interpretString(new Scope(
+					ProjectManager.getInstance().getCurrentProject(), sprite, null));
+			return org.catrobat.catroid.content.LocalServer.normServerKey(value);
+		} catch (Exception e) {
+			return "";
+		}
 	}
 
 	@Override

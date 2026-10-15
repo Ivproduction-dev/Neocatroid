@@ -278,6 +278,15 @@ enum class ToolType(
         R.id.pocketpaint_tools_brush,
         INVALID_RESOURCE_ID,
         true
+    ),
+    LIGHT2D(
+        R.string.button_light_2d,
+        R.string.help_content_light_2d,
+        R.drawable.ic_pocketpaint_tool_light2d,
+        EnumSet.of(StateChange.ALL),
+        R.id.pocketpaint_tools_light2d,
+        INVALID_RESOURCE_ID,
+        true
     );
 
     fun shouldReactToStateChange(stateChange: StateChange): Boolean =

@@ -12,8 +12,8 @@ import org.catrobat.catroid.neo3d.Neo3DCamera;
 import org.catrobat.catroid.neo3d.Neo3DCustomMaterial;
 import org.catrobat.catroid.neo3d.Neo3DGameObject;
 import org.catrobat.catroid.neo3d.Neo3DLight;
+import org.catrobat.catroid.neo3d.Neo3DMath;
 import org.catrobat.catroid.neo3d.Neo3DPhysicsBody;
-import org.catrobat.catroid.neo3d.Neo3DPrimitiveMeshes;
 import org.catrobat.catroid.neo3d.Neo3DPrimitiveMeshes;
 import org.catrobat.catroid.neo3d.Neo3DPersistedObject;
 import org.catrobat.catroid.neo3d.Neo3DScene;
@@ -277,11 +277,35 @@ final class Neo3DEditorDocument {
 
     Neo3DGameObject duplicate(String objectId) {
         Neo3DPersistedObject source = persistedById.get(objectId);
-        if (source == null || source.camera || source.lightType != null) return null;
+        if (source == null) return null;
         Neo3DPersistedObject copy = new Neo3DPersistedObject(source.name + " Copy");
         copy.objectType = source.objectType;
         copy.modelAssetKey = source.modelAssetKey;
         copy.primitiveKind = source.primitiveKind;
+        copy.camera = source.camera;
+        copy.cameraMain = false;
+        copy.cameraFov = source.cameraFov;
+        copy.cameraNear = source.cameraNear;
+        copy.cameraFar = source.cameraFar;
+        copy.cameraAperture = source.cameraAperture;
+        copy.cameraShutterSpeed = source.cameraShutterSpeed;
+        copy.cameraSensitivity = source.cameraSensitivity;
+        copy.cameraUsesTransformOrientation = source.cameraUsesTransformOrientation;
+        copy.cameraTargetX = source.cameraTargetX;
+        copy.cameraTargetY = source.cameraTargetY;
+        copy.cameraTargetZ = source.cameraTargetZ;
+        copy.lightType = source.lightType;
+        copy.lightIntensity = source.lightIntensity;
+        copy.lightRed = source.lightRed;
+        copy.lightGreen = source.lightGreen;
+        copy.lightBlue = source.lightBlue;
+        copy.lightRange = source.lightRange;
+        copy.lightShadows = source.lightShadows;
+        copy.lightDirectionX = source.lightDirectionX;
+        copy.lightDirectionY = source.lightDirectionY;
+        copy.lightDirectionZ = source.lightDirectionZ;
+        copy.lightInnerConeDeg = source.lightInnerConeDeg;
+        copy.lightOuterConeDeg = source.lightOuterConeDeg;
         copy.x = source.x + 1f; copy.y = source.y; copy.z = source.z;
         copy.scaleX = source.scaleX; copy.scaleY = source.scaleY; copy.scaleZ = source.scaleZ;
         copy.yawDeg = source.yawDeg; copy.pitchDeg = source.pitchDeg; copy.rollDeg = source.rollDeg;
@@ -651,6 +675,91 @@ final class Neo3DEditorDocument {
         } catch (RuntimeException e) {
             gridObjectId = null;
             gridVisible = false;
+        }
+    }
+
+    private final String[] gizmoObjectIds = new String[3];
+    private int lastGizmoTool = -1;
+    private int lastGizmoAxis = -1;
+
+    void updateGizmo(Neo3DGameObject selected, int tool, int activeAxis) {
+        if (selected == null || tool <= 0) {
+            hideGizmo();
+            return;
+        }
+        ensureGizmoObjects();
+        float[] objPos = selected.getTransform().getPosition();
+        Neo3DGameObject cam = viewportCamera();
+        float dist = 6f;
+        if (cam != null) {
+            float[] camPos = cam.getTransform().getPosition();
+            dist = Neo3DMath.distance3(objPos, camPos);
+        }
+        float scale = Math.max(0.1f, dist * 0.14f);
+
+        boolean reloadMesh = tool != lastGizmoTool || activeAxis != lastGizmoAxis;
+        lastGizmoTool = tool;
+        lastGizmoAxis = activeAxis;
+
+        float[][] defaultColors = {
+                {0.95f, 0.2f, 0.2f, 1f},
+                {0.2f, 0.95f, 0.2f, 1f},
+                {0.2f, 0.5f, 0.95f, 1f}
+        };
+        float[] activeColor = {1.0f, 0.95f, 0.2f, 1f};
+
+        for (int i = 0; i < 3; i++) {
+            Neo3DGameObject g = scene.getObject(gizmoObjectIds[i]);
+            if (g == null) continue;
+            g.setVisible(true);
+            g.setActive(true);
+            g.getTransform().setPosition(objPos[0], objPos[1], objPos[2]);
+            g.getTransform().setScale(scale, scale, scale);
+            if (reloadMesh) {
+                float[] col = (activeAxis == (i + 1)) ? activeColor : defaultColors[i];
+                byte[] bytes;
+                String key;
+                if (tool == 1) {
+                    bytes = Neo3DPrimitiveMeshes.buildGizmoArrow(i, col);
+                    key = "gizmo_arrow_" + i + "_" + (activeAxis == (i + 1) ? "act" : "def");
+                } else if (tool == 2) {
+                    bytes = Neo3DPrimitiveMeshes.buildGizmoRing(i, col);
+                    key = "gizmo_ring_" + i + "_" + (activeAxis == (i + 1) ? "act" : "def");
+                } else {
+                    bytes = Neo3DPrimitiveMeshes.buildGizmoScale(i, col);
+                    key = "gizmo_scale_" + i + "_" + (activeAxis == (i + 1) ? "act" : "def");
+                }
+                engine.setObjectModelBytes(scene.getId(), gizmoObjectIds[i], key, bytes);
+            }
+            engine.syncObject(scene.getId(), gizmoObjectIds[i]);
+        }
+    }
+
+    void hideGizmo() {
+        for (int i = 0; i < 3; i++) {
+            if (gizmoObjectIds[i] != null) {
+                Neo3DGameObject g = scene.getObject(gizmoObjectIds[i]);
+                if (g != null && g.isVisible()) {
+                    g.setVisible(false);
+                    engine.syncObject(scene.getId(), gizmoObjectIds[i]);
+                }
+            }
+        }
+        lastGizmoTool = -1;
+        lastGizmoAxis = -1;
+    }
+
+    private void ensureGizmoObjects() {
+        String[] names = {"__editor_gizmo_x", "__editor_gizmo_y", "__editor_gizmo_z"};
+        for (int i = 0; i < 3; i++) {
+            if (gizmoObjectIds[i] == null || scene.getObject(gizmoObjectIds[i]) == null) {
+                Neo3DGameObject g = scene.findByName(names[i]);
+                if (g == null) {
+                    g = scene.createObject(names[i]);
+                }
+                gizmoObjectIds[i] = g.getId();
+                engine.syncObject(scene.getId(), gizmoObjectIds[i]);
+            }
         }
     }
 

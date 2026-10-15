@@ -685,6 +685,12 @@
     <string name="subcategory_event_system">Системные</string>
     <string name="subcategory_event_notifications">Уведомления</string>
     <string name="subcategory_event_admob">Реклама</string>
+    <string name="subcategory_v2_events">События</string>
+
+    <string name="grouping_v2_dialog_title">Включить группировку блоков 2.0?</string>
+    <string name="grouping_v2_dialog_message">В Событиях останутся только запуски (при старте, при нажатии, сообщения), а остальные события переедут в свои категории: образы, движение, сеть, ИИ, реклама, устройство. Старые проекты продолжат работать.</string>
+    <string name="grouping_v2_dialog_yes">Включить навсегда</string>
+    <string name="grouping_v2_dialog_no">Не сейчас</string>
 
     <string name="subcategory_control_waiting">Ожидание и задержки</string>
     <string name="subcategory_control_loops">Циклы</string>
@@ -737,6 +743,8 @@
     <string name="preference_description_grouping_device">Включить группировку блоков в устройствах</string>
     <string name="preference_title_grouping_threed">Категория 3D</string>
     <string name="preference_description_grouping_threed">Включить группировку блоков в 3D (Рекомендуется)</string>
+    <string name="preference_title_grouping_v2">Группировка 2.0</string>
+    <string name="preference_description_grouping_v2">Разнести события по своим категориям (Образы, Движение, Сеть, ИИ, Реклама, Устройство)</string>
     <string name="preference_title_redrawn_brick_mode">Перерисованный режим</string>
     <string name="preference_description_redrawn_brick_mode">Сделать фон всех блоков мягче, скруглить края и добавить аккуратный контур</string>
 
@@ -2215,7 +2223,7 @@
     <string name="formula_intersect_list" formatted="false">список_пересечений_объекта</string>
     <string name="formula_collision_list" formatted="false">список_столкновений_объекта</string>
     <string name="formula_pt_argmax" formatted="false">PT_argmax</string>
-    <string name="formula_pt_shape" formatted="false">PT_размер</string>
+    <string name="formula_pt_shape" formatted="false">PT_форма</string>
     <string name="formula_pt_dump" formatted="false">PT_в_строку</string>
     <string name="formula_pt_totalsize" formatted="false">PT_длина</string>
     <string name="formula_pt_valuend" formatted="false">PT_значение_ND</string>
@@ -2471,6 +2479,28 @@
     <string formatted="false" name="brick_when_tcp_message">Когда получено сообщение TCP</string>
     <string formatted="false" name="brick_when_tcp_disconnected">Когда отключен по таймауту TCP сервера</string>
     <string formatted="false" name="brick_listen_tcp_server">Слушать TCP сервер и сохранить в</string>
+    <string formatted="false" name="brick_tcp_server_name">сервер</string>
+    <string formatted="false" name="brick_start_tcp_server_named">Запустить TCP сервер</string>
+    <string formatted="false" name="brick_start_tcp_server_named2">с портом</string>
+    <string formatted="false" name="brick_stop_tcp_server_named">Остановить TCP сервер</string>
+    <string formatted="false" name="brick_connect_tcp_server_named">Подключиться к TCP серверу</string>
+    <string formatted="false" name="brick_disconnect_tcp_server_named">Отключиться от TCP сервера</string>
+    <string formatted="false" name="brick_clear_tcp_variable">Очистить TCP сообщение в</string>
+    <string formatted="false" name="brick_tcp_ping">PING-PONG TCP сервера</string>
+    <string formatted="false" name="brick_tcp_ping2">сохранить ответ в</string>
+    <string formatted="false" name="brick_tcp_measure_ping">Измерить PING-PONG TCP сервера</string>
+    <string formatted="false" name="brick_tcp_measure_ping2">сохранить значение в</string>
+    <string formatted="false" name="brick_tcp_ping_timeout">ждать ответ (мс)</string>
+    <string formatted="false" name="udp_send_mode_auto">автомат</string>
+    <string formatted="false" name="udp_send_mode_custom">своё</string>
+    <string formatted="false" name="brick_start_udp">Запустить UDP точку</string>
+    <string formatted="false" name="brick_start_udp2">с портом</string>
+    <string formatted="false" name="brick_stop_udp">Остановить UDP точку</string>
+    <string formatted="false" name="brick_connect_udp">Подключить UDP</string>
+    <string formatted="false" name="brick_disconnect_udp">Отключить UDP</string>
+    <string formatted="false" name="brick_send_udp">Отправить UDP</string>
+    <string formatted="false" name="brick_listen_udp">Слушать UDP и сохранить в</string>
+    <string formatted="false" name="brick_when_udp_message">Когда получено UDP сообщение</string>
     <string formatted="false" name="formula_external_ip">Внешний_IP</string>
     <string formatted="false" name="brick_screenshot">Сделать скриншот и использовать как образ</string>
     <string formatted="false" name="create_web_url">Создать WebView с названием</string>
@@ -5492,6 +5522,17 @@
     <string name="button_eraser">Ластик</string>
     <string name="button_line">Линия</string>
     <string name="button_shape">Фигуры</string>
+    <string name="button_light_2d">Свет 2D</string>
+    <string name="help_content_light_2d">Размещайте, двигайте, меняйте размер и угол света</string>
+    <string name="light_2d_type">Тип света</string>
+    <string name="light_2d_point">Точечный</string>
+    <string name="light_2d_aura">Аура</string>
+    <string name="light_2d_spot">Прожектор</string>
+    <string name="light_2d_intensity_format">Яркость: %1$d%%</string>
+    <string name="light_2d_resize_hint">Размер: %1$s</string>
+    <string name="tools_page_indicator">%1$d / %2$d</string>
+    <string name="tools_previous_page">Предыдущие инструменты</string>
+    <string name="tools_next_page">Другие инструменты</string>
     <string name="button_fill">Заливка</string>
     <string name="button_spray_can">Распылитель</string>
     <string name="button_cursor">Курсор</string>
@@ -5710,7 +5751,7 @@
     <string formatted="false" name="brick_import_script_object">в объект</string>
     <string formatted="false" name="brick_import_script_file">из файла</string>
     <string formatted="false" name="brick_import_script_file_hint">нажмите, чтобы выбрать файл .neoscript</string>
-    <string formatted="false" name="brick_import_script_overwrite">если объект уже содержит импортированные скрипты?</string>
+    <string formatted="false" name="brick_import_script_overwrite">перезаписать дубликаты?</string>
     <string formatted="false" name="brick_import_script_scene">в сцене</string>
     <string formatted="false" name="menu_save_as_script">Сохранить как скрипт…</string>
     <string formatted="false" name="menu_import_script_module">Импортировать модуль скрипта…</string>
@@ -6398,6 +6439,7 @@ Catrobat — это визуальный язык программировани
     <string name="shape_tool_dialog_star_title">Звезда</string>
     <string name="shape_tool_dialog_heart_title">Сердце</string>
     <string name="shape_tool_dialog_pixel_title">Пиксели</string>
+    <string name="shape_tool_dialog_triangle_title">Треугольник</string>
     <string name="shape_tool_dialog_fill_title">Заливка</string>
     <string name="shape_tool_dialog_outline_title">Контур</string>
 
@@ -7129,4 +7171,15 @@ Catrobat — это визуальный язык программировани
     <string name="editor_3d_pasted">Вставлено: %1$d</string>
     <string name="editor_3d_selected_count">Выбрано объектов: %1$d</string>
     <string name="editor_3d_delete_selected_confirm">Удалить %1$d выбранных объектов?</string>
+    <string name="formula_editor_bitwise_and" formatted="false">И</string>
+    <string name="formula_editor_bitwise_or" formatted="false">ИЛИ</string>
+    <string name="formula_editor_bitwise_xor" formatted="false">XOR</string>
+    <string name="formula_editor_bitwise_nand" formatted="false">NAND</string>
+    <string name="formula_editor_bitwise_nor" formatted="false">NOR</string>
+    <string name="formula_editor_bitwise_xnor" formatted="false">XNOR</string>
+    <string name="formula_editor_bitwise_not" formatted="false">~</string>
+    <string name="formula_editor_bitwise_shift_left" formatted="false">&lt;&lt;</string>
+    <string name="formula_editor_bitwise_shift_right" formatted="false">&gt;&gt;</string>
+    <string name="formula_editor_bitwise_unsigned_shift_right" formatted="false">&gt;&gt;&gt;</string>
+    <string name="formula_editor_bitwise_category" formatted="false">Битовые</string>
 </resources>

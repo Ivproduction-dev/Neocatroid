@@ -12,6 +12,7 @@ import org.catrobat.catroid.content.actions.ScriptSequenceAction;
 import org.catrobat.catroid.content.bricks.brickspinner.BrickSpinner;
 import org.catrobat.catroid.content.bricks.brickspinner.NewOption;
 import org.catrobat.catroid.content.bricks.brickspinner.UserVariableBrickTextInputDialogBuilder;
+import org.catrobat.catroid.formulaeditor.Formula;
 import org.catrobat.catroid.formulaeditor.UserVariable;
 import org.catrobat.catroid.ui.UiUtils;
 import org.catrobat.catroid.utils.LockUtils;
@@ -29,15 +30,21 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 
 	private static final long serialVersionUID = 1L;
 
+	public static final int ROW_COUNT = 12;
+
 	private UserVariable userVariable;
 	private List<UserVariable> extraVariables = new ArrayList<>();
 	private int visibleVariables = 1;
 	private int listenModeSelection;
+	private boolean[] rowVisible;
 
 	private transient Map<Integer, BrickSpinner<UserVariable>> spinners = new HashMap<>();
 	private transient Map<Integer, Integer> spinnerSlots = new HashMap<>();
 
 	public ListenTcpServerBrick() {
+		addAllowedBrickField(BrickField.TEXT, R.id.listen_tcp_name_edit);
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(""));
+		rowVisible = newRowVisible();
 	}
 
 	public ListenTcpServerBrick(UserVariable userVariable) {
@@ -59,6 +66,9 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 		if (index == 0) {
 			return userVariable;
 		}
+		if (extraVariables == null) {
+			extraVariables = new ArrayList<>();
+		}
 		int extraIndex = index - 1;
 		if (extraIndex < extraVariables.size()) {
 			return extraVariables.get(extraIndex);
@@ -70,6 +80,9 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 		if (index == 0) {
 			userVariable = variable;
 			return;
+		}
+		if (extraVariables == null) {
+			extraVariables = new ArrayList<>();
 		}
 		int extraIndex = index - 1;
 		while (extraVariables.size() <= extraIndex) {
@@ -94,10 +107,54 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 		this.listenModeSelection = listenModeSelection;
 	}
 
-	private List<UserVariable> getVariables() {
+	public boolean[] getRowVisible() {
+		if (rowVisible == null) {
+			rowVisible = newRowVisible();
+			int count = Math.max(1, Math.min(ROW_COUNT, visibleVariables));
+			for (int i = 0; i < count; i++) {
+				rowVisible[i] = true;
+			}
+		}
+		return rowVisible;
+	}
+
+	public void setRowVisible(boolean[] rowVisible) {
+		this.rowVisible = rowVisible;
+	}
+
+	private boolean[] newRowVisible() {
+		boolean[] rows = new boolean[ROW_COUNT];
+		rows[0] = true;
+		return rows;
+	}
+
+	private void syncVisibleVariables() {
+		int count = 0;
+		for (boolean visible : getRowVisible()) {
+			if (visible) {
+				count++;
+			}
+		}
+		visibleVariables = count;
+	}
+
+	private int firstHiddenRow() {
+		boolean[] rows = getRowVisible();
+		for (int i = 0; i < rows.length; i++) {
+			if (!rows[i]) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	public List<UserVariable> getVariables() {
 		List<UserVariable> variables = new ArrayList<>();
-		for (int i = 0; i < visibleVariables; i++) {
-			variables.add(getVariable(i));
+		boolean[] rows = getRowVisible();
+		for (int i = 0; i < ROW_COUNT; i++) {
+			if (rows[i]) {
+				variables.add(getVariable(i));
+			}
 		}
 		return variables;
 	}
@@ -140,6 +197,12 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 			items.addAll(project.getMultiplayerVariables());
 		}
 
+		int[] rowIds = {
+				R.id.listen_tcp_row, R.id.listen_tcp_row2, R.id.listen_tcp_row3,
+				R.id.listen_tcp_row4, R.id.listen_tcp_row5, R.id.listen_tcp_row6,
+				R.id.listen_tcp_row7, R.id.listen_tcp_row8, R.id.listen_tcp_row9,
+				R.id.listen_tcp_row10, R.id.listen_tcp_row11, R.id.listen_tcp_row12
+		};
 		int[] spinnerIds = {
 				R.id.listen_tcp_spinner1,
 				R.id.listen_tcp_spinner2,
@@ -154,45 +217,72 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 				R.id.listen_tcp_spinner11,
 				R.id.listen_tcp_spinner12
 		};
+		int[] minusIds = {
+				R.id.listen_tcp_minus, R.id.listen_tcp_minus2, R.id.listen_tcp_minus3,
+				R.id.listen_tcp_minus4, R.id.listen_tcp_minus5, R.id.listen_tcp_minus6,
+				R.id.listen_tcp_minus7, R.id.listen_tcp_minus8, R.id.listen_tcp_minus9,
+				R.id.listen_tcp_minus10, R.id.listen_tcp_minus11, R.id.listen_tcp_minus12
+		};
 
+		boolean[] rows = getRowVisible();
+		spinners.clear();
+		spinnerSlots.clear();
 		for (int i = 0; i < spinnerIds.length; i++) {
-			View spinnerView = view.findViewById(spinnerIds[i]);
-			if (i < visibleVariables) {
-				spinnerView.setVisibility(View.VISIBLE);
+			View rowView = view.findViewById(rowIds[i]);
+			if (rowView != null) {
+				rowView.setVisibility(rows[i] ? View.VISIBLE : View.GONE);
+			}
+			if (rows[i]) {
 				BrickSpinner<UserVariable> spinner = new BrickSpinner<>(spinnerIds[i], view, items);
 				spinner.setOnItemSelectedListener(this);
 				spinner.setSelection(getVariable(i));
 				spinners.put(spinnerIds[i], spinner);
 				spinnerSlots.put(spinnerIds[i], i);
-			} else {
-				spinnerView.setVisibility(View.GONE);
+			}
+			final int index = i;
+			View minusButton = view.findViewById(minusIds[i]);
+			if (minusButton != null) {
+				minusButton.setOnClickListener(click -> {
+					rows[index] = false;
+					syncVisibleVariables();
+					applyRowVisibility(view, rowIds, rows);
+					ElseIfSeparatorBrick.refreshScriptList(view);
+				});
 			}
 		}
 
 		View addButton = view.findViewById(R.id.brick_listen_tcp_add);
 		if (addButton != null) {
 			addButton.setOnClickListener(click -> {
-				if (visibleVariables < spinnerIds.length) {
-					visibleVariables++;
-					int nextId = spinnerIds[visibleVariables - 1];
-					View nextView = view.findViewById(nextId);
-					if (nextView != null) {
-						nextView.setVisibility(View.VISIBLE);
-						BrickSpinner<UserVariable> spinner = new BrickSpinner<>(nextId, view, items);
-						spinner.setOnItemSelectedListener(ListenTcpServerBrick.this);
-						spinner.setSelection(getVariable(visibleVariables - 1));
-						spinners.put(nextId, spinner);
-						spinnerSlots.put(nextId, visibleVariables - 1);
-					}
-					if (visibleVariables >= spinnerIds.length) {
-						click.setVisibility(View.GONE);
-					}
+				int hidden = firstHiddenRow();
+				if (hidden >= 0) {
+					rows[hidden] = true;
+					syncVisibleVariables();
+					applyRowVisibility(view, rowIds, rows);
+					BrickSpinner<UserVariable> spinner = new BrickSpinner<>(spinnerIds[hidden], view, items);
+					spinner.setOnItemSelectedListener(ListenTcpServerBrick.this);
+					spinner.setSelection(getVariable(hidden));
+					spinners.put(spinnerIds[hidden], spinner);
+					spinnerSlots.put(spinnerIds[hidden], hidden);
 					ElseIfSeparatorBrick.refreshScriptList(view);
 				}
 			});
-			addButton.setVisibility(visibleVariables >= spinnerIds.length ? View.GONE : View.VISIBLE);
+			applyRowVisibility(view, rowIds, rows);
 		}
 		return view;
+	}
+
+	private void applyRowVisibility(View view, int[] rowIds, boolean[] rows) {
+		for (int i = 0; i < rowIds.length; i++) {
+			View rowView = view.findViewById(rowIds[i]);
+			if (rowView != null) {
+				rowView.setVisibility(rows[i] ? View.VISIBLE : View.GONE);
+			}
+		}
+		View addButton = view.findViewById(R.id.brick_listen_tcp_add);
+		if (addButton != null) {
+			addButton.setVisibility(firstHiddenRow() >= 0 ? View.VISIBLE : View.GONE);
+		}
 	}
 
 	@Override
@@ -251,7 +341,8 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 
 	@Override
 	public void addActionToSequence(Sprite sprite, ScriptSequenceAction sequence) {
-		sequence.addAction(sprite.getActionFactory().createListenTcpServerAction(sprite, sequence, getVariables(), listenModeSelection));
+		sequence.addAction(sprite.getActionFactory().createListenTcpServerAction(sprite, sequence,
+				getVariables(), listenModeSelection, getFormulaWithBrickField(BrickField.TEXT)));
 	}
 
 	@Override

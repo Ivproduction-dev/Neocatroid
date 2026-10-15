@@ -41,11 +41,30 @@ public final class NeoScriptExporter {
 		Set<UserVariable> variables = new HashSet<>();
 		Set<UserList> lists = new HashSet<>();
 		for (Script script : scripts) {
-			file.getScripts().add(script);
-			NeoScriptUserData.collect(script, variables, lists);
+			Script snapshot = script;
+			try {
+				snapshot = script.clone();
+				snapshot.setParents();
+			} catch (CloneNotSupportedException e) {
+				snapshot = script;
+			}
+			file.getScripts().add(snapshot);
+			NeoScriptUserData.collect(snapshot, variables, lists);
 		}
 		file.getUserVariables().addAll(variables);
 		file.getUserLists().addAll(lists);
+		for (UserVariable variable : variables) {
+			if (variable != null && variable.getName() != null) {
+				file.getUserVariableValues().put(variable.getName(), variable.getValue());
+			}
+		}
+		for (UserList list : lists) {
+			if (list != null && list.getName() != null) {
+				List<Object> items = list.getValue();
+				file.getUserListValues().put(list.getName(),
+						items != null ? new ArrayList<>(items) : new ArrayList<>());
+			}
+		}
 		return file;
 	}
 }

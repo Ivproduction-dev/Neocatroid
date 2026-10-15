@@ -534,8 +534,10 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
 			R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
 			R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
-			R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_touches_param, R.string.formula_3d_intersects_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
-			R.string.formula_3d_double_param, R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param,
+			R.string.formula_3d_single_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
+			R.string.formula_3d_double_param, R.string.formula_3d_touches_param,
+			R.string.formula_3d_intersects_param, R.string.formula_3d_single_param, R.string.formula_3d_single_param,
+			R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param,
 			R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param, R.string.formula_no_param,
 			R.string.formula_no_param, R.string.formula_no_param,
 			R.string.formula_vector_dir_param, R.string.formula_vector_dir_param, R.string.formula_vector_angle_param,
@@ -546,6 +548,12 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 	private static final List<Integer> LOGIC_BOOL = asList(R.string.formula_editor_logic_and,
 			R.string.formula_editor_logic_or, R.string.formula_editor_logic_not,
 			R.string.formula_editor_function_true, R.string.formula_editor_function_false);
+	private static final List<Integer> BITWISE_OPERATORS = asList(
+			R.string.formula_editor_bitwise_and, R.string.formula_editor_bitwise_or,
+			R.string.formula_editor_bitwise_xor, R.string.formula_editor_bitwise_nand,
+			R.string.formula_editor_bitwise_nor, R.string.formula_editor_bitwise_xnor,
+			R.string.formula_editor_bitwise_not, R.string.formula_editor_bitwise_shift_left,
+			R.string.formula_editor_bitwise_shift_right, R.string.formula_editor_bitwise_unsigned_shift_right);
 	private static final List<Integer> LOGIC_COMPARISION = asList(R.string.formula_editor_logic_equal,
 			R.string.formula_editor_logic_notequal, R.string.formula_editor_logic_lesserthan,
 			R.string.formula_editor_logic_leserequal, R.string.formula_editor_logic_greaterthan,
@@ -895,6 +903,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 			groups.add(new CategoryGroup("Tilemap", TILEMAP_FUNCTIONS, TILEMAP_PARAMS));
 		} else if (LOGIC_TAG.equals(tag)) {
 			groups.add(new CategoryGroup(context.getString(R.string.formula_editor_logic_boolean), LOGIC_BOOL, null));
+			groups.add(new CategoryGroup(context.getString(R.string.formula_editor_bitwise_category), BITWISE_OPERATORS, null));
 			groups.add(new CategoryGroup(context.getString(R.string.formula_editor_logic_comparison), LOGIC_COMPARISION, null));
 		} else if (OBJECT_TAG.equals(tag)) {
 			List<Integer> look = new ArrayList<>(OBJECT_GENERAL_PROPERTIES);
@@ -1446,6 +1455,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
 	private List<CategoryListItem> getLogicItems() {
 		List<CategoryListItem> result = new ArrayList<>();
 		result.addAll(addHeader(toCategoryListItems(LOGIC_BOOL), getString(R.string.formula_editor_logic_boolean)));
+		result.addAll(addHeader(toCategoryListItems(BITWISE_OPERATORS), getString(R.string.formula_editor_bitwise_category)));
 		result.addAll(addHeader(toCategoryListItems(LOGIC_COMPARISION),
 				getString(R.string.formula_editor_logic_comparison)));
 		return result;
@@ -1688,6 +1698,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
         if (CRYPTO_FUNCTIONS.contains(id)) return getString(R.string.formula_editor_functions_crypto);
         if (OBJECTS_FUNCTIONS.contains(id)) return "Sprite info";
         if (TILEMAP_FUNCTIONS.contains(id)) return "Tilemap";
+        if (BITWISE_OPERATORS.contains(id)) return getString(R.string.formula_editor_bitwise_category);
         if (LOGIC_BOOL.contains(id)) return getString(R.string.formula_editor_logic_boolean);
         if (LOGIC_COMPARISION.contains(id)) return getString(R.string.formula_editor_logic_comparison);
 

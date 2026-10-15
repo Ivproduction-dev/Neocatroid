@@ -35,6 +35,7 @@ import org.catrobat.catroid.neo3d.Neo3DMath;
 import org.catrobat.catroid.neo3d.Neo3DScene;
 import org.catrobat.catroid.neo3d.Neo3DShadowSettings;
 import org.catrobat.catroid.neo3d.Neo3DSkybox;
+import org.catrobat.catroid.neo3d.assets.Neo3DAssetManager;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -461,6 +462,10 @@ public class Neo3DFilamentBackend implements INeo3DBackend {
         }
         if (data == null || data.length < 20) {
             Log.w(TAG, "loadModelBytes: empty data for " + sourceName + ", skipping");
+            return;
+        }
+        if (!Neo3DAssetManager.isModelWithinBudget(data)) {
+            Log.w(TAG, "loadModelBytes: model exceeds Neo3D limits, skipping " + sourceName);
             return;
         }
         try {

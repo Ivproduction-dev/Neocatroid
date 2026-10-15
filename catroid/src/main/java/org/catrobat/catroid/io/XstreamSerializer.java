@@ -467,7 +467,6 @@ public final class XstreamSerializer {
         xstream.alias("brick", PromoteLightBrick.class);
         xstream.alias("brick", DetachFromCameraBrick.class);
         xstream.alias("brick", SetMaxPointLightsBrick.class);
-        xstream.alias("brick", SetParticleEmissionBrick.class);
         xstream.alias("brick", SetAnimationSpeedBrick.class);
         xstream.alias("brick", SetTextureTilingBrick.class);
         xstream.alias("brick", SetSoundInstancePitchBrick.class);
@@ -909,9 +908,6 @@ public final class XstreamSerializer {
 		xstream.alias("setting", LegoEV3Setting.class);
 		xstream.alias("ev3Port", LegoEV3Setting.EV3Port.class);
 
-		xstream.alias("brick", FadeParticleEffectBrick.class);
-		xstream.alias("brick", ParticleEffectAdditivityBrick.class);
-		xstream.alias("brick", SetParticleColorBrick.class);
 		xstream.alias("brick", NoneBrick.class);
 
         xstream.alias("brick", org.catrobat.catroid.content.bricks.UnknownBrick.class);
@@ -985,7 +981,6 @@ public final class XstreamSerializer {
         xstream.alias("brick", CopyProjectFileToPathBrick.class);
         xstream.alias("brick", CreateFolderBrick.class);
         xstream.alias("brick", CreateFolderByPathBrick.class);
-        xstream.alias("brick", CreateParticleSystemBrick.class);
         xstream.alias("brick", DeleteCloneByNumberBrick.class);
         xstream.alias("brick", DeleteFolderBrick.class);
         xstream.alias("brick", DeleteFolderByPathBrick.class);

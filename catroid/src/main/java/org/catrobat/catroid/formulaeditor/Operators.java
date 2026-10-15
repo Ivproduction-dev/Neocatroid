@@ -25,9 +25,11 @@ package org.catrobat.catroid.formulaeditor;
 import org.catrobat.catroid.utils.EnumUtils;
 
 public enum Operators {
-	LOGICAL_AND(2, true), LOGICAL_OR(1, true), EQUAL(3, true), NOT_EQUAL(4, true), SMALLER_OR_EQUAL(4, true),
-	GREATER_OR_EQUAL(4, true), SMALLER_THAN(4, true), GREATER_THAN(4, true), PLUS(5), MINUS(5), MULT(6), DIVIDE(6),
-	MOD(6), POW(7), LOGICAL_NOT(4, true), CONCAT(5);
+	LOGICAL_OR(1, true), LOGICAL_AND(2, true), BITWISE_OR(3), BITWISE_XOR(4), BITWISE_NOR(3), BITWISE_XNOR(4),
+	BITWISE_AND(5), BITWISE_NAND(5), EQUAL(6, true), NOT_EQUAL(6, true), SMALLER_OR_EQUAL(7, true),
+	GREATER_OR_EQUAL(7, true), SMALLER_THAN(7, true), GREATER_THAN(7, true), SHIFT_LEFT(8), SHIFT_RIGHT(8),
+	UNSIGNED_SHIFT_RIGHT(8), PLUS(9), MINUS(9), MULT(10), DIVIDE(10), MOD(10), POW(11),
+	LOGICAL_NOT(7, true), BITWISE_NOT(12), CONCAT(9);
 
 	private static final String TAG = Operators.class.getSimpleName();
 

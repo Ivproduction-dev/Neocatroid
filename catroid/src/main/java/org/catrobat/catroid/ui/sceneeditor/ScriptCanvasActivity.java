@@ -507,8 +507,16 @@ canvas = new ScriptCanvasView(this);
 
 		new Thread(() -> {
 			try {
+				java.util.List<Script> snapshot = new java.util.ArrayList<>();
+				for (Script script : scripts) {
+					try {
+						snapshot.add(script.clone());
+					} catch (CloneNotSupportedException e) {
+						throw new java.io.IOException(e.getMessage(), e);
+					}
+				}
 				org.catrobat.catroid.neoscript.NeoScriptFile neoScriptFile =
-						org.catrobat.catroid.neoscript.NeoScriptExporter.buildFromScripts(scripts, project, sprite);
+						org.catrobat.catroid.neoscript.NeoScriptExporter.buildFromScripts(snapshot, project, sprite);
 				java.io.File directory = new java.io.File(
 						org.catrobat.catroid.common.Constants.DOWNLOAD_DIRECTORY,
 						getString(R.string.save_script_folder));

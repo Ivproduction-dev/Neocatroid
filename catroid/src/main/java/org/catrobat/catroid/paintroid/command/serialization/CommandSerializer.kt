@@ -72,11 +72,13 @@ import org.catrobat.catroid.paintroid.iotasks.WorkspaceReturnValue
 import org.catrobat.catroid.paintroid.model.CommandManagerModel
 import org.catrobat.catroid.paintroid.tools.TextToolEffects
 import org.catrobat.catroid.paintroid.tools.drawable.HeartDrawable
+import org.catrobat.catroid.paintroid.tools.drawable.LightDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.OvalDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.PixelDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.RectangleDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.ShapeDrawable
 import org.catrobat.catroid.paintroid.tools.drawable.StarDrawable
+import org.catrobat.catroid.paintroid.tools.drawable.TriangleDrawable
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -150,6 +152,8 @@ open class CommandSerializer(private val activityContext: Context, private val c
             put(ClippingCommand::class.java, ClippingCommandSerializer(version))
             put(LayerOpacityCommand::class.java, LayerOpacityCommandSerializer(version))
             put(TextToolEffects::class.java, null)
+            put(TriangleDrawable::class.java, GeometricFillCommandSerializer.TriangleDrawableSerializer(version))
+            put(LightDrawable::class.java, GeometricFillCommandSerializer.LightDrawableSerializer(version))
         }
     }
 

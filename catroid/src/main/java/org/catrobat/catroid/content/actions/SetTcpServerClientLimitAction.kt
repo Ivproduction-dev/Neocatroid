@@ -8,9 +8,11 @@ import org.catrobat.catroid.formulaeditor.Formula
 class SetTcpServerClientLimitAction() : TemporalAction() {
     var scope: Scope? = null
     var limit: Formula? = null
+    var serverName: Formula? = null
 
     override fun update(percent: Float) {
         val value = limit?.interpretString(scope)?.toIntOrNull() ?: return
-        LocalServer.clientLimit = value.coerceAtLeast(1)
+        val name = serverName?.interpretString(scope).orEmpty()
+        LocalServer.node(name).clientLimit = value.coerceAtLeast(1)
     }
 }

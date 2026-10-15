@@ -32,9 +32,22 @@ class SVGPlotGenerator(plot : Plot?){
     private val data = plot?.data()
     private var width = plot?.width
     private var height = plot?.height
+    private val scaleMMtoPx: Float = 0.2f / 0.2646f
+    private var lineWidth: Double = 1.0
 
     private fun dotDecinalRound(number : Float?) : String {
-        return "%.2f".format(Locale.ENGLISH, number)
+        if (number == null) {
+            return "0.00"
+        }
+        return "%.2f".format(Locale.ENGLISH, number * scaleMMtoPx)
+    }
+
+    private fun stroke() : String {
+        return String.format("#%06X", 0x000000)
+    }
+
+    private fun svgYCoordinate(y : Float, yAlignment : Float?) : String {
+        return dotDecinalRound(-y - (yAlignment ?: 0f))
     }
 
     fun writeToSVGFile(targetFile : File){
@@ -44,13 +57,13 @@ class SVGPlotGenerator(plot : Plot?){
         String {
         var path = ""
         if(line.size < 2) return path
-        path = "<path fill=\"none\" style=\"stroke:rgb(0,0,0);stroke-width:1;stroke-linecap:round;stroke-opacity:1;\" d=\"M"
-        path += dotDecinalRound(line[0].x - (xAlignment ?: 0f)) + " " + dotDecinalRound(line[0].y - (yAlignment ?: 0f))
+        path = "<path fill=\"none\" style=\"stroke:" + stroke() + ";stroke-width:" + lineWidth.toString() +
+                ";stroke-linecap:round;stroke-opacity:1;\" d=\"M"
+        path += dotDecinalRound(line[0].x - (xAlignment ?: 0f)) + " " + svgYCoordinate(line[0].y, yAlignment)
 
         for (point in line.subList(1, line.size))
-            path = path + " L" + dotDecinalRound(point.x - (xAlignment ?: 0f)) + " " + dotDecinalRound(point
-                                                                                                .y
-                                                                                                - (yAlignment ?: 0f))
+            path = path + " L" + dotDecinalRound(point.x - (xAlignment ?: 0f)) + " " +
+                    svgYCoordinate(point.y, yAlignment)
 
         path += "\" />\n"
         return path

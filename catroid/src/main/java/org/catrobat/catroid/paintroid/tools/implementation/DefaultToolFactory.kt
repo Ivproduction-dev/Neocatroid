@@ -38,6 +38,7 @@ import org.catrobat.catroid.paintroid.ui.tools.DefaultImportToolOptionsView
 import org.catrobat.catroid.paintroid.ui.tools.DefaultTextToolOptionsView
 import org.catrobat.catroid.paintroid.ui.tools.DefaultTransformToolOptionsView
 import org.catrobat.catroid.paintroid.ui.tools.DefaultSmudgeToolOptionsView
+import org.catrobat.catroid.paintroid.ui.tools.DefaultLight2DToolOptionsView
 
 private const val DRAW_TIME_INIT: Long = 30_000_000
 
@@ -272,6 +273,17 @@ class DefaultToolFactory(var mainActivity: MainActivity) : ToolFactory {
                 idlingResource,
                 commandManager,
                 DRAW_TIME_INIT
+            )
+            ToolType.LIGHT2D -> ShapeTool(
+                DefaultLight2DToolOptionsView(toolLayout),
+                contextCallback,
+                toolOptionsViewController,
+                toolPaint,
+                workspace,
+                idlingResource,
+                commandManager,
+                DRAW_TIME_INIT,
+                ToolType.LIGHT2D
             )
             else -> BrushTool(
                 DefaultBrushToolOptionsView(toolLayout),

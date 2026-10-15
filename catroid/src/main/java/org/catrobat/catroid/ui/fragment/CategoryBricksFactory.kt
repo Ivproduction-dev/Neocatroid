@@ -793,6 +793,22 @@ import org.catrobat.catroid.content.bricks.SetTcpServerClientLimitBrick
 import org.catrobat.catroid.content.bricks.SetTcpServerTimeoutBrick
 import org.catrobat.catroid.content.bricks.SendToTcpClientsBrick
 import org.catrobat.catroid.content.bricks.SendToTcpServerBrick
+import org.catrobat.catroid.content.bricks.StartTcpServerNamedBrick
+import org.catrobat.catroid.content.bricks.StopTcpServerNamedBrick
+import org.catrobat.catroid.content.bricks.ConnectTcpServerNamedBrick
+import org.catrobat.catroid.content.bricks.DisconnectTcpServerNamedBrick
+import org.catrobat.catroid.content.bricks.ClearTcpVariableBrick
+import org.catrobat.catroid.content.bricks.TcpPingBrick
+import org.catrobat.catroid.content.bricks.TcpPingNamedBrick
+import org.catrobat.catroid.content.bricks.TcpMeasurePingBrick
+import org.catrobat.catroid.content.bricks.TcpMeasurePingNamedBrick
+import org.catrobat.catroid.content.bricks.StartUdpBrick
+import org.catrobat.catroid.content.bricks.StopUdpBrick
+import org.catrobat.catroid.content.bricks.ConnectUdpBrick
+import org.catrobat.catroid.content.bricks.DisconnectUdpBrick
+import org.catrobat.catroid.content.bricks.SendUdpBrick
+import org.catrobat.catroid.content.bricks.ListenUdpBrick
+import org.catrobat.catroid.content.bricks.WhenUdpMessageBrick
 import org.catrobat.catroid.content.bricks.ListenTcpServerBrick
 import org.catrobat.catroid.content.bricks.StopBufferRecordingBrick
 import org.catrobat.catroid.content.bricks.StopGifBrick
@@ -1034,6 +1050,29 @@ import kotlin.contracts.contract
 
 open class CategoryBricksFactory {
 
+    companion object {
+        const val PREF_GROUPING_V2 = "pref_grouping_v2"
+        const val PREF_GROUPING_V2_ASKED = "pref_grouping_v2_asked"
+
+        @JvmStatic
+        fun isGroupingV2Enabled(context: Context): Boolean =
+            android.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_GROUPING_V2, false)
+
+        @JvmStatic
+        fun isGroupingV2Asked(context: Context): Boolean =
+            android.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_GROUPING_V2_ASKED, false)
+
+        @JvmStatic
+        fun setGroupingV2(context: Context, enabled: Boolean) {
+            android.preference.PreferenceManager.getDefaultSharedPreferences(context).edit()
+                .putBoolean(PREF_GROUPING_V2, enabled)
+                .putBoolean(PREF_GROUPING_V2_ASKED, true)
+                .apply()
+        }
+    }
+
     open fun getBricks(category: String, isBackgroundSprite: Boolean, context: Context): List<Brick> {
         if (category == context.getString(R.string.category_favorites)) {
             return setupFavoriteBricksCategoryList(context, isBackgroundSprite)
@@ -1084,6 +1123,8 @@ open class CategoryBricksFactory {
             else -> emptyList()
         }
 
+        val bricksWithV2 = appendGroupingV2Events(category, bricks, context, isBackgroundSprite)
+
         val prefKey = getPreferenceKeyForCategory(category, context)
         if (prefKey != null) {
             val defaultValue = category == context.getString(R.string.category_threed)
@@ -1091,11 +1132,11 @@ open class CategoryBricksFactory {
                 .getBoolean(prefKey, defaultValue)
 
             if (!isGroupingEnabled) {
-                return bricks.filter { it !is org.catrobat.catroid.content.bricks.SubCategoryHeaderBrick }
+                return bricksWithV2.filter { it !is org.catrobat.catroid.content.bricks.SubCategoryHeaderBrick }
             }
         }
 
-        return bricks
+        return bricksWithV2
     }
 
     private fun getPreferenceKeyForCategory(category: String, context: Context): String? {
@@ -1110,6 +1151,108 @@ open class CategoryBricksFactory {
             context.getString(R.string.category_threed) -> "pref_grouping_threed"
             else -> null
         }
+    }
+
+    private fun v2EventsHeader(context: Context, template: Brick): SubCategoryHeaderBrick =
+        SubCategoryHeaderBrick(context.getString(R.string.subcategory_v2_events), template)
+
+    private fun appendGroupingV2Events(
+        category: String,
+        bricks: List<Brick>,
+        context: Context,
+        isBackgroundSprite: Boolean
+    ): List<Brick> {
+        if (!isGroupingV2Enabled(context)) {
+            return bricks
+        }
+        val present = bricks.map { it.javaClass }.toSet()
+        val toAdd = mutableListOf<Brick>()
+        fun addIfMissing(brick: Brick) {
+            if (brick.javaClass !in present && toAdd.none { it.javaClass == brick.javaClass }) {
+                toAdd.add(brick)
+            }
+        }
+        when (category) {
+            context.getString(R.string.category_control) -> {
+                addIfMissing(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
+                addIfMissing(WhenBeforeUpdateBrick())
+                addIfMissing(WhenAfterUpdateBrick())
+                addIfMissing(WhenAppMinimizedBrick())
+                addIfMissing(WhenAppRestoredBrick())
+                addIfMissing(WhenProjectExitsBrick())
+            }
+            context.getString(R.string.category_motion) -> {
+                if (!isBackgroundSprite) {
+                    addIfMissing(WhenBounceOffBrick(WhenBounceOffScript(null)))
+                    addIfMissing(WhenTouchingSpriteBrick())
+                    addIfMissing(WhenTouchingSpriteByNameBrick())
+                }
+            }
+            context.getString(R.string.category_looks) -> {
+                addIfMissing(WhenBackgroundChangesBrick())
+            }
+            context.getString(R.string.category_device) -> {
+                if (SettingsFragment.isNfcSharedPreferenceEnabled(context)) {
+                    addIfMissing(WhenNfcBrick())
+                }
+                addIfMissing(WhenGamepadButtonBrick(WhenGamepadButtonScript(context.getString(R.string.cast_gamepad_A))))
+                addIfMissing(WhenMouseButtonClickedBrick())
+                addIfMissing(WhenMouseWheelScrolledBrick())
+                addIfMissing(WhenWindowResizedBrick())
+                addIfMissing(WhenNotificationActionClickedBrick())
+                addIfMissing(WhenNotificationReplyBrick())
+                addIfMissing(WhenNotificationShownBrick())
+                addIfMissing(WhenNotificationDismissedBrick())
+                addIfMissing(WhenNotificationClickedBrick(WhenNotificationClickedScript(Formula(123456))))
+                addIfMissing(WhenNotificationActionTriggeredBrick(WhenNotificationActionTriggeredScript(Formula(123456))))
+            }
+            context.getString(R.string.category_neural) -> {
+                addIfMissing(WhenAIResponseBrick())
+            }
+            context.getString(R.string.category_neo3d) -> {
+                addIfMissing(WhenNeo3DCollidesBrick())
+                addIfMissing(WhenNeo3DTouchBrick())
+                addIfMissing(WhenNeo3DRayHitBrick())
+            }
+            context.getString(R.string.category_internet) -> {
+                addIfMissing(WhenTcpMessageBrick())
+                addIfMissing(WhenTcpDisconnectedBrick())
+                addIfMissing(WhenHttpResponseReceivedBrick())
+                addIfMissing(WhenHttpRequestFailedBrick())
+                addIfMissing(WhenFirestoreChangedBrick())
+                addIfMissing(WhenFirebaseChangedBrick())
+                addIfMissing(WhenFirebaseChildChangedBrick())
+                addIfMissing(WhenMqttMessageBrick(WhenMqttMessageScript(Formula("room_1"))))
+            }
+            context.getString(R.string.category_admob) -> {
+                addIfMissing(AdmobInitializedEventBrick())
+                addIfMissing(AdmobInitFailedEventBrick())
+                addIfMissing(AdmobBannerLoadedEventBrick())
+                addIfMissing(AdmobBannerFailedEventBrick())
+                addIfMissing(AdmobBannerShownEventBrick())
+                addIfMissing(AdmobBannerHiddenEventBrick())
+                addIfMissing(AdmobInterstitialLoadedEventBrick())
+                addIfMissing(AdmobInterstitialFailedEventBrick())
+                addIfMissing(AdmobInterstitialShownEventBrick())
+                addIfMissing(AdmobInterstitialClosedEventBrick())
+                addIfMissing(AdmobRewardedLoadedEventBrick())
+                addIfMissing(AdmobRewardedFailedEventBrick())
+                addIfMissing(AdmobRewardedShownEventBrick())
+                addIfMissing(AdmobRewardedRewardEventBrick())
+                addIfMissing(AdmobRewardedClosedEventBrick())
+                addIfMissing(AdmobAppOpenLoadedEventBrick())
+                addIfMissing(AdmobAppOpenFailedEventBrick())
+                addIfMissing(AdmobAppOpenShownEventBrick())
+                addIfMissing(AdmobAppOpenClosedEventBrick())
+            }
+        }
+        if (toAdd.isEmpty()) {
+            return bricks
+        }
+        val result = bricks.toMutableList()
+        result.add(v2EventsHeader(context, WhenStartedBrick()))
+        result.addAll(toAdd)
+        return result
     }
 
     private fun setupLibrariesCategoryList(): List<Brick> {
@@ -1131,6 +1274,9 @@ open class CategoryBricksFactory {
         context: Context,
         isBackgroundSprite: Boolean
     ): List<Brick> {
+        if (isGroupingV2Enabled(context)) {
+            return setupEventCategoryListV2(context, isBackgroundSprite)
+        }
         val category = context.getString(R.string.category_event)
         val prefKey = getPreferenceKeyForCategory(category, context)
         if (prefKey != null) {
@@ -1354,6 +1500,58 @@ open class CategoryBricksFactory {
         eventBrickList.add(WhenNotificationActionTriggeredBrick(WhenNotificationActionTriggeredScript(Formula(123456))))
         eventBrickList.add(WhenClonedWithNameBrick(WhenClonedWithNameScript(Formula("clone"))))
         eventBrickList.add(WhenMqttMessageBrick(WhenMqttMessageScript(Formula("room_1"))))
+
+        return eventBrickList
+    }
+
+    private fun setupEventCategoryListV2(
+        context: Context,
+        isBackgroundSprite: Boolean
+    ): List<Brick> {
+        val defaultIf = FormulaElement(
+            FormulaElement.ElementType.OPERATOR,
+            Operators.SMALLER_THAN.toString(),
+            null
+        )
+        defaultIf.setLeftChild(FormulaElement(FormulaElement.ElementType.NUMBER, "1", null))
+        defaultIf.setRightChild(FormulaElement(FormulaElement.ElementType.NUMBER, "2", null))
+        val eventBrickList: MutableList<Brick> = ArrayList()
+        val template = WhenStartedBrick()
+
+        eventBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_event_touch), template))
+        eventBrickList.add(WhenStartedBrick())
+        val editedSceneV2 = ProjectManager.getInstance().currentlyEditedScene
+        if (editedSceneV2 != null && editedSceneV2.isGlobalScene) {
+            eventBrickList.add(WhenSceneLaunchedBrick())
+            eventBrickList.add(WhenSceneExitedBrick())
+        }
+        eventBrickList.add(WhenBrick())
+        eventBrickList.add(WhenTouchDownBrick())
+        eventBrickList.add(WhenSwipedBrick(WhenSwipedScript(0)))
+        eventBrickList.add(WhenVariableChangedBrick())
+        eventBrickList.add(WhenBackPressedBrick())
+        eventBrickList.add(WhenButtonPressedBrick(WhenButtonPressedScript(WhenButtonPressedScript.BUTTON_VOLUME_UP)))
+
+        eventBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_event_messages), template))
+        val broadcastMessages =
+            ProjectManager.getInstance().currentProject?.broadcastMessageContainer?.broadcastMessages
+        var broadcastMessage: String? = context.getString(R.string.brick_broadcast_default_value)
+        if (broadcastMessages != null && broadcastMessages.size > 0) {
+            broadcastMessage = broadcastMessages[0]
+        }
+        eventBrickList.add(BroadcastReceiverBrick(BroadcastScript(broadcastMessage)))
+        eventBrickList.add(BroadcastWithParamsReceiverBrick())
+        eventBrickList.add(BroadcastBrick(broadcastMessage))
+        eventBrickList.add(BroadcastWaitBrick(broadcastMessage))
+        eventBrickList.add(BroadcastWithParamsBrick("signal", "data"))
+
+        eventBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_event_conditions), template))
+        eventBrickList.add(WhenConditionBrick(WhenConditionScript(Formula(defaultIf))))
+        eventBrickList.add(WhenTimeReachedBrick(WhenTimeReachedScript(Formula(1430))))
+        eventBrickList.add(WhenShakeBrick())
+        eventBrickList.add(WhenFingerMovedOnScreenBrick())
+        eventBrickList.add(WhenFingerMovedOverSpriteBrick())
+        eventBrickList.add(WhenSpriteReleasedBrick())
 
         return eventBrickList
     }
@@ -3757,6 +3955,23 @@ void main() {
         internetBrickList.add(MqttJoinRoomBrick("my_lobby", "room_1", "my_secret_game_salt"))
         internetBrickList.add(MqttPublishBrick("my_lobby", "room_1", "my_secret_game_salt", "Hello!"))
         internetBrickList.add(MqttDisconnectBrick("my_lobby"))
+        internetBrickList.add(StartTcpServerNamedBrick("server", "1234"))
+        internetBrickList.add(StopTcpServerNamedBrick("server"))
+        internetBrickList.add(ConnectTcpServerNamedBrick("server", "127.0.0.1", "1234"))
+        internetBrickList.add(DisconnectTcpServerNamedBrick("server"))
+        internetBrickList.add(ClearTcpVariableBrick())
+        internetBrickList.add(TcpPingBrick("127.0.0.1", "1234"))
+        internetBrickList.add(TcpPingNamedBrick("server"))
+        internetBrickList.add(TcpMeasurePingBrick("127.0.0.1", "1234"))
+        internetBrickList.add(TcpMeasurePingNamedBrick("server"))
+        internetBrickList.add(SubCategoryHeaderBrick("UDP", StartUdpBrick("udp", "1234")))
+        internetBrickList.add(StartUdpBrick("udp", "1234"))
+        internetBrickList.add(StopUdpBrick("udp"))
+        internetBrickList.add(ConnectUdpBrick("udp", "127.0.0.1", "1234"))
+        internetBrickList.add(DisconnectUdpBrick("udp"))
+        internetBrickList.add(SendUdpBrick("Hi"))
+        internetBrickList.add(ListenUdpBrick())
+        internetBrickList.add(WhenUdpMessageBrick())
         return internetBrickList
     }
 
@@ -3835,7 +4050,11 @@ void main() {
             is LookRequestBrick -> category = res.getString(R.string.category_looks)
             is BackgroundRequestBrick -> category = res.getString(R.string.category_looks)
             is WhenClonedBrick -> category = res.getString(R.string.category_control)
-            is WhenBackgroundChangesBrick -> category = res.getString(R.string.category_event)
+            is WhenBackgroundChangesBrick -> category = if (isGroupingV2Enabled(context)) {
+                res.getString(R.string.category_looks)
+            } else {
+                res.getString(R.string.category_event)
+            }
             is SetVariableBrick -> category = res.getString(R.string.category_data)
             is WebRequestBrick -> category = res.getString(R.string.category_data)
             is StoreCSVIntoUserListBrick -> category = res.getString(R.string.category_data)
