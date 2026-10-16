@@ -40,16 +40,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Accept Android SDK licenses
+      - name: Set up Android SDK packages
         shell: bash
         run: |
-          set +o pipefail
-          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+          sdkmanager_path=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)
+          if [[ -z "$sdkmanager_path" ]]; then
+            echo "Could not find sdkmanager under $ANDROID_HOME/cmdline-tools" >&2
+            exit 1
+          fi
+          sdkmanager_dir=$(dirname "$sdkmanager_path")
+          echo "$sdkmanager_dir" >> "$GITHUB_PATH"
+          export PATH="$sdkmanager_dir:$PATH"
 
-      - name: Install required Android SDK packages
-        shell: bash
-        run: |
-          sdkmanager --sdk_root="$ANDROID_HOME" \
+          set +o pipefail
+          yes | "$sdkmanager_path" --sdk_root="$ANDROID_HOME" --licenses
+          "$sdkmanager_path" --sdk_root="$ANDROID_HOME" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "cmake;3.22.1" \
