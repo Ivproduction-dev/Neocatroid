@@ -3,25 +3,256 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/v3_wizard_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/app_background"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/v3_step_subtitle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="@color/progress_blue"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_v3_badge_blue">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_v3_rocket"
+                app:tint="@color/progress_blue" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/v3_title_full"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="@color/solid_white" />
+
+            <TextView
+                android:id="@+id/v3_step_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/v3_subtitle_desc"
+                android:textSize="12sp"
+                android:textColor="@color/progress_blue" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/v3_btn_close"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            app:tint="@color/spinner_icon_and_inactive_elements" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp">
+
+            <FrameLayout
+                android:id="@+id/v3_step1_circle"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_v3_step_circle_active">
+
+                <TextView
+                    android:id="@+id/v3_step1_num"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/solid_white" />
+
+                <ImageView
+                    android:id="@+id/v3_step1_done"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_done"
+                    android:visibility="gone"
+                    app:tint="@color/solid_white" />
+            </FrameLayout>
+
+            <View
+                android:id="@+id/v3_step_line_1"
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="6dp"
+                android:background="#383842" />
+
+            <FrameLayout
+                android:id="@+id/v3_step2_circle"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_v3_step_circle">
+
+                <TextView
+                    android:id="@+id/v3_step2_num"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="2"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/solid_white" />
+
+                <ImageView
+                    android:id="@+id/v3_step2_done"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_done"
+                    android:visibility="gone"
+                    app:tint="@color/solid_white" />
+            </FrameLayout>
+
+            <View
+                android:id="@+id/v3_step_line_2"
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="6dp"
+                android:background="#383842" />
+
+            <FrameLayout
+                android:id="@+id/v3_step3_circle"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_v3_step_circle">
+
+                <TextView
+                    android:id="@+id/v3_step3_num"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="3"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/solid_white" />
+
+                <ImageView
+                    android:id="@+id/v3_step3_done"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_done"
+                    android:visibility="gone"
+                    app:tint="@color/solid_white" />
+            </FrameLayout>
+
+            <View
+                android:id="@+id/v3_step_line_3"
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="6dp"
+                android:background="#383842" />
+
+            <FrameLayout
+                android:id="@+id/v3_step4_circle"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_v3_step_circle">
+
+                <TextView
+                    android:id="@+id/v3_step4_num"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="4"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/solid_white" />
+
+                <ImageView
+                    android:id="@+id/v3_step4_done"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_done"
+                    android:visibility="gone"
+                    app:tint="@color/solid_white" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/v3_step1_badge"
+                android:textSize="11sp"
+                android:textColor="@color/view_holder_item_title" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/v3_step2_badge"
+                android:textSize="11sp"
+                android:textColor="@color/view_holder_item_title" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/v3_step3_badge"
+                android:textSize="11sp"
+                android:textColor="@color/view_holder_item_title" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/v3_step4_badge"
+                android:textSize="11sp"
+                android:textColor="@color/view_holder_item_title" />
+        </LinearLayout>
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/v3_step_progress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="6dp"
+        android:layout_height="4dp"
         android:layout_marginBottom="12dp"
         android:max="100"
         android:progress="25"
@@ -31,7 +262,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:minHeight="200dp"
+        android:minHeight="260dp"
         android:fillViewport="true">
 
         <LinearLayout
@@ -49,54 +280,51 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp"
-                    app:cardCornerRadius="18dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1F000000">
+                    app:strokeColor="#2E303A">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="14dp">
-
-                            <View
-                                android:layout_width="4dp"
-                                android:layout_height="18dp"
-                                android:layout_marginEnd="10dp"
-                                android:background="@color/progress_blue" />
+                            android:layout_marginBottom="8dp">
 
                             <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/v3_step_template"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/solid_white" />
+
+                            <TextView
+                                android:id="@+id/v3_template_status"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/v3_step_template"
-                                android:textSize="15sp"
+                                android:background="@drawable/bg_v3_badge_green"
+                                android:textSize="11sp"
                                 android:textStyle="bold"
-                                android:textColor="@color/dialog_title_and_text_view" />
+                                android:textColor="#A5D6A7" />
                         </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/v3_template_status"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textSize="13sp"
-                            android:textColor="@color/checkbox_and_radio_button_description"
-                            android:layout_marginBottom="8dp" />
 
                         <ProgressBar
                             android:id="@+id/v3_template_progress"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="6dp"
-                            android:layout_marginBottom="8dp"
+                            android:layout_marginBottom="10dp"
                             android:max="100"
                             android:progress="0"
                             android:visibility="gone"
@@ -107,56 +335,210 @@
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
                             android:text="@string/v3_template_download"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="10dp"
+                            app:icon="@drawable/baseline_save_alt_24"
+                            app:iconGravity="textStart" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/v3_template_type"
-                            android:textSize="13sp"
-                            android:textColor="@color/checkbox_and_radio_button_description"
-                            android:layout_marginBottom="4dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/v3_template_type"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/view_holder_item_title"
+                    android:layout_marginBottom="8dp" />
 
-                        <RadioGroup
-                            android:id="@+id/v3_template_radio_group"
+                <RadioGroup
+                    android:id="@+id/v3_template_radio_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone">
+
+                    <RadioButton
+                        android:id="@+id/v3_template_full"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+
+                    <RadioButton
+                        android:id="@+id/v3_template_light"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </RadioGroup>
+
+                <LinearLayout
+                    android:id="@+id/v3_card_template_full"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_v3_card_selected"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/bg_v3_badge_blue">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_v3_cube"
+                            app:tint="@color/progress_blue" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginBottom="10dp">
+                            android:gravity="center_vertical">
 
-                            <RadioButton
-                                android:id="@+id/v3_template_light"
-                                android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/v3_template_light"
-                                android:checked="true" />
+                                android:text="@string/v3_template_full_title"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/solid_white" />
 
-                            <RadioButton
-                                android:id="@+id/v3_template_full"
-                                android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/v3_template_full" />
-                        </RadioGroup>
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_v3_badge_green"
+                                android:text="@string/v3_recommended_tag"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:textColor="#81C784" />
+                        </LinearLayout>
 
                         <TextView
-                            android:id="@+id/v3_template_description"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_marginBottom="8dp"
-                            android:textSize="13sp"
-                            android:textColor="@color/text_secondary" />
+                            android:text="@string/v3_template_full_sub"
+                            android:textSize="11sp"
+                            android:textColor="@color/view_holder_item_details"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/v3_template_full_check"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/ic_done"
+                        app:tint="@color/progress_blue" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/v3_card_template_light"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_v3_card_selectable"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/bg_v3_badge_gray">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_v3_feather"
+                            app:tint="@color/spinner_icon_and_inactive_elements" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/v3_template_light_title"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/solid_white" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/v3_template_light_sub"
+                            android:textSize="11sp"
+                            android:textColor="@color/view_holder_item_details"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/v3_template_light_check"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/ic_done"
+                        android:visibility="gone"
+                        app:tint="@color/progress_blue" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/v3_template_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#2E303A">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
 
                         <CheckBox
                             android:id="@+id/v3_debuggable_checkbox"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/v3_debuggable"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/solid_white"
                             android:checked="false" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="32dp"
+                            android:text="@string/v3_debuggable_sub"
+                            android:textSize="11sp"
+                            android:textColor="@color/view_holder_item_title" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -171,39 +553,98 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp"
-                    app:cardCornerRadius="18dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1F000000">
+                    app:strokeColor="#2E303A">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/v3_icon"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/view_holder_item_title"
+                            android:layout_marginBottom="10dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="14dp">
+                            android:gravity="center_vertical">
 
-                            <View
-                                android:layout_width="4dp"
-                                android:layout_height="18dp"
-                                android:layout_marginEnd="10dp"
-                                android:background="@color/progress_blue" />
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:layout_marginEnd="14dp"
+                                android:background="@drawable/bg_v3_icon_box">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <ImageView
+                                    android:id="@+id/v3_icon_preview_image"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:scaleType="centerCrop"
+                                    android:src="@drawable/logo" />
+                            </FrameLayout>
+
+                            <RadioGroup
+                                android:id="@+id/v3_icon_radio_group"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="@string/v3_section_app"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/dialog_title_and_text_view" />
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <RadioButton
+                                    android:id="@+id/v3_icon_project"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/v3_icon_project"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/solid_white" />
+
+                                <RadioButton
+                                    android:id="@+id/v3_icon_default"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/v3_icon_default"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/solid_white" />
+                            </RadioGroup>
                         </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#2E303A">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/v3_section_app"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/view_holder_item_title"
+                            android:layout_marginBottom="10dp" />
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/v3_app_name_layout"
@@ -211,13 +652,19 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@string/v3_app_name"
+                            app:boxCornerRadiusTopStart="10dp"
+                            app:boxCornerRadiusTopEnd="10dp"
+                            app:boxCornerRadiusBottomStart="10dp"
+                            app:boxCornerRadiusBottomEnd="10dp"
                             android:layout_marginBottom="10dp">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/v3_app_name_input"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text" />
+                                android:inputType="textCapSentences"
+                                android:singleLine="true"
+                                android:imeOptions="actionNext" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
@@ -226,13 +673,19 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@string/v3_package_name"
+                            app:boxCornerRadiusTopStart="10dp"
+                            app:boxCornerRadiusTopEnd="10dp"
+                            app:boxCornerRadiusBottomStart="10dp"
+                            app:boxCornerRadiusBottomEnd="10dp"
                             android:layout_marginBottom="10dp">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/v3_package_input"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text" />
+                                android:inputType="text"
+                                android:singleLine="true"
+                                android:imeOptions="actionNext" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <LinearLayout
@@ -247,14 +700,20 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginEnd="5dp"
+                                android:layout_marginEnd="4dp"
+                                app:boxCornerRadiusTopStart="10dp"
+                                app:boxCornerRadiusTopEnd="10dp"
+                                app:boxCornerRadiusBottomStart="10dp"
+                                app:boxCornerRadiusBottomEnd="10dp"
                                 android:hint="@string/v3_version_name">
 
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/v3_version_input"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:inputType="text" />
+                                    android:inputType="text"
+                                    android:singleLine="true"
+                                    android:imeOptions="actionNext" />
                             </com.google.android.material.textfield.TextInputLayout>
 
                             <com.google.android.material.textfield.TextInputLayout
@@ -263,7 +722,11 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginStart="5dp"
+                                android:layout_marginStart="4dp"
+                                app:boxCornerRadiusTopStart="10dp"
+                                app:boxCornerRadiusTopEnd="10dp"
+                                app:boxCornerRadiusBottomStart="10dp"
+                                app:boxCornerRadiusBottomEnd="10dp"
                                 android:hint="@string/v3_version_code">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -285,7 +748,11 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginEnd="5dp"
+                                android:layout_marginEnd="4dp"
+                                app:boxCornerRadiusTopStart="10dp"
+                                app:boxCornerRadiusTopEnd="10dp"
+                                app:boxCornerRadiusBottomStart="10dp"
+                                app:boxCornerRadiusBottomEnd="10dp"
                                 android:hint="@string/v3_min_sdk">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -301,7 +768,11 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginStart="5dp"
+                                android:layout_marginStart="4dp"
+                                app:boxCornerRadiusTopStart="10dp"
+                                app:boxCornerRadiusTopEnd="10dp"
+                                app:boxCornerRadiusBottomStart="10dp"
+                                app:boxCornerRadiusBottomEnd="10dp"
                                 android:hint="@string/v3_target_sdk">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -311,52 +782,6 @@
                                     android:inputType="number" />
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="1dp"
-                    app:strokeColor="#1F000000">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/v3_icon"
-                            android:textSize="13sp"
-                            android:textColor="@color/checkbox_and_radio_button_description"
-                            android:layout_marginBottom="4dp" />
-
-                        <RadioGroup
-                            android:id="@+id/v3_icon_radio_group"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <RadioButton
-                                android:id="@+id/v3_icon_project"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/v3_icon_project" />
-
-                            <RadioButton
-                                android:id="@+id/v3_icon_default"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/v3_icon_default" />
-                        </RadioGroup>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -371,17 +796,17 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp"
-                    app:cardCornerRadius="18dp"
+                    app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1F000000">
+                    app:strokeColor="#2E303A">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -390,50 +815,61 @@
                             android:gravity="center_vertical"
                             android:layout_marginBottom="10dp">
 
-                            <View
-                                android:layout_width="4dp"
-                                android:layout_height="18dp"
-                                android:layout_marginEnd="10dp"
-                                android:background="@color/progress_blue" />
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/v3_permissions"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/solid_white" />
 
                             <TextView
+                                android:id="@+id/v3_permissions_detected_badge"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/v3_permissions"
-                                android:textSize="15sp"
+                                android:background="@drawable/bg_v3_badge_blue"
+                                android:text="Auto"
+                                android:textSize="11sp"
                                 android:textStyle="bold"
-                                android:textColor="@color/dialog_title_and_text_view" />
+                                android:textColor="@color/progress_blue" />
                         </LinearLayout>
 
                         <RadioGroup
                             android:id="@+id/v3_permissions_mode_group"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginBottom="10dp">
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
 
                             <RadioButton
                                 android:id="@+id/v3_perm_mode_auto"
-                                android:layout_width="match_parent"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
+                                android:layout_weight="1"
                                 android:text="@string/v3_perm_mode_auto"
+                                android:textSize="12sp"
+                                android:textColor="@color/solid_white"
                                 android:checked="true" />
 
                             <RadioButton
                                 android:id="@+id/v3_perm_mode_manual"
-                                android:layout_width="match_parent"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="@string/v3_perm_mode_manual" />
+                                android:layout_weight="1"
+                                android:text="@string/v3_perm_mode_manual"
+                                android:textSize="12sp"
+                                android:textColor="@color/solid_white" />
                         </RadioGroup>
 
                         <TextView
                             android:id="@+id/v3_permissions_hint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
+                            android:layout_marginBottom="10dp"
                             android:text="@string/v3_permissions_hint"
-                            android:textSize="13sp"
-                            android:textColor="@color/text_secondary" />
+                            android:textSize="11sp"
+                            android:textColor="@color/view_holder_item_title" />
 
                         <LinearLayout
                             android:id="@+id/v3_permissions_container"
@@ -454,46 +890,35 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardCornerRadius="18dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1F000000">
+                    app:strokeColor="#2E303A">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="10dp">
-
-                            <View
-                                android:layout_width="4dp"
-                                android:layout_height="18dp"
-                                android:layout_marginEnd="10dp"
-                                android:background="@color/progress_blue" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/v3_firebase_section"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/dialog_title_and_text_view" />
-                        </LinearLayout>
+                        android:padding="14dp">
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
+                            android:text="@string/v3_firebase_section"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/solid_white"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
                             android:text="@string/v3_firebase_hint"
-                            android:textSize="13sp"
-                            android:textColor="@color/text_secondary" />
+                            android:textSize="11sp"
+                            android:textColor="@color/view_holder_item_title" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/v3_firebase_add_button"
@@ -501,16 +926,17 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/v3_firebase_add_button"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="10dp" />
 
                         <TextView
                             android:id="@+id/v3_firebase_status"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:visibility="gone"
-                            android:paddingVertical="8dp"
-                            android:textSize="13sp"
-                            android:textColor="@color/checkbox_and_radio_button_description" />
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_v3_badge_green"
+                            android:textSize="12sp"
+                            android:textColor="#A5D6A7" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/v3_firebase_remove_button"
@@ -519,7 +945,65 @@
                             android:layout_height="wrap_content"
                             android:visibility="gone"
                             android:text="@string/v3_firebase_remove_button"
-                            app:cornerRadius="12dp" />
+                            android:textColor="@color/red" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#2E303A">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/v3_summary_title"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/solid_white"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:id="@+id/v3_summary_app_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="@color/view_holder_item_details"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/v3_summary_package"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="@color/view_holder_item_details"
+                            android:layout_marginBottom="4dp" />
+
+                        <TextView
+                            android:id="@+id/v3_summary_template"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="@color/view_holder_item_details"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_v3_badge_blue"
+                            android:text="@string/v3_summary_local_speed"
+                            android:textSize="11sp"
+                            android:textColor="@color/progress_blue" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -527,34 +1011,35 @@
         </LinearLayout>
     </ScrollView>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
-        android:background="#1F000000" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end|center_vertical">
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/v3_btn_cancel"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/cancel" />
+            android:text="@string/cancel"
+            android:textColor="@color/view_holder_item_title" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/v3_btn_back"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="invisible"
             android:layout_marginEnd="8dp"
-            android:text="@string/v3_back" />
+            android:text="@string/v3_back"
+            app:cornerRadius="10dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/v3_btn_next"
@@ -562,6 +1047,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/v3_next"
+            app:cornerRadius="10dp"
             app:backgroundTint="@color/progress_blue" />
     </LinearLayout>
+
 </LinearLayout>

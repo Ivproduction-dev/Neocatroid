@@ -5546,6 +5546,10 @@
     <string name="light_2d_aura">Аура</string>
     <string name="light_2d_spot">Прожектор</string>
     <string name="light_2d_intensity_format">Яркость: %1$d%%</string>
+    <string name="light_2d_softness_format">Рассеивание: %1$d%%</string>
+    <string name="light_2d_core_format">Размер ядра: %1$d%%</string>
+    <string name="light_2d_glow_mode">Свечение (Screen)</string>
+    <string name="light_2d_reset_aspect">1:1 Круг</string>
     <string name="light_2d_resize_hint">Размер: %1$s</string>
     <string name="tools_page_indicator">%1$d / %2$d</string>
     <string name="tools_previous_page">Предыдущие инструменты</string>
@@ -5688,6 +5692,7 @@
     <string name="v3_fun_fact_prefix">Интересный факт: %s</string>
 
     <string name="v3_building_apk">Сборка APK…</string>
+    <string name="v3_current_file">Файл: %1$s</string>
 
     <string name="v3_app_name">Название приложения</string>
     <string name="v3_package_name">Имя пакета</string>
@@ -5710,6 +5715,23 @@
     <string name="v3_next">Далее</string>
     <string name="v3_back">Назад</string>
     <string name="v3_build">Собрать APK</string>
+    <string name="v3_title_full">NeoCatroid APK Builder V3</string>
+    <string name="v3_subtitle_desc">Экспорт игры в автономный Android APK</string>
+    <string name="v3_step1_badge">Движок</string>
+    <string name="v3_step2_badge">Игра</string>
+    <string name="v3_step3_badge">Права</string>
+    <string name="v3_step4_badge">Сборка</string>
+    <string name="v3_template_full_title">Полный движок (Full)</string>
+    <string name="v3_template_full_sub">Включает 3D + физику Neo3D/Jolt, Box2D, свет 2D, звук и AI</string>
+    <string name="v3_template_light_title">Лёгкий движок (Lite)</string>
+    <string name="v3_template_light_sub">Оптимизирован для 2D игр, меньше размер итогового APK</string>
+    <string name="v3_recommended_tag">РЕКОМЕНДУЕТСЯ</string>
+    <string name="v3_summary_title">Готовность к сборке</string>
+    <string name="v3_summary_local_speed">⚡ Локальная сборка на устройстве без интернета за 3–5 секунд</string>
+    <string name="v3_perm_detected_count">Обнаружено в блоках проекта: %1$d</string>
+    <string name="v3_debuggable_sub">Включает отладчик Android Studio и подробные логи в logcat</string>
+    <string name="v3_icon_project_sub">Использовать скриншот или обложку проекта</string>
+    <string name="v3_icon_default_sub">Использовать стандартную системную иконку</string>
     <string name="v3_template_light_description">Меньше расход памяти. Остальные сцены загружаются по мере перехода.</string>
     <string name="v3_template_full_description">Сцены загружаются заранее для быстрых переходов. Требуется больше памяти.</string>
     <string name="v3_permissions_hint">Автоматический режим выбирает разрешения по блокам проекта. Переключитесь на ручной, чтобы изменить список.</string>

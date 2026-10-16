@@ -111,7 +111,7 @@ class BottomBarViewHolder(val layout: View) : MainActivityContracts.BottomBarVie
     }
 
     fun applyUiMode(ui2Enabled: Boolean) {
-        for (type in ToolType.values()) {
+        for (type in ToolType.values().distinctBy { it.toolButtonID }) {
             val button = layout.findViewById<android.view.ViewGroup>(type.toolButtonID) ?: continue
             for (i in 0 until button.childCount) {
                 val child = button.getChildAt(i)

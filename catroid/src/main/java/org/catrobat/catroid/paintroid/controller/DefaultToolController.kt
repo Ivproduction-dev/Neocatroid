@@ -109,7 +109,7 @@ class DefaultToolController(
     override fun hideToolOptionsView() {
         when (toolReference.tool?.toolType) {
             ToolType.TEXT -> (toolReference.tool as TextTool).hideTextToolLayout()
-            ToolType.SHAPE -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(true, true)
+            ToolType.SHAPE, ToolType.LIGHT2D -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(true, true)
             ToolType.CLIPBOARD -> (toolReference.tool as ClipboardTool).changeClipboardToolLayoutVisibility(true, true)
             else -> toolOptionsViewController.hide()
         }
@@ -118,7 +118,7 @@ class DefaultToolController(
     override fun hideToolOptionsViewForShapeTools() {
         when (toolReference.tool?.toolType) {
             ToolType.TEXT -> (toolReference.tool as TextTool).hideTextToolLayout()
-            ToolType.SHAPE -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(true, true)
+            ToolType.SHAPE, ToolType.LIGHT2D -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(true, true)
             ToolType.CLIPBOARD -> (toolReference.tool as ClipboardTool).changeClipboardToolLayoutVisibility(true, true)
             else -> {}
         }
@@ -128,7 +128,7 @@ class DefaultToolController(
         toolOptionsViewController.show()
         when (toolReference.tool?.toolType) {
             ToolType.TEXT -> (toolReference.tool as TextTool).showTextToolLayout()
-            ToolType.SHAPE -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(false, true)
+            ToolType.SHAPE, ToolType.LIGHT2D -> (toolReference.tool as ShapeTool).changeShapeToolLayoutVisibility(false, true)
             ToolType.CLIPBOARD -> (toolReference.tool as ClipboardTool).changeClipboardToolLayoutVisibility(false, true)
             else -> {}
         }

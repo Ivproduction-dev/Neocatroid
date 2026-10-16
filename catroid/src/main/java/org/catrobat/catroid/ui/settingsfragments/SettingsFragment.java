@@ -738,7 +738,7 @@ public class SettingsFragment extends PreferenceFragment {
 	}
 
 	public static boolean isSceneEditorModeEnabled(Context context) {
-		return getBooleanSharedPreference(false, SETTINGS_UI_SCENE_EDITOR_2, context);
+		return false;
 	}
 
 	public static boolean isTestSharedPreferenceEnabled(Context context) {

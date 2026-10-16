@@ -21,6 +21,8 @@ package org.catrobat.catroid.paintroid.tools.implementation
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.os.Bundle
 import androidx.test.espresso.idling.CountingIdlingResource
@@ -32,9 +34,12 @@ import org.catrobat.catroid.paintroid.tools.Workspace
 import org.catrobat.catroid.paintroid.tools.drawable.DrawableFactory
 import org.catrobat.catroid.paintroid.tools.drawable.DrawableShape
 import org.catrobat.catroid.paintroid.tools.drawable.DrawableStyle
+import org.catrobat.catroid.paintroid.tools.drawable.LightDrawable
 import org.catrobat.catroid.paintroid.tools.helper.toPoint
 import org.catrobat.catroid.paintroid.tools.options.ShapeToolOptionsView
 import org.catrobat.catroid.paintroid.tools.options.ToolOptionsViewController
+import kotlin.math.max
+import kotlin.math.min
 
 private const val SHAPE_OFFSET = 10f
 private const val MIN_SHAPE_OFFSET = 0.75f
@@ -43,6 +48,9 @@ private const val BUNDLE_BASE_SHAPE = "BASE_SHAPE"
 private const val BUNDLE_SHAPE_DRAW_TYPE = "SHAPE_DRAW_TYPE"
 private const val BUNDLE_OUTLINE_WIDTH = "OUTLINE_WIDTH"
 private const val BUNDLE_LIGHT_INTENSITY = "LIGHT_INTENSITY"
+private const val BUNDLE_LIGHT_SOFTNESS = "LIGHT_SOFTNESS"
+private const val BUNDLE_LIGHT_CORE_SIZE = "LIGHT_CORE_SIZE"
+private const val BUNDLE_LIGHT_GLOW_ENABLED = "LIGHT_GLOW_ENABLED"
 private const val STROKE_MITER_MULTIPLICATOR: Int = 4
 
 class ShapeTool(
@@ -67,6 +75,9 @@ class ShapeTool(
     private var shapeDrawable = drawableFactory.createDrawable(baseShape)
     private var shapeOutlineWidth = DEFAULT_OUTLINE_WIDTH
     private var lightIntensity = 75
+    private var lightSoftness = 60
+    private var lightCoreSize = 20
+    private var lightGlowEnabled = true
     val shapeBitmapPaint = Paint()
 
     override val toolType: ToolType
@@ -86,6 +97,10 @@ class ShapeTool(
         rotationEnabled = true
         if (selectedToolType == ToolType.LIGHT2D) {
             setBaseShape(DrawableShape.POINT_LIGHT)
+            val defaultSize = (min(workspace.width, workspace.height) * 0.45f).coerceIn(120f, 600f)
+            boxWidth = defaultSize
+            boxHeight = defaultSize
+            toolPosition.set(workspace.width / 2f, workspace.height / 2f)
         }
         this.shapeToolOptionsView = shapeToolOptionsView
         this.shapeToolOptionsView.setCallback(
@@ -109,6 +124,31 @@ class ShapeTool(
                     lightIntensity = intensity.coerceIn(1, 100)
                     workspace.invalidate()
                 }
+
+                override fun setLightSoftness(softness: Int) {
+                    lightSoftness = softness.coerceIn(10, 100)
+                    updateLightDrawableProperties()
+                    workspace.invalidate()
+                }
+
+                override fun setLightCoreSize(coreSize: Int) {
+                    lightCoreSize = coreSize.coerceIn(0, 80)
+                    updateLightDrawableProperties()
+                    workspace.invalidate()
+                }
+
+                override fun setLightGlowEnabled(enabled: Boolean) {
+                    lightGlowEnabled = enabled
+                    workspace.invalidate()
+                }
+
+                override fun resetSquareAspectRatio() {
+                    val size = max(boxWidth, boxHeight).coerceIn(100f, max(workspace.width, workspace.height).toFloat())
+                    boxWidth = size
+                    boxHeight = size
+                    createAndSetShapeSizeText(boxWidth, boxHeight)
+                    workspace.invalidate()
+                }
             })
         toolOptionsViewController.showDelayed()
         setShapeSizeChangedListener(this)
@@ -120,6 +160,14 @@ class ShapeTool(
     fun setBaseShape(shape: DrawableShape) {
         baseShape = shape
         shapeDrawable = drawableFactory.createDrawable(shape)
+        updateLightDrawableProperties()
+    }
+
+    private fun updateLightDrawableProperties() {
+        (shapeDrawable as? LightDrawable)?.let {
+            it.softness = lightSoftness
+            it.coreSize = lightCoreSize
+        }
     }
 
     override fun changePaintColor(color: Int, invalidate: Boolean) {
@@ -134,6 +182,9 @@ class ShapeTool(
             putSerializable(BUNDLE_SHAPE_DRAW_TYPE, shapeDrawType)
             putInt(BUNDLE_OUTLINE_WIDTH, shapeOutlineWidth)
             putInt(BUNDLE_LIGHT_INTENSITY, lightIntensity)
+            putInt(BUNDLE_LIGHT_SOFTNESS, lightSoftness)
+            putInt(BUNDLE_LIGHT_CORE_SIZE, lightCoreSize)
+            putBoolean(BUNDLE_LIGHT_GLOW_ENABLED, lightGlowEnabled)
         }
     }
 
@@ -144,12 +195,20 @@ class ShapeTool(
             bundle?.getSerializable(BUNDLE_SHAPE_DRAW_TYPE) as DrawableStyle? ?: return
         val newShapeOutlineWidth = bundle?.getInt(BUNDLE_OUTLINE_WIDTH) ?: return
         lightIntensity = bundle.getInt(BUNDLE_LIGHT_INTENSITY, lightIntensity)
+        lightSoftness = bundle.getInt(BUNDLE_LIGHT_SOFTNESS, lightSoftness)
+        lightCoreSize = bundle.getInt(BUNDLE_LIGHT_CORE_SIZE, lightCoreSize)
+        lightGlowEnabled = bundle.getBoolean(BUNDLE_LIGHT_GLOW_ENABLED, lightGlowEnabled)
         shapeToolOptionsView.setLightIntensity(lightIntensity)
+        shapeToolOptionsView.setLightSoftness(lightSoftness)
+        shapeToolOptionsView.setLightCoreSize(lightCoreSize)
+        shapeToolOptionsView.setLightGlowEnabled(lightGlowEnabled)
+        updateLightDrawableProperties()
         if (baseShape != newBaseShape || shapeDrawType != newShapeDrawType) {
             baseShape = newBaseShape
             shapeDrawType = newShapeDrawType
             shapeOutlineWidth = newShapeOutlineWidth
             shapeDrawable = drawableFactory.createDrawable(newBaseShape)
+            updateLightDrawableProperties()
             shapeToolOptionsView.setShapeActivated(newBaseShape)
             shapeToolOptionsView.setDrawTypeActivated(newShapeDrawType)
             shapeToolOptionsView.setShapeOutlineWidth(newShapeOutlineWidth)
@@ -176,6 +235,7 @@ class ShapeTool(
     }
 
     private fun preparePaint(paint: Paint) {
+        paint.xfermode = null
         when (shapeDrawType) {
             DrawableStyle.FILL -> {
                 paint.style = Paint.Style.FILL
@@ -217,7 +277,12 @@ class ShapeTool(
             baseShape == DrawableShape.AURA_LIGHT ||
             baseShape == DrawableShape.SPOT_LIGHT
         ) {
-            paint.alpha = paint.alpha * lightIntensity / 100
+            paint.alpha = (paint.alpha * lightIntensity / 100).coerceIn(0, 255)
+            if (lightGlowEnabled) {
+                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SCREEN)
+            } else {
+                paint.xfermode = null
+            }
         }
     }
 

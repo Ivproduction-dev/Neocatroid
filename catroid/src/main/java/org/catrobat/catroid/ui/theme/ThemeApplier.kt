@@ -16,6 +16,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
+import org.catrobat.catroid.CatroidApplication
 
 object ThemeApplier {
 
@@ -31,11 +32,13 @@ object ThemeApplier {
     private val nullBackground = Any()
 
     fun apply(activity: Activity) {
+        if (ThemeManager.isMaterialYouEnabled(activity)) return
         val root = activity.window?.decorView ?: return
         applyToRoot(root)
     }
 
     fun apply(dialog: Dialog) {
+        if (ThemeManager.isMaterialYouEnabled(CatroidApplication.getAppContext())) return
         val root = dialog.window?.decorView ?: return
         applyToRoot(root)
     }

@@ -1,58 +1,129 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:overScrollMode="never"
+    android:scrollbars="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/light_2d_type"
-        android:textStyle="bold" />
-
-    <RadioGroup
-        android:id="@+id/light_2d_type_group"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:background="?attr/colorSurface"
+        android:orientation="vertical"
+        android:padding="10dp">
 
-        <RadioButton
-            android:id="@+id/light_2d_point"
+        <TextView
+            style="@style/PocketPaintToolSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="@string/light_2d_point" />
+            android:text="@string/light_2d_type" />
 
-        <RadioButton
-            android:id="@+id/light_2d_aura"
+        <View style="@style/PocketPaintToolSectionDivider" />
+
+        <RadioGroup
+            android:id="@+id/light_2d_type_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/light_2d_point"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/light_2d_point" />
+
+            <RadioButton
+                android:id="@+id/light_2d_aura"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/light_2d_aura" />
+
+            <RadioButton
+                android:id="@+id/light_2d_spot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/light_2d_spot" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/light_2d_intensity_label"
+            style="@style/PocketPaintToolSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/light_2d_aura" />
+            android:layout_marginTop="4dp"
+            android:text="@string/light_2d_intensity_format" />
 
-        <RadioButton
-            android:id="@+id/light_2d_spot"
+        <SeekBar
+            android:id="@+id/light_2d_intensity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="75" />
+
+        <TextView
+            android:id="@+id/light_2d_softness_label"
+            style="@style/PocketPaintToolSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/light_2d_spot" />
-    </RadioGroup>
+            android:layout_marginTop="4dp"
+            android:text="@string/light_2d_softness_format" />
 
-    <TextView
-        android:id="@+id/light_2d_intensity_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/light_2d_intensity_format" />
+        <SeekBar
+            android:id="@+id/light_2d_softness"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="60" />
 
-    <SeekBar
-        android:id="@+id/light_2d_intensity"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"
-        android:progress="75" />
+        <TextView
+            android:id="@+id/light_2d_core_label"
+            style="@style/PocketPaintToolSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/light_2d_core_format" />
 
-    <TextView
-        android:id="@+id/light_2d_size"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:text="@string/light_2d_resize_hint" />
-</LinearLayout>
+        <SeekBar
+            android:id="@+id/light_2d_core"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="80"
+            android:progress="20" />
+
+        <View
+            style="@style/PocketPaintToolSectionDivider"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/light_2d_glow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="@string/light_2d_glow_mode" />
+
+            <Button
+                android:id="@+id/light_2d_reset_ratio"
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/light_2d_reset_aspect" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/light_2d_size"
+            style="@style/PocketPaintToolSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:text="@string/light_2d_resize_hint" />
+    </LinearLayout>
+</ScrollView>

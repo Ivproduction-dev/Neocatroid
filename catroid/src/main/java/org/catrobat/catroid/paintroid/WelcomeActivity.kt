@@ -98,7 +98,7 @@ class WelcomeActivity : AppCompatActivity() {
                                 toolDescription.setText(type.helpTextResource)
                                 val icon =
                                     findViewById<AppCompatImageView>(R.id.pocketpaint_tools_info_icon)
-                                icon.setImageResource(type.drawableResource)
+                                icon.setImageResource(org.catrobat.catroid.paintroid.ui.Ui2Helper.getToolIcon(type, false))
                             }
                         }
                     }

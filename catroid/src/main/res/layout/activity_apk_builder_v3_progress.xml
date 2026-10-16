@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="28dp">
+    android:background="@color/app_background"
+    android:padding="24dp">
 
     <TextView
         android:id="@+id/v3_progress_title"
@@ -58,6 +59,7 @@
         android:textColor="@color/spinner_icon_and_inactive_elements"
         android:gravity="center"
         android:maxLines="2"
+        android:ellipsize="middle"
         android:layout_marginBottom="20dp" />
 
     <TextView

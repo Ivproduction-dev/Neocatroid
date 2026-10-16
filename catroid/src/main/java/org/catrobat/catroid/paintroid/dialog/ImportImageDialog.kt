@@ -26,22 +26,7 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import org.catrobat.catroid.R
 
-
 class ImportImageDialog : MainActivityDialogFragment() {
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val importGallery = view.findViewById<LinearLayout>(R.id.pocketpaint_dialog_import_gallery)
-        val importStickers =
-            view.findViewById<LinearLayout>(R.id.pocketpaint_dialog_import_stickers)
-        importGallery.setOnClickListener {
-            presenter.importFromGalleryClicked()
-            dismiss()
-        }
-        importStickers.setOnClickListener {
-            presenter.importStickersClicked()
-            dismiss()
-        }
-    }
 
     @SuppressLint("InflateParams")
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -52,5 +37,20 @@ class ImportImageDialog : MainActivityDialogFragment() {
             .setView(layout)
             .setNegativeButton(R.string.pocketpaint_cancel) { _, _ -> dismiss() }
             .create()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val alertDialog = dialog as? AlertDialog ?: return
+        val importGallery = alertDialog.findViewById<LinearLayout>(R.id.pocketpaint_dialog_import_gallery)
+        val importStickers = alertDialog.findViewById<LinearLayout>(R.id.pocketpaint_dialog_import_stickers)
+        importGallery?.setOnClickListener {
+            presenter.importFromGalleryClicked()
+            dismiss()
+        }
+        importStickers?.setOnClickListener {
+            presenter.importStickersClicked()
+            dismiss()
+        }
     }
 }

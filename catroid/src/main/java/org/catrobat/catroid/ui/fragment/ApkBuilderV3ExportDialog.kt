@@ -82,6 +82,16 @@ class ApkBuilderV3ExportDialog {
         settingsDialog = dialog
         dialog.setOnDismissListener { if (activeInstance === this) activeInstance = null }
         dialog.show()
+        val metrics = activity.resources.displayMetrics
+        val horizontalMargin = (32 * metrics.density).toInt()
+        val maxWidth = (560 * metrics.density).toInt()
+        dialog.window?.apply {
+            setLayout(
+                minOf(metrics.widthPixels - horizontalMargin, maxWidth),
+                (metrics.heightPixels * 0.88f).toInt()
+            )
+            setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
     }
 
     fun onFirebaseUriResult(uri: Uri?) {
@@ -115,6 +125,11 @@ class ApkBuilderV3ExportDialog {
     }
 
 
+    private fun <T : View> findV(root: View, idName: String): T? {
+        val id = root.resources.getIdentifier(idName, "id", root.context.packageName)
+        return if (id != 0) root.findViewById(id) else null
+    }
+
     private fun buildDialog(host: Fragment): AlertDialog {
         val ctx = host.requireContext()
         val project = ProjectManager.getInstance().currentProject ?: return AlertDialog.Builder(ctx).create()
@@ -144,6 +159,8 @@ class ApkBuilderV3ExportDialog {
         val permModeGroup = view.findViewById<android.widget.RadioGroup>(R.id.v3_permissions_mode_group)
         val permAutoRadio = view.findViewById<RadioButton>(R.id.v3_perm_mode_auto)
         val autoPermissions = org.catrobat.catroid.apkbuildV3.ProjectScanner.detectPermissions(project)
+        findV<TextView>(view, "v3_permissions_detected_badge")?.text =
+            ctx.getString(R.string.v3_perm_detected_count, autoPermissions.size)
 
         fun updatePermissionsUI(isAuto: Boolean) {
             permChecks.forEach { (perm, cb) ->
@@ -163,23 +180,56 @@ class ApkBuilderV3ExportDialog {
             updatePermissionsUI(checkedId == R.id.v3_perm_mode_auto)
         }
 
-        val hasProjectIcon = File(project.directory, "manual_screenshot.png").exists() ||
-                File(project.directory, "automatic_screenshot.png").exists()
+        val projectIconFile = listOf(
+            File(project.directory, "manual_screenshot.png"),
+            File(project.directory, "automatic_screenshot.png")
+        ).firstOrNull { it.exists() && it.length() > 0 }
+        val hasProjectIcon = projectIconFile != null
+        val iconPreview = findV<android.widget.ImageView>(view, "v3_icon_preview_image")
+        fun updateIconPreview(useProject: Boolean) {
+            if (useProject && projectIconFile != null) {
+                val bitmap = android.graphics.BitmapFactory.decodeFile(projectIconFile.absolutePath)
+                if (bitmap != null) {
+                    iconPreview?.setImageBitmap(bitmap)
+                    return
+                }
+            }
+            iconPreview?.setImageResource(R.drawable.logo)
+        }
+        updateIconPreview(hasProjectIcon)
+
         view.findViewById<RadioButton>(R.id.v3_icon_project)?.isChecked = hasProjectIcon
         view.findViewById<RadioButton>(R.id.v3_icon_default)?.isChecked = !hasProjectIcon
-
-        view.findViewById<RadioButton>(R.id.v3_template_full)?.isChecked = true
-        val templateDescription = view.findViewById<TextView>(R.id.v3_template_description)
-        fun updateTemplateDescription() {
-            templateDescription?.setText(
-                if (view.findViewById<RadioButton>(R.id.v3_template_full)?.isChecked == true)
-                    R.string.v3_template_full_description
-                else R.string.v3_template_light_description
-            )
+        view.findViewById<android.widget.RadioGroup>(R.id.v3_icon_radio_group)?.setOnCheckedChangeListener { _, checkedId ->
+            updateIconPreview(checkedId == R.id.v3_icon_project)
         }
-        view.findViewById<android.widget.RadioGroup>(R.id.v3_template_radio_group)
-            ?.setOnCheckedChangeListener { _, _ -> updateTemplateDescription() }
-        updateTemplateDescription()
+
+        val cardFull = findV<View>(view, "v3_card_template_full")
+        val cardLight = findV<View>(view, "v3_card_template_light")
+        val fullCheck = findV<View>(view, "v3_template_full_check")
+        val lightCheck = findV<View>(view, "v3_template_light_check")
+        val radioFull = view.findViewById<RadioButton>(R.id.v3_template_full)
+        val radioLight = view.findViewById<RadioButton>(R.id.v3_template_light)
+
+        fun selectTemplate(isFull: Boolean) {
+            if (isFull) {
+                radioFull?.isChecked = true
+                cardFull?.setBackgroundResource(R.drawable.bg_v3_card_selected)
+                cardLight?.setBackgroundResource(R.drawable.bg_v3_card_selectable)
+                fullCheck?.visibility = View.VISIBLE
+                lightCheck?.visibility = View.GONE
+            } else {
+                radioLight?.isChecked = true
+                cardLight?.setBackgroundResource(R.drawable.bg_v3_card_selected)
+                cardFull?.setBackgroundResource(R.drawable.bg_v3_card_selectable)
+                lightCheck?.visibility = View.VISIBLE
+                fullCheck?.visibility = View.GONE
+            }
+        }
+
+        cardFull?.setOnClickListener { selectTemplate(true) }
+        cardLight?.setOnClickListener { selectTemplate(false) }
+        selectTemplate(true)
 
         val firebaseAddButton = view.findViewById<Button>(R.id.v3_firebase_add_button)
         val firebaseStatus = view.findViewById<TextView>(R.id.v3_firebase_status)
@@ -203,6 +253,9 @@ class ApkBuilderV3ExportDialog {
             downloadTemplate(view, ctx)
         }
 
+        findV<View>(view, "v3_btn_close")?.setOnClickListener {
+            settingsDialog?.dismiss()
+        }
         view.findViewById<Button>(R.id.v3_btn_cancel)?.setOnClickListener {
             settingsDialog?.dismiss()
         }
@@ -243,7 +296,6 @@ class ApkBuilderV3ExportDialog {
         updateStepUI(view, ctx)
 
         return AlertDialog.Builder(ctx)
-            .setTitle("APK Builder V3")
             .setView(view)
             .create()
     }
@@ -286,6 +338,8 @@ class ApkBuilderV3ExportDialog {
             )
         }
 
+        val project = ProjectManager.getInstance().currentProject
+
         view.findViewById<TextView>(R.id.v3_step_subtitle)?.text =
             ctx.getString(R.string.v3_step_format, currentStep, TOTAL_STEPS, stepName(ctx, currentStep))
 
@@ -297,6 +351,46 @@ class ApkBuilderV3ExportDialog {
                 .start()
         }
 
+        val stepCircles = listOf(
+            Pair(findV<View>(view, "v3_step1_circle"), Pair(findV<TextView>(view, "v3_step1_num"), findV<View>(view, "v3_step1_done"))),
+            Pair(findV<View>(view, "v3_step2_circle"), Pair(findV<TextView>(view, "v3_step2_num"), findV<View>(view, "v3_step2_done"))),
+            Pair(findV<View>(view, "v3_step3_circle"), Pair(findV<TextView>(view, "v3_step3_num"), findV<View>(view, "v3_step3_done"))),
+            Pair(findV<View>(view, "v3_step4_circle"), Pair(findV<TextView>(view, "v3_step4_num"), findV<View>(view, "v3_step4_done")))
+        )
+        val stepLines = listOf(
+            findV<View>(view, "v3_step_line_1"),
+            findV<View>(view, "v3_step_line_2"),
+            findV<View>(view, "v3_step_line_3")
+        )
+        for (i in 1..TOTAL_STEPS) {
+            val (circle, pair) = stepCircles.getOrNull(i - 1) ?: continue
+            val (numView, doneView) = pair
+            when {
+                i < currentStep -> {
+                    circle?.setBackgroundResource(R.drawable.bg_v3_step_circle_done)
+                    numView?.visibility = View.GONE
+                    doneView?.visibility = View.VISIBLE
+                }
+                i == currentStep -> {
+                    circle?.setBackgroundResource(R.drawable.bg_v3_step_circle_active)
+                    numView?.visibility = View.VISIBLE
+                    doneView?.visibility = View.GONE
+                }
+                else -> {
+                    circle?.setBackgroundResource(R.drawable.bg_v3_step_circle)
+                    numView?.visibility = View.VISIBLE
+                    doneView?.visibility = View.GONE
+                }
+            }
+        }
+        for (i in 1..3) {
+            val line = stepLines.getOrNull(i - 1) ?: continue
+            line?.setBackgroundColor(
+                if (i < currentStep) android.graphics.Color.parseColor("#3FB950")
+                else android.graphics.Color.parseColor("#383842")
+            )
+        }
+
         view.findViewById<View>(R.id.v3_step1_container)?.visibility =
             if (currentStep == 1) View.VISIBLE else View.GONE
         view.findViewById<View>(R.id.v3_step2_container)?.visibility =
@@ -306,11 +400,29 @@ class ApkBuilderV3ExportDialog {
         view.findViewById<View>(R.id.v3_step4_container)?.visibility =
             if (currentStep == 4) View.VISIBLE else View.GONE
 
+        if (currentStep == 4 && project != null) {
+            val appName = view.findViewById<TextInputEditText>(R.id.v3_app_name_input)?.text.toString().ifBlank { project.name }
+            val pkg = view.findViewById<TextInputEditText>(R.id.v3_package_input)?.text.toString().ifBlank { "org.neocatroid.runtime.v3" }
+            val version = view.findViewById<TextInputEditText>(R.id.v3_version_input)?.text.toString().ifBlank { "1.0" }
+            val isFull = view.findViewById<RadioButton>(R.id.v3_template_full)?.isChecked == true
+            findV<TextView>(view, "v3_summary_app_name")?.text = "$appName  v$version"
+            findV<TextView>(view, "v3_summary_package")?.text = "Package: $pkg"
+            findV<TextView>(view, "v3_summary_template")?.text =
+                if (isFull) ctx.getString(R.string.v3_template_full_title)
+                else ctx.getString(R.string.v3_template_light_title)
+        }
+
         view.findViewById<Button>(R.id.v3_btn_back)?.visibility =
             if (currentStep > 1) View.VISIBLE else View.INVISIBLE
-        view.findViewById<Button>(R.id.v3_btn_next)?.text =
-            if (currentStep == TOTAL_STEPS) ctx.getString(R.string.v3_build)
-            else ctx.getString(R.string.v3_next)
+
+        val nextBtn = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_btn_next)
+        if (currentStep == TOTAL_STEPS) {
+            nextBtn?.text = ctx.getString(R.string.v3_build)
+            nextBtn?.setIconResource(R.drawable.ic_v3_rocket)
+        } else {
+            nextBtn?.text = ctx.getString(R.string.v3_next)
+            nextBtn?.icon = null
+        }
     }
 
     private fun formatSizeMb(bytes: Long): String {
@@ -420,7 +532,7 @@ class ApkBuilderV3ExportDialog {
         val versionCode = view.findViewById<TextInputEditText>(R.id.v3_version_code_input)?.text.toString()
             .toIntOrNull() ?: 1
         val minSdk = view.findViewById<TextInputEditText>(R.id.v3_min_sdk_input)?.text.toString()
-            .toIntOrNull() ?: 21
+            .toIntOrNull() ?: ApkBuilderV3Config.RUNTIME_MIN_SDK
         val targetSdk = view.findViewById<TextInputEditText>(R.id.v3_target_sdk_input)?.text.toString()
             .toIntOrNull() ?: 35
 
@@ -524,7 +636,9 @@ class ApkBuilderV3ExportDialog {
                             progressBar.progress = progress.toInt()
                             percentText.text = "${progress.toInt()}%"
                             stageText.text = stage
-                            fileText.text = if (currentFile.isNotBlank()) "Файл: $currentFile" else ""
+                            fileText.text = if (currentFile.isNotBlank()) {
+                                ctx.getString(R.string.v3_current_file, currentFile)
+                            } else ""
                         }
                     }
                 )

@@ -71,7 +71,7 @@ abstract class BaseActivity : AppCompatActivity(), PermissionHandlingActivity {
 
     override fun getResources(): Resources {
         val base = super.getResources()
-        if (ThemeManager.isDefaultSelected) {
+        if (ThemeManager.isDefaultSelected || ThemeManager.isMaterialYouEnabled(this)) {
             themedResources = null
             return base
         }

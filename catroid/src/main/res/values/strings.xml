@@ -4349,6 +4349,10 @@
 <string name="light_2d_aura">Aura</string>
 <string name="light_2d_spot">Spot</string>
 <string name="light_2d_intensity_format">Intensity: %1$d%%</string>
+<string name="light_2d_softness_format">Softness: %1$d%%</string>
+<string name="light_2d_core_format">Core size: %1$d%%</string>
+<string name="light_2d_glow_mode">Glow (Screen)</string>
+<string name="light_2d_reset_aspect">1:1 Circle</string>
 <string name="light_2d_resize_hint">Size: %1$s</string>
 <string name="tools_page_indicator">%1$d / %2$d</string>
 <string name="tools_previous_page">Previous tools</string>
@@ -5093,6 +5097,7 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_fun_fact_prefix">Fun fact: %s</string>
 
     <string name="v3_building_apk">Building APK…</string>
+    <string name="v3_current_file">File: %1$s</string>
 
     <string name="v3_app_name">App name</string>
     <string name="v3_package_name">Package name</string>
@@ -5115,6 +5120,23 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_next">Next</string>
     <string name="v3_back">Back</string>
     <string name="v3_build">Build APK</string>
+    <string name="v3_title_full">NeoCatroid APK Builder V3</string>
+    <string name="v3_subtitle_desc">Standalone Android Game Exporter</string>
+    <string name="v3_step1_badge">Engine</string>
+    <string name="v3_step2_badge">Package</string>
+    <string name="v3_step3_badge">Perms</string>
+    <string name="v3_step4_badge">Build</string>
+    <string name="v3_template_full_title">Full Runtime Engine</string>
+    <string name="v3_template_full_sub">Includes 3D + Jolt physics, Box2D, 2D lighting, AI, and sound engine</string>
+    <string name="v3_template_light_title">Lite Runtime Engine</string>
+    <string name="v3_template_light_sub">Optimized compact build for classic 2D games and lighter APK size</string>
+    <string name="v3_recommended_tag">RECOMMENDED</string>
+    <string name="v3_summary_title">Ready to Assemble</string>
+    <string name="v3_summary_local_speed">⚡ Fast local device compilation in 3–5 seconds without internet</string>
+    <string name="v3_perm_detected_count">Auto-detected in project blocks: %1$d</string>
+    <string name="v3_debuggable_sub">Enables Android Studio debugging &amp; detailed runtime logcat</string>
+    <string name="v3_icon_project_sub">Use project screenshot/cover</string>
+    <string name="v3_icon_default_sub">Use default NeoCatroid game icon</string>
     <string name="v3_template_light_description">Uses less memory. Other scenes load when needed.</string>
     <string name="v3_template_full_description">Preloads scenes for faster scene changes. Uses more memory.</string>
     <string name="v3_permissions_hint">Automatic mode estimates permissions from project blocks. Switch to manual to adjust them.</string>

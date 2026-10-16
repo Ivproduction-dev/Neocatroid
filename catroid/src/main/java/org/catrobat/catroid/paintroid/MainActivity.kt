@@ -676,6 +676,7 @@ class MainActivity : AppCompatActivity(), MainView, CommandListener, Ui2Onboardi
             }
             rail.addView(button)
         }
+
     }
     override fun onUi2Accepted() {
         applyUiMode(true)

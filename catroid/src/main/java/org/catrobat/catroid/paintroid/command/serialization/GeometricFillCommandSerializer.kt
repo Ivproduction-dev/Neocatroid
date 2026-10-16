@@ -120,12 +120,18 @@ class GeometricFillCommandSerializer(version: Int) : VersionSerializer<Geometric
     class LightDrawableSerializer(version: Int) : VersionSerializer<LightDrawable>(version) {
         override fun write(kryo: Kryo, output: Output, command: LightDrawable) {
             output.writeInt(command.type.ordinal)
+            output.writeInt(command.softness)
+            output.writeInt(command.coreSize)
         }
 
         override fun read(kryo: Kryo, input: Input, type: Class<out LightDrawable>): LightDrawable =
             super.handleVersions(this, kryo, input, type)
 
-        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out LightDrawable>): LightDrawable =
-            LightDrawable(LightDrawable.Type.values()[input.readInt()])
+        override fun readCurrentVersion(kryo: Kryo, input: Input, type: Class<out LightDrawable>): LightDrawable {
+            val lightType = LightDrawable.Type.values()[input.readInt()]
+            val softness = if (input.canReadInt()) input.readInt() else 60
+            val coreSize = if (input.canReadInt()) input.readInt() else 20
+            return LightDrawable(lightType, softness, coreSize)
+        }
     }
 }

@@ -4,10 +4,18 @@ import org.catrobat.catroid.R
 import org.catrobat.catroid.paintroid.tools.ToolType
 
 object Ui2Helper {
-    fun getToolIcon(toolType: ToolType, isUi2: Boolean): Int {
-        if (!isUi2) return toolType.drawableResource
+    fun getToolIcon(toolType: ToolType, @Suppress("UNUSED_PARAMETER") isUi2: Boolean): Int {
         return when (toolType) {
-            ToolType.BRUSH -> R.drawable.ic_pocketpaint_v2_brush
+            ToolType.BRUSH -> R.drawable.ic_pocketpaint_v2_paintbrush
+            ToolType.PIXELART -> R.drawable.ic_pocketpaint_v2_pixelart
+            ToolType.PATTERN -> R.drawable.ic_pocketpaint_v2_pattern
+            ToolType.SYMMETRY -> R.drawable.ic_pocketpaint_v2_symmetry
+            ToolType.AUTO_REMOVE_BG -> R.drawable.ic_pocketpaint_v2_auto_remove_bg
+            ToolType.COLOR_REPLACE -> R.drawable.ic_pocketpaint_v2_color_replace
+            ToolType.WATERCOLOR -> R.drawable.ic_pocketpaint_v2_watercolor
+            ToolType.SMUDGE -> R.drawable.ic_pocketpaint_v2_smudge
+            ToolType.CLIP -> R.drawable.ic_pocketpaint_v2_clipping
+            ToolType.SPRAY -> R.drawable.ic_pocketpaint_v2_spray
             ToolType.ERASER -> R.drawable.ic_pocketpaint_v2_eraser
             ToolType.FILL -> R.drawable.ic_pocketpaint_v2_fill
             ToolType.PIPETTE -> R.drawable.ic_pocketpaint_v2_pipette
@@ -19,7 +27,6 @@ object Ui2Helper {
             ToolType.HAND -> R.drawable.ic_pocketpaint_v2_hand
             ToolType.UNDO -> R.drawable.ic_pocketpaint_v2_undo
             ToolType.REDO -> R.drawable.ic_pocketpaint_v2_redo
-            ToolType.SPRAY -> R.drawable.ic_pocketpaint_v2_spray
             ToolType.CLIPBOARD -> R.drawable.ic_pocketpaint_v2_stamp
             ToolType.IMPORTPNG -> R.drawable.ic_pocketpaint_v2_import
             ToolType.LASSO -> R.drawable.ic_pocketpaint_v2_lasso

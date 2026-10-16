@@ -31,6 +31,12 @@ interface ShapeToolOptionsView {
 
     fun setLightIntensity(intensity: Int) { }
 
+    fun setLightSoftness(softness: Int) { }
+
+    fun setLightCoreSize(coreSize: Int) { }
+
+    fun setLightGlowEnabled(enabled: Boolean) { }
+
     fun setCallback(callback: Callback)
 
     fun setShapeSizeText(shapeSize: String)
@@ -47,5 +53,13 @@ interface ShapeToolOptionsView {
         fun setOutlineWidth(outlineWidth: Int)
 
         fun setLightIntensity(intensity: Int) { }
+
+        fun setLightSoftness(softness: Int) { }
+
+        fun setLightCoreSize(coreSize: Int) { }
+
+        fun setLightGlowEnabled(enabled: Boolean) { }
+
+        fun resetSquareAspectRatio() { }
     }
 }

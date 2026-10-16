@@ -357,6 +357,14 @@ open class MainActivityPresenter(
             FileIO.storeImageUri = null
         }
 
+
+
+
+        if (requestCode == PERMISSION_REQUEST_CODE_IMPORT_PICTURE) {
+            navigator.startImportImageActivity(REQUEST_CODE_IMPORT_PNG)
+            return
+        }
+
         if (navigator.isSdkAboveOrEqualM) {
             askForReadAndWriteExternalStoragePermission(requestCode)
             when (requestCode) {
