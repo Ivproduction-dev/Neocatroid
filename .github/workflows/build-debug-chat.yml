@@ -86,10 +86,20 @@ jobs:
       - name: Build debug-chat storeRelease APK
         run: bash ./gradlew :catroid:assembleDebugChatStoreRelease --no-daemon --stacktrace -x lint -x test -x uploadCrashlyticsMappingFileDebugChatStoreRelease
 
+      - name: Locate generated APK
+        shell: bash
+        run: |
+          find catroid/build/outputs -maxdepth 6 -type f -name '*.apk' -print
+          apk_count=$(find catroid/build/outputs/apk -type f -name '*.apk' 2>/dev/null | wc -l)
+          if [[ "$apk_count" -eq 0 ]]; then
+            echo "Gradle finished but no APK was found under catroid/build/outputs/apk" >&2
+            exit 1
+          fi
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: neocatroid-debug-chat-${{ github.run_number }}
-          path: catroid/build/outputs/apk/debugChat/storeRelease/catroid-debugChat-storeRelease.apk
+          path: catroid/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
