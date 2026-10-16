@@ -1,0 +1,79 @@
+name: Build Debug Chat APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-chat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and upload debug-chat APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      ANDROID_NDK_VERSION: '27.2.12479018'
+
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK and NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required Android SDK packages
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "cmake;3.22.1" "ndk;${ANDROID_NDK_VERSION}"
+
+      - name: Show runner memory
+        run: |
+          free -h
+          nproc
+
+      - name: Choose Gradle heap from runner memory
+        shell: bash
+        run: |
+          total_mib=$(awk '/MemTotal/ { print int($2 / 1024) }' /proc/meminfo)
+          # Reserve 3 GiB for native compilers and OS; cap heap to 10 GiB.
+          heap_mib=$((total_mib - 3072))
+          (( heap_mib > 10240 )) && heap_mib=10240
+          (( heap_mib < 4096 )) && heap_mib=4096
+          sed -i "s|^org.gradle.jvmargs=.*|org.gradle.jvmargs=-Xmx${heap_mib}m -XX:MaxMetaspaceSize=2048m -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=0|" gradle.properties
+          echo "GRADLE_OPTS=-Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dkotlin.compiler.execution.strategy=in-process" >> "$GITHUB_ENV"
+          echo "Gradle heap: ${heap_mib} MiB (runner total: ${total_mib} MiB)"
+
+      - name: Set up Gradle and cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug-chat storeRelease APK
+        run: ./gradlew :catroid:assembleDebugChatStoreRelease --no-daemon --stacktrace -x lint -x test -x uploadCrashlyticsMappingFileDebugChatStoreRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neocatroid-debug-chat-${{ github.run_number }}
+          path: catroid/build/outputs/apk/debugChat/storeRelease/catroid-debugChat-storeRelease.apk
+          if-no-files-found: error
+          retention-days: 14
