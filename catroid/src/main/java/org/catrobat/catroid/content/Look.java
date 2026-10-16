@@ -504,6 +504,10 @@ public class Look extends Image {
             return;
         }
 
+        if (org.catrobat.catroid.fast2d.mirror.MirrorScene.suppressClassicDraw(sprite)) {
+            return;
+        }
+
 		if (!isParticleEffectPaused) {
 			if (hasParticleEffect) {
 				fadeInParticles();
@@ -534,9 +538,10 @@ public class Look extends Image {
 			return;
 		}
 
-		if (!isLookVisible() || getDrawable() == null) {
+		Drawable currentDrawable = getDrawable();
+		if (!isLookVisible() || currentDrawable == null) {
 			if (shouldLog) {
-				Log.w("ShaderDebug", "    [Draw] Look is NOT drawn. isLookVisible: " + isLookVisible() + ", getDrawable() is null: " + (getDrawable() == null));
+				Log.w("ShaderDebug", "    [Draw] Look is NOT drawn. isLookVisible: " + isLookVisible() + ", getDrawable() is null: " + (currentDrawable == null));
 			}
 			return;
 		}
@@ -555,7 +560,7 @@ public class Look extends Image {
 		if (useShader) {
 			batch.setShader(shader);
 		}
-		if (isLookVisible() && this.getDrawable() != null) {
+		if (isLookVisible() && currentDrawable != null) {
 			super.draw(batch, this.alpha);
 		}
 		if (useShader) {
@@ -567,7 +572,7 @@ public class Look extends Image {
 			Log.d("ShaderDebug", "    [Draw] <<< super.draw() called.");
 		}
 
-		Drawable drawable = getDrawable();
+		Drawable drawable = currentDrawable;
 		if (drawable != null) {
 			if (shouldLog) {
 				Log.d("ShaderDebug", "    [Draw] Drawable class: " + drawable.getClass().getSimpleName());
@@ -1234,6 +1239,18 @@ public class Look extends Image {
 
 	public boolean needsCustomShader() {
 		return useCustomShader;
+	}
+
+	public boolean isGifPlaying() {
+		return gifPlaying;
+	}
+
+	public boolean isSpritesheetPlaying() {
+		return spritesheetPlaying;
+	}
+
+	public boolean hasCornerMesh() {
+		return hasCornerOffsets;
 	}
 
 	public float getBrightnessValue() {

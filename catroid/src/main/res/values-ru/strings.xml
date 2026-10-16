@@ -488,6 +488,21 @@
     <string name="editor_3d_load_scene">Загрузить сцену</string>
     <string name="editor_3d_no_scenes_found">Не найдено сохраненных сцен (.rscene).</string>
     <string name="editor_3d_loading_scene">Загрузка сцены: %1$s</string>
+    <string name="editor_3d_neo3d_entry">Neo3D-объекты текущей сцены</string>
+    <string name="editor_3d_neo3d_unavailable">Neo3D-движок недоступен</string>
+    <string name="editor_3d_choose_sky_color">Выберите цвет неба</string>
+    <string name="editor_3d_close">Закрыть</string>
+    <string name="editor_3d_min">Мин:</string>
+    <string name="editor_3d_max">Макс:</string>
+    <string name="editor_3d_add_color_keyframe">+ Добавить цветовой кейфрейм</string>
+    <string name="editor_3d_cd_move_to_cam">К камере</string>
+    <string name="editor_3d_cd_rotate_to_cam">Повернуть к камере</string>
+    <string name="editor_3d_cd_focus">Фокус</string>
+    <string name="editor_3d_cd_inspector">Инспектор</string>
+    <string name="editor_3d_overwrite_title">Файл существует</string>
+    <string name="editor_3d_overwrite_msg">Перезаписать %1$s?</string>
+    <string name="editor_3d_load_unsaved_msg">Загрузка сцены отменит несохранённые изменения. Сохранить?</string>
+    <string name="editor_3d_load_no_save">Загрузить без сохранения</string>
     <string name="editor_3d_shadow_applied">Настройки теней применены.</string>
     <string name="editor_3d_invalid_shadow">Некорректные значения теней.</string>
     <string name="editor_3d_restart_engine_title">Перезапуск 3D-движка</string>
@@ -2998,6 +3013,8 @@
     <string formatted="false" name="preference_title_enable_arduino_bricks">Расширение Arduino</string>
     <string formatted="false" name="preference_description_arduino_bricks">Разрешить приложению управлять платой Arduino</string>
     <string formatted="false" name="preference_title_enable_embroidery_bricks">Расширение для вышивки</string>
+    <string formatted="false" name="preference_title_mirror_render">Зеркальный рендер (эксперимент)</string>
+    <string formatted="false" name="preference_summary_mirror_render">Рисовать классические спрайты через батчированный Fast2D-рендерер</string>
     <string formatted="false" name="preference_description_embroidery_bricks">Создавать шаблоны для швейных машин</string>
     <string formatted="false" name="preference_title_cast_feature_globally_enabled">Расширение Chromecast</string>
     <string formatted="false" name="preference_description_cast_feature_globally_enabled">Показывать кнопку трансляции и транслируемые проекты</string>

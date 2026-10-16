@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class TextureComponent extends PooledComponent {
     public TextureRegion region = null;
     public String textureName = "";
+    public boolean visible = true;
     public Color color = new Color(Color.WHITE);
     public float width = 0f, height = 0f;
     public float originX = 0f, originY = 0f;
@@ -15,6 +16,7 @@ public class TextureComponent extends PooledComponent {
     protected void reset() {
         region = null;
         textureName = "";
+        visible = true;
         color.set(Color.WHITE);
         width = 0f; height = 0f;
         originX = 0f; originY = 0f;

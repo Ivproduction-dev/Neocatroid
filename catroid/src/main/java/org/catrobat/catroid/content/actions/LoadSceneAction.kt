@@ -27,7 +27,6 @@ class LoadSceneAction : TemporalAction() {
             return
         }
 
-        val threeDManager = StageActivity.activeStageActivity.get()?.stageListener?.threeDManager
         val sceneManager = StageActivity.activeStageActivity.get()?.stageListener?.sceneManager
 
         val fileHandle = Gdx.files.absolute(sceneFile.absolutePath)

@@ -32,10 +32,8 @@ import org.catrobat.catroid.raptor.TransformComponent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,10 +43,6 @@ public class SceneManager {
     private static SceneManager instance;
 
     public static SceneManager getInstance() { return instance; }
-
-    private final Queue<GameObject> loadingQueue = new LinkedList<>();
-
-    private static final long MAX_LOADING_TIME_PER_FRAME_MS = 8;
 
     public final ThreeDManager engine;
     private final Map<String, GameObject> gameObjects = new ConcurrentHashMap<>();
@@ -174,7 +168,9 @@ public class SceneManager {
     }
 
     public void update(float delta) {
-        processLoadingQueue();
+        if (engine == null || !engine.isInitialized()) {
+            return;
+        }
 
         if (!isEditorMode) {
             updateKeyframeAnimations(delta);
@@ -255,7 +251,7 @@ public class SceneManager {
 
 
             if (anim.currentTime > duration) {
-                if (anim.looping) {
+                if (anim.looping && duration > 0.0001f) {
                     anim.currentTime = anim.currentTime % duration;
                 } else {
                     anim.isPlaying = false;
@@ -277,6 +273,9 @@ public class SceneManager {
                     endFrame = frame;
                     break;
                 }
+            }
+            if (startFrame == null) {
+                startFrame = keyframeSnapshot.get(0);
             }
 
 
@@ -337,28 +336,6 @@ public class SceneManager {
 
             updateKeyframeAnimations(0);
             updateWorldTransforms();
-        }
-    }
-
-    private void processLoadingQueue() {
-        if (loadingQueue.isEmpty()) return;
-
-        long startTime = System.currentTimeMillis();
-
-
-        while (!loadingQueue.isEmpty()) {
-
-            if (System.currentTimeMillis() - startTime > MAX_LOADING_TIME_PER_FRAME_MS) {
-                break;
-            }
-
-            GameObject go = loadingQueue.poll();
-            if (go != null) {
-
-                gameObjects.put(go.id, go);
-
-                rebuildGameObject_internal(go);
-            }
         }
     }
 
@@ -685,6 +662,20 @@ public class SceneManager {
         go.name = newName;
 
         gameObjects.put(go.id, go);
+
+        for (BoneAttachment att : activeAttachments) {
+            if (att.childId.equals(oldId)) {
+                att.childId = newName;
+            }
+            if (att.parentModelId.equals(oldId)) {
+                att.parentModelId = newName;
+            }
+        }
+        for (CameraAttachment att : cameraAttachments) {
+            if (att.childId.equals(oldId)) {
+                att.childId = newName;
+            }
+        }
 
         Gdx.app.postRunnable(() -> engine.renameObject(oldId, newName));
 
@@ -1201,11 +1192,24 @@ public class SceneManager {
 
         FileHandle tmpHandle = Gdx.files.absolute(fileHandle.path() + ".tmp");
         tmpHandle.writeString(sceneJson, false);
-        if (fileHandle.exists()) {
-            fileHandle.delete();
+        FileHandle backupHandle = Gdx.files.absolute(fileHandle.path() + ".bak");
+        boolean hadTarget = fileHandle.exists();
+        if (hadTarget) {
+            if (backupHandle.exists()) {
+                backupHandle.delete();
+            }
+            if (!fileHandle.file().renameTo(backupHandle.file())) {
+                throw new GdxRuntimeException("Could not back up scene file " + fileHandle.path());
+            }
         }
         if (!tmpHandle.file().renameTo(fileHandle.file())) {
+            if (hadTarget) {
+                backupHandle.file().renameTo(fileHandle.file());
+            }
             throw new GdxRuntimeException("Could not move scene temp file to " + fileHandle.path());
+        }
+        if (hadTarget) {
+            backupHandle.delete();
         }
         Gdx.app.log("SceneManager", "Scene saved to " + fileHandle.path());
     }
@@ -1512,6 +1516,7 @@ public class SceneManager {
     private void clearScene_internal() {
         engine.clearScene();
         gameObjects.clear();
+        activeAttachments.clear();
         cameraAttachments.clear();
         this.skyboxPath = null;
         this.cachedFogComponent = null;
@@ -1670,10 +1675,6 @@ public class SceneManager {
             gameObjects.remove(go.id);
             return null;
         }
-    }
-
-    public boolean isLoading() {
-        return !loadingQueue.isEmpty();
     }
 
     public void setMaterialComponent(GameObject go, MaterialComponent component) {

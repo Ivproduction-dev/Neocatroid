@@ -8,7 +8,6 @@ import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import org.catrobat.catroid.R
-
 import org.catrobat.catroid.paintroid.UserPreferences
 import org.catrobat.catroid.paintroid.tools.helper.AdvancedSettingsAlgorithms.smoothing
 import org.catrobat.catroid.paintroid.tools.implementation.DefaultToolPaint.Companion.antialiasing
@@ -33,7 +32,7 @@ class AdvancedSettingsDialog : MainActivityDialogFragment() {
         smoothSwitch.isChecked = smoothing
 
         val prefs = UserPreferences(
-            requireContext().getSharedPreferences(MainActivity.SHARED_PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            requireContext().getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE)
         )
         val tablet = resources.configuration.smallestScreenWidthDp >= 600
         ui2Switch.visibility = if (tablet) android.view.View.VISIBLE else android.view.View.GONE

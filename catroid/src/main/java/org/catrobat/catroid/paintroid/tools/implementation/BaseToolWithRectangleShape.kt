@@ -198,7 +198,6 @@ abstract class BaseToolWithRectangleShape(
         maximumBoxResolution = DEFAULT_MAXIMUM_BOX_RESOLUTION
 
         initScaleDependedValues()
-        createOverlayDrawable()
         linePaint.apply {
             reset()
             isDither = true
@@ -374,6 +373,7 @@ abstract class BaseToolWithRectangleShape(
             drawRotationArrows(canvas, boxWidth, boxHeight)
         }
         drawBitmap(canvas, boxWidth, boxHeight)
+        ensureOverlayDrawable()
         if (overlayDrawable != null) {
             drawOverlayDrawable(canvas, boxWidth, boxHeight, boxRotation)
         }
@@ -721,12 +721,24 @@ abstract class BaseToolWithRectangleShape(
         toolPosition.y = oldPosY
     }
 
-    private fun createOverlayDrawable() {
-        val overlayDrawableResource = toolType.overlayDrawableResource
-        if (overlayDrawableResource != INVALID_RESOURCE_ID) {
-            overlayDrawable = contextCallback.getDrawable(overlayDrawableResource)
-            overlayDrawable?.isFilterBitmap = false
+    private var overlayDrawableInitialized = false
+
+    private fun ensureOverlayDrawable() {
+        if (overlayDrawableInitialized) return
+        overlayDrawableInitialized = true
+        try {
+            val overlayDrawableResource = toolType.overlayDrawableResource
+            if (overlayDrawableResource != INVALID_RESOURCE_ID) {
+                overlayDrawable = contextCallback.getDrawable(overlayDrawableResource)
+                overlayDrawable?.isFilterBitmap = false
+            }
+        } catch (_: NullPointerException) {
+            overlayDrawable = null
         }
+    }
+
+    private fun createOverlayDrawable() {
+        ensureOverlayDrawable()
     }
 
     fun highlightBox() {

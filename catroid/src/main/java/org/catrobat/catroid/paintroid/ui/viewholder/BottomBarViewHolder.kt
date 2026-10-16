@@ -19,6 +19,7 @@ class BottomBarViewHolder(val layout: View) : MainActivityContracts.BottomBarVie
     private val nextPage: TextView
 
     init {
+        val layoutContext = layout.context
         val toolsTable = layout.findViewById<ViewGroup>(R.id.pocketpaint_tools_layout)
         val parent = toolsTable.parent as ViewGroup
         val index = parent.indexOfChild(toolsTable)
@@ -27,44 +28,44 @@ class BottomBarViewHolder(val layout: View) : MainActivityContracts.BottomBarVie
         originalLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
         originalLayoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
 
-        pageSwitcher = ToolPageSwitcher(layout.context)
+        pageSwitcher = ToolPageSwitcher(layoutContext)
         pageSwitcher.addView(
             toolsTable,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         )
         pageSwitcher.addView(
-            LayoutInflater.from(layout.context).inflate(R.layout.pocketpaint_tool_page_light2d, pageSwitcher, false)
+            LayoutInflater.from(layoutContext).inflate(R.layout.pocketpaint_tool_page_light2d, pageSwitcher, false)
         )
 
-        val pagerLayout = LinearLayout(layout.context).apply {
+        val pagerLayout = LinearLayout(layoutContext).apply {
             orientation = LinearLayout.VERTICAL
             background = layout.background
             addView(pageSwitcher, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
-        val pageControls = LinearLayout(layout.context).apply {
+        val pageControls = LinearLayout(layoutContext).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(8, 0, 8, 0)
         }
-        previousPage = TextView(layout.context).apply {
+        previousPage = TextView(layoutContext).apply {
             text = "‹"
             textSize = 28f
             gravity = Gravity.CENTER
-            setTextColor(ContextCompat.getColor(layout.context, R.color.pocketpaint_icon_tint))
-            contentDescription = layout.context.getString(R.string.tools_previous_page)
+            setTextColor(ContextCompat.getColor(layoutContext, R.color.pocketpaint_icon_tint))
+            contentDescription = layoutContext.getString(R.string.tools_previous_page)
             setOnClickListener { pageSwitcher.showPage(0) }
         }
-        pageIndicator = TextView(layout.context).apply {
+        pageIndicator = TextView(layoutContext).apply {
             textSize = 12f
             gravity = Gravity.CENTER
-            setTextColor(ContextCompat.getColor(layout.context, R.color.pocketpaint_icon_tint))
+            setTextColor(ContextCompat.getColor(layoutContext, R.color.pocketpaint_icon_tint))
         }
-        nextPage = TextView(layout.context).apply {
+        nextPage = TextView(layoutContext).apply {
             text = "›"
             textSize = 28f
             gravity = Gravity.CENTER
-            setTextColor(ContextCompat.getColor(layout.context, R.color.pocketpaint_icon_tint))
-            contentDescription = layout.context.getString(R.string.tools_next_page)
+            setTextColor(ContextCompat.getColor(layoutContext, R.color.pocketpaint_icon_tint))
+            contentDescription = layoutContext.getString(R.string.tools_next_page)
             setOnClickListener { pageSwitcher.showPage(1) }
         }
         val density = layout.resources.displayMetrics.density

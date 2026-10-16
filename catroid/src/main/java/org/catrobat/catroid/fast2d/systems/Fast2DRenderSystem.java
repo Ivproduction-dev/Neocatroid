@@ -77,7 +77,7 @@ public class Fast2DRenderSystem extends BaseEntitySystem {
 
     private void renderEntity(int entityId) {
         TextureComponent tex = mTexture.get(entityId);
-        if (tex.region == null) return;
+        if (tex.region == null || !tex.visible) return;
 
         TransformComponent t = mTransform.get(entityId);
 

@@ -16,6 +16,12 @@ public class UniversalPBRShaderProvider extends PBRShaderProvider {
             CustomShaderAttribute attr = (CustomShaderAttribute) renderable.material.get(CustomShaderAttribute.Type);
             return new CustomObjectShader(renderable, attr);
         }
+        if (renderable.bones != null && config instanceof PBRShaderConfig) {
+            PBRShaderConfig pbrConfig = (PBRShaderConfig) config;
+            if (renderable.bones.length > pbrConfig.numBones) {
+                pbrConfig.numBones = Math.min(256, renderable.bones.length);
+            }
+        }
         return super.createShader(renderable);
     }
 }

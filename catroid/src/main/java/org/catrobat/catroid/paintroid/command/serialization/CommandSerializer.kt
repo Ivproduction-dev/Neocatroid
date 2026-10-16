@@ -217,7 +217,7 @@ open class CommandSerializer(private val activityContext: Context, private val c
     fun overWriteFile(fileName: String, uri: Uri, resolver: ContentResolver): Uri? {
         val result = writeToFile(fileName)
         if (result != null && uri.scheme == "content") {
-            for (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val projection = arrayOf(MediaStore.Images.Media._ID)
                 val c = resolver.query(uri, projection, null, null, null)
                 if (c != null) {
@@ -253,7 +253,7 @@ open class CommandSerializer(private val activityContext: Context, private val c
             if (input is com.esotericsoftware.kryo.io.Input && !input.canReadInt()) {
                 throw e
             }
-            val buffered = java.io.ByteArrayInputStream(input.toBytes())
+            val buffered = java.io.ByteArrayInputStream(input.readBytes(input.limit() - input.position()))
             readBody(buildKryo(imageVersion, true), Input(buffered))
         }
     }
@@ -271,10 +271,12 @@ open class CommandSerializer(private val activityContext: Context, private val c
         var commandModel: CommandManagerModel? = null
         var colorHistory: ColorHistory? = null
 
-        Input(stream).use { input ->
-            val result = readCatrobatImage(input)
-            commandModel = result.first
-            colorHistory = result.second
+        stream.use { fileStream ->
+            Input(fileStream.readBytes()).use { input ->
+                val result = readCatrobatImage(input)
+                commandModel = result.first
+                colorHistory = result.second
+            }
         }
 
         commandModel?.commands?.reverse()
@@ -298,7 +300,8 @@ open class CommandSerializer(private val activityContext: Context, private val c
         var colorHistory: ColorHistory? = null
 
         activityContext.contentResolver.openInputStream(uri).use { contentResolverStream ->
-            Input(contentResolverStream).use { input ->
+            val imageBytes = contentResolverStream?.readBytes() ?: throw IOException("Could not open image stream")
+            Input(imageBytes).use { input ->
                 val result = readCatrobatImage(input)
                 commandModel = result.first
                 colorHistory = result.second

@@ -8,11 +8,14 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Choreographer;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -51,6 +54,12 @@ import com.flask.colorpicker.builder.ColorPickerDialogBuilder;
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.content.Project;
+import org.catrobat.catroid.content.Scene;
+import org.catrobat.catroid.neo3d.Neo3DEngine;
+import org.catrobat.catroid.neo3d.Neo3DFacade;
+import org.catrobat.catroid.neo3d.Neo3DGameObject;
+import org.catrobat.catroid.neo3d.Neo3DScene;
+import org.catrobat.catroid.neo3d.backend.Neo3DFilamentBackend;
 import org.catrobat.catroid.raptor.GameObject;
 import org.catrobat.catroid.raptor.ParticleSystem3DComponent;
 import org.catrobat.catroid.raptor.SceneData;
@@ -90,6 +99,41 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     private Thread.UncaughtExceptionHandler defaultCrashHandler;
     private Thread.UncaughtExceptionHandler installedCrashHandler;
     private static final String AUTOSAVE_FILE_NAME = "_recovery_autosave.rscene";
+    private String currentSceneFileName = null;
+
+    private enum EditorSceneMode { LEGACY, NEO3D }
+
+    private EditorSceneMode editorSceneMode = EditorSceneMode.LEGACY;
+    private Neo3DEngine neo3DEngine;
+    private SurfaceView neo3dSurfaceView;
+    private boolean neo3dSurfaceShown;
+    private String neo3DSceneId;
+    private final List<String> neo3DObjectIds = new ArrayList<>();
+    private String selectedNeo3DObjectId;
+    private long neo3DLastFrameNanos;
+    private float neo3DTouchDownX;
+    private float neo3DTouchDownY;
+    private long neo3DTouchDownTime;
+
+    private final Choreographer.FrameCallback neo3DFrameCallback = new Choreographer.FrameCallback() {
+        @Override
+        public void doFrame(long frameTimeNanos) {
+            if (editorSceneMode != EditorSceneMode.NEO3D || neo3DSceneId == null || !Neo3DFacade.isReady()) {
+                neo3DLastFrameNanos = 0;
+                return;
+            }
+            float dt = neo3DLastFrameNanos == 0 ? 0.016f
+                    : Math.min((frameTimeNanos - neo3DLastFrameNanos) / 1_000_000_000f, 0.1f);
+            neo3DLastFrameNanos = frameTimeNanos;
+            try {
+                Neo3DFacade.facadeUpdate(neo3DSceneId, dt, frameTimeNanos);
+            } catch (Throwable t) {
+                Log.e("EditorActivity", "Neo3D frame update failed", t);
+            }
+            updateNeo3DViewport();
+            Choreographer.getInstance().postFrameCallback(this);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +144,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         }
         setupCrashHandler();
         setContentView(R.layout.editor_activity);
+        setupNeo3DEditorSurface();
 
         setupToolbarAndDrawer();
 
@@ -133,26 +178,26 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
 
         this.undoManager = new UndoManager(this);
 
-        findViewById(R.id.btn_undo).setOnClickListener(v -> {
-            undoManager.undo();
-            refreshSelectionAfterHistory();
-        });
-
-        findViewById(R.id.btn_redo).setOnClickListener(v -> {
-            undoManager.redo();
-            refreshSelectionAfterHistory();
-        });
-
-        EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment != null) {
-            this.editorListener = fragment.getListener();
-            this.gizmo = editorListener.getGizmo();
-            if (this.gizmo != null) {
-                this.inspectorManager.setGizmo(this.gizmo);
-            }
-        }
-
         runOnUiThread(() -> {
+            findViewById(R.id.btn_undo).setOnClickListener(v -> {
+                undoManager.undo();
+                refreshSelectionAfterHistory();
+            });
+
+            findViewById(R.id.btn_redo).setOnClickListener(v -> {
+                undoManager.redo();
+                refreshSelectionAfterHistory();
+            });
+
+            EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (fragment != null) {
+                this.editorListener = fragment.getListener();
+                this.gizmo = editorListener.getGizmo();
+                if (this.gizmo != null) {
+                    this.inspectorManager.setGizmo(this.gizmo);
+                }
+            }
+
             setupUI();
 
             checkForRecovery();
@@ -776,15 +821,14 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         this.threeDManager = engine;
         this.inspectorManager = new InspectorManager(this, sceneManager, threeDManager);
 
-        EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment != null && fragment.getListener() != null) {
-            this.gizmo = fragment.getListener().getGizmo();
-            if (this.gizmo != null) {
-                this.inspectorManager.setGizmo(this.gizmo);
-            }
-        }
-
         runOnUiThread(() -> {
+            EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (fragment != null && fragment.getListener() != null) {
+                this.gizmo = fragment.getListener().getGizmo();
+                if (this.gizmo != null) {
+                    this.inspectorManager.setGizmo(this.gizmo);
+                }
+            }
             currentSelectedObject = null;
             if (inspectorManager != null) {
                 inspectorManager.populateInspector(null);
@@ -916,11 +960,11 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         colorButton.setOnClickListener(v -> {
             ColorPickerDialogBuilder
                     .with(this)
-                    .setTitle("Choose Sky Color")
+                    .setTitle(getString(R.string.editor_3d_choose_sky_color))
                     .initialColor(initialAndroidColor)
                     .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
                     .density(12)
-                    .setPositiveButton("OK", (dialog, selectedColor, allColors) -> {
+                    .setPositiveButton(getString(android.R.string.ok), (dialog, selectedColor, allColors) -> {
                         colorButton.setBackgroundColor(selectedColor);
 
                         int a = android.graphics.Color.alpha(selectedColor);
@@ -953,9 +997,9 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         bonesEditor.setText(String.valueOf(currentSettings.numBones));
 
         AlertDialog dialog = new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
-                .setTitle("Scene Settings")
+                .setTitle(getString(R.string.editor_3d_scene_settings))
                 .setView(dialogView)
-                .setPositiveButton("Close", null)
+                .setPositiveButton(getString(R.string.editor_3d_close), null)
                 .create();
 
         applyButton.setOnClickListener(v -> {
@@ -964,7 +1008,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                 newSettings.numPointLights = Integer.parseInt(pointLightsEditor.getText().toString());
                 newSettings.numSpotLights = Integer.parseInt(spotLightsEditor.getText().toString());
                 newSettings.numDirectionalLights = Integer.parseInt(dirLightsEditor.getText().toString());
-                newSettings.numBones = Math.min(110, Integer.parseInt(bonesEditor.getText().toString()));
+                newSettings.numBones = Math.min(256, Integer.parseInt(bonesEditor.getText().toString()));
 
                 new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
                         .setTitle("Restart 3D Engine")
@@ -1009,12 +1053,12 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         }
 
         if (textureFiles.isEmpty()) {
-            Toast.makeText(this, "No suitable image files found in project.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.editor_3d_no_textures_found, Toast.LENGTH_SHORT).show();
             return;
         }
 
         new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
-                .setTitle("Select Skybox Texture")
+                .setTitle(getString(R.string.editor_3d_select_skybox))
                 .setItems(textureFiles.toArray(new String[0]), (dialog, which) -> {
                     String selectedFile = textureFiles.get(which);
                     sceneManager.skyboxPath = selectedFile;
@@ -1063,6 +1107,10 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
 
         final EditText input = new EditText(builder.getContext());
         input.setHint("my_level_1");
+        if (currentSceneFileName != null && currentSceneFileName.endsWith(".rscene")) {
+            input.setText(currentSceneFileName.substring(0, currentSceneFileName.length() - 7));
+            input.setSelection(input.getText().length());
+        }
 
         builder.setTitle(R.string.editor_3d_save_scene_as)
                 .setMessage(R.string.editor_3d_enter_file_name)
@@ -1080,53 +1128,70 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
                     }
                     String fileNameWithExt = sanitized + ".rscene";
 
-                    final SceneManager manager = sceneManager;
-                    Gdx.app.postRunnable(() -> {
-                        final String sceneJson;
-                        try {
-                            SceneData sceneData = manager.getCurrentSceneData();
-                            Json json = manager.getJson();
-                            json.setOutputType(JsonWriter.OutputType.json);
-                            json.setUsePrototypes(false);
-                            json.setIgnoreUnknownFields(true);
-                            sceneJson = json.toJson(sceneData);
-                        } catch (Exception e) {
-                            Log.e("EditorActivity", "Scene serialize failed", e);
-                            runOnUiThread(() -> Toast.makeText(this,
-                                    R.string.editor_3d_scene_save_failed, Toast.LENGTH_LONG).show());
-                            return;
-                        }
-
-                        Thread t = new Thread(() -> {
-                            boolean saved;
-                            try {
-                                writeSceneFileAtomically(fileNameWithExt, sceneJson);
-                                saved = true;
-                            } catch (Exception e) {
-                                Log.e("EditorActivity", "Scene save failed", e);
-                                saved = false;
-                            }
-                            final boolean success = saved;
-                            runOnUiThread(() -> {
-                                if (success) {
-                                    deleteRecoveryFile();
-                                    Toast.makeText(this,
-                                            getString(R.string.editor_3d_scene_saved, fileNameWithExt),
-                                            Toast.LENGTH_SHORT).show();
-                                    if (onSaveComplete != null) {
-                                        onSaveComplete.run();
-                                    }
-                                } else {
-                                    Toast.makeText(this,
-                                            R.string.editor_3d_scene_save_failed, Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        }, "editor-save");
-                        t.start();
-                    });
+                    File projectDir = ProjectManager.getInstance().getCurrentProject().getFilesDir();
+                    if (new File(projectDir, fileNameWithExt).exists()
+                            && !fileNameWithExt.equals(currentSceneFileName)) {
+                        new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
+                                .setTitle(R.string.editor_3d_overwrite_title)
+                                .setMessage(getString(R.string.editor_3d_overwrite_msg, fileNameWithExt))
+                                .setPositiveButton(R.string.save,
+                                        (d, w) -> writeSceneToFile(fileNameWithExt, onSaveComplete))
+                                .setNegativeButton(R.string.cancel, null)
+                                .show();
+                        return;
+                    }
+                    writeSceneToFile(fileNameWithExt, onSaveComplete);
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    private void writeSceneToFile(String fileNameWithExt, Runnable onSaveComplete) {
+        final SceneManager manager = sceneManager;
+        Gdx.app.postRunnable(() -> {
+            final String sceneJson;
+            try {
+                SceneData sceneData = manager.getCurrentSceneData();
+                Json json = manager.getJson();
+                json.setOutputType(JsonWriter.OutputType.json);
+                json.setUsePrototypes(false);
+                json.setIgnoreUnknownFields(true);
+                sceneJson = json.toJson(sceneData);
+            } catch (Exception e) {
+                Log.e("EditorActivity", "Scene serialize failed", e);
+                runOnUiThread(() -> Toast.makeText(this,
+                        R.string.editor_3d_scene_save_failed, Toast.LENGTH_LONG).show());
+                return;
+            }
+
+            Thread t = new Thread(() -> {
+                boolean saved;
+                try {
+                    writeSceneFileAtomically(fileNameWithExt, sceneJson);
+                    saved = true;
+                } catch (Exception e) {
+                    Log.e("EditorActivity", "Scene save failed", e);
+                    saved = false;
+                }
+                final boolean success = saved;
+                runOnUiThread(() -> {
+                    if (success) {
+                        currentSceneFileName = fileNameWithExt;
+                        deleteRecoveryFile();
+                        Toast.makeText(this,
+                                getString(R.string.editor_3d_scene_saved, fileNameWithExt),
+                                Toast.LENGTH_SHORT).show();
+                        if (onSaveComplete != null) {
+                            onSaveComplete.run();
+                        }
+                    } else {
+                        Toast.makeText(this,
+                                R.string.editor_3d_scene_save_failed, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }, "editor-save");
+            t.start();
+        });
     }
 
     private static String sanitizeFileName(String name) {
@@ -1137,6 +1202,28 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         return cleaned;
     }
 
+    private static void replaceFileAtomically(File tmpFile, File targetFile) throws Exception {
+        File backupFile = new File(targetFile.getParent(), targetFile.getName() + ".bak");
+        boolean hadTarget = targetFile.exists();
+        if (hadTarget) {
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            if (!targetFile.renameTo(backupFile)) {
+                throw new java.io.IOException("Could not back up " + targetFile.getName());
+            }
+        }
+        if (!tmpFile.renameTo(targetFile)) {
+            if (hadTarget) {
+                backupFile.renameTo(targetFile);
+            }
+            throw new java.io.IOException("Could not move " + tmpFile.getName() + " to " + targetFile.getName());
+        }
+        if (hadTarget) {
+            backupFile.delete();
+        }
+    }
+
     private void writeSceneFileAtomically(String fileNameWithExt, String sceneJson) throws Exception {
         File projectDir = ProjectManager.getInstance().getCurrentProject().getFilesDir();
         File targetFile = new File(projectDir, fileNameWithExt);
@@ -1145,12 +1232,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         try (java.io.FileWriter writer = new java.io.FileWriter(tmpFile)) {
             writer.write(sceneJson);
         }
-        if (targetFile.exists()) {
-            targetFile.delete();
-        }
-        if (!tmpFile.renameTo(targetFile)) {
-            throw new java.io.IOException("Could not move " + tmpFile.getName() + " to " + targetFile.getName());
-        }
+        replaceFileAtomically(tmpFile, targetFile);
     }
 
     private void showLoadSceneDialog() {
@@ -1161,45 +1243,369 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         File projectFilesDir = ProjectManager.getInstance().getCurrentProject().getFilesDir();
         File[] allFiles = projectFilesDir.listFiles((dir, name) ->
                 name.toLowerCase().endsWith(".rscene") && !name.equals(AUTOSAVE_FILE_NAME));
-
-        if (allFiles == null || allFiles.length == 0) {
-            Toast.makeText(this, R.string.editor_3d_no_scenes_found, Toast.LENGTH_SHORT).show();
-            return;
+        if (allFiles == null) {
+            allFiles = new File[0];
         }
 
-        String[] sceneNames = new String[allFiles.length];
+        String[] sceneNames = new String[allFiles.length + 1];
+        sceneNames[0] = getString(R.string.editor_3d_neo3d_entry);
         for(int i = 0; i < allFiles.length; i++) {
-            sceneNames[i] = allFiles[i].getName();
+            sceneNames[i + 1] = allFiles[i].getName();
         }
+        final File[] rsceneFiles = allFiles;
 
         new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
                 .setTitle(R.string.editor_3d_load_scene)
                 .setItems(sceneNames, (dialog, which) -> {
-                    File selectedFile = allFiles[which];
-                    FileHandle fileHandle = Gdx.files.absolute(selectedFile.getAbsolutePath());
-
-                    EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                    if (fragment != null && fragment.getListener() != null) {
-                        ThreeDManager.SceneSettings settings = new ThreeDManager.SceneSettings();
-                        try {
-                            String sceneJson = fileHandle.readString();
-                            Json json = new Json();
-                            SceneData sceneData = json.fromJson(SceneData.class, sceneJson);
-                            if (sceneData != null && sceneData.renderSettings != null) {
-                                settings = sceneData.renderSettings;
-                            }
-                        } catch (Exception e) {
-                            Gdx.app.error("EditorActivity", "Could not parse scene settings, using defaults.", e);
-                        }
-
-                        fragment.getListener().resetEngine(fileHandle, settings);
-
-                        updateHierarchy();
-                        onObjectSelected(null);
-                        Toast.makeText(this, getString(R.string.editor_3d_loading_scene, selectedFile.getName()), Toast.LENGTH_SHORT).show();
+                    if (which == 0) {
+                        openNeo3DMode();
+                        return;
                     }
+                    File selectedFile = rsceneFiles[which - 1];
+                    new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
+                            .setTitle(R.string.editor_3d_load_scene)
+                            .setMessage(R.string.editor_3d_load_unsaved_msg)
+                            .setPositiveButton(R.string.save,
+                                    (d, w) -> showSaveSceneDialog(() -> loadSceneFile(selectedFile)))
+                            .setNeutralButton(R.string.editor_3d_load_no_save,
+                                    (d, w) -> loadSceneFile(selectedFile))
+                            .setNegativeButton(R.string.cancel, null)
+                            .show();
                 })
                 .show();
+    }
+
+    private void loadSceneFile(File selectedFile) {
+        FileHandle fileHandle = Gdx.files.absolute(selectedFile.getAbsolutePath());
+
+        EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment != null && fragment.getListener() != null) {
+            ThreeDManager.SceneSettings settings = new ThreeDManager.SceneSettings();
+            try {
+                String sceneJson = fileHandle.readString();
+                Json json = new Json();
+                SceneData sceneData = json.fromJson(SceneData.class, sceneJson);
+                if (sceneData != null && sceneData.renderSettings != null) {
+                    settings = sceneData.renderSettings;
+                }
+            } catch (Exception e) {
+                Gdx.app.error("EditorActivity", "Could not parse scene settings, using defaults.", e);
+            }
+
+            fragment.getListener().resetEngine(fileHandle, settings);
+            currentSceneFileName = selectedFile.getName();
+            setEditorSceneMode(EditorSceneMode.LEGACY);
+            restoreLegacyHierarchyAdapter();
+
+            updateHierarchy();
+            onObjectSelected(null);
+            Toast.makeText(this, getString(R.string.editor_3d_loading_scene, selectedFile.getName()), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setupNeo3DEditorSurface() {
+        try {
+            neo3DEngine = Neo3DEngine.create(this, Neo3DEngine.BackendType.AUTO);
+            Neo3DFacade.install(neo3DEngine);
+            ViewGroup container = findViewById(R.id.fragment_container);
+            neo3dSurfaceView = new SurfaceView(this);
+            neo3dSurfaceView.setZOrderOnTop(false);
+            neo3dSurfaceView.setZOrderMediaOverlay(false);
+            container.addView(neo3dSurfaceView, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            neo3dSurfaceView.setVisibility(View.GONE);
+            neo3dSurfaceView.setOnTouchListener((v, event) -> {
+                if (editorSceneMode != EditorSceneMode.NEO3D) {
+                    return false;
+                }
+                if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                    neo3DTouchDownX = event.getX();
+                    neo3DTouchDownY = event.getY();
+                    neo3DTouchDownTime = System.currentTimeMillis();
+                } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                    float dx = event.getX() - neo3DTouchDownX;
+                    float dy = event.getY() - neo3DTouchDownY;
+                    if (System.currentTimeMillis() - neo3DTouchDownTime < 300
+                            && dx * dx + dy * dy < 400) {
+                        pickNeo3DObject(event.getX(), event.getY());
+                    }
+                }
+                return true;
+            });
+            if (neo3DEngine.getBackend() instanceof Neo3DFilamentBackend) {
+                neo3DEngine.attachSurfaceView(neo3dSurfaceView);
+            }
+        } catch (Throwable t) {
+            Log.e("EditorActivity", "Neo3D editor setup failed", t);
+            neo3DEngine = null;
+            neo3dSurfaceView = null;
+        }
+    }
+
+    private void setEditorSceneMode(EditorSceneMode mode) {
+        editorSceneMode = mode;
+        EditorFragment fragment = (EditorFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        View legacyView = fragment != null ? fragment.getView() : null;
+        boolean neo3d = mode == EditorSceneMode.NEO3D;
+        if (legacyView != null) {
+            legacyView.setVisibility(neo3d ? View.GONE : View.VISIBLE);
+        }
+        if (touchHelper != null && hierarchyRecyclerView != null) {
+            touchHelper.attachToRecyclerView(neo3d ? null : hierarchyRecyclerView);
+        }
+        if (neo3d) {
+            neo3DLastFrameNanos = 0;
+            Choreographer.getInstance().postFrameCallback(neo3DFrameCallback);
+        } else {
+            Choreographer.getInstance().removeFrameCallback(neo3DFrameCallback);
+        }
+        updateNeo3DViewport();
+    }
+
+    private void updateNeo3DViewport() {
+        if (neo3dSurfaceView == null) {
+            return;
+        }
+        boolean shouldShow = editorSceneMode == EditorSceneMode.NEO3D
+                && neo3DEngine != null
+                && neo3DEngine.getBackend() instanceof Neo3DFilamentBackend
+                && neo3DEngine.getLoadedModelCount() > 0;
+        if (shouldShow == neo3dSurfaceShown) {
+            return;
+        }
+        neo3dSurfaceShown = shouldShow;
+        neo3dSurfaceView.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+    }
+
+    private void openNeo3DMode() {
+        if (!Neo3DFacade.isReady()) {
+            Toast.makeText(this, R.string.editor_3d_neo3d_unavailable, Toast.LENGTH_LONG).show();
+            return;
+        }
+        closeNeo3DMode();
+        try {
+            Project project = ProjectManager.getInstance().getCurrentProject();
+            Scene projectScene = ProjectManager.getInstance().getCurrentlyPlayingScene();
+            neo3DSceneId = Neo3DFacade.facadeCreateScene("Editor");
+            Neo3DFacade.facadeLoadScene(project, projectScene, neo3DSceneId);
+        } catch (Throwable t) {
+            Log.e("EditorActivity", "Neo3D editor scene load failed", t);
+            closeNeo3DMode();
+            return;
+        }
+        currentSceneFileName = null;
+        selectedNeo3DObjectId = null;
+        setEditorSceneMode(EditorSceneMode.NEO3D);
+        populateNeo3DHierarchy();
+        onObjectSelected(null);
+    }
+
+    private void closeNeo3DMode() {
+        Choreographer.getInstance().removeFrameCallback(neo3DFrameCallback);
+        try {
+            if (neo3DSceneId != null && Neo3DFacade.isReady()) {
+                Neo3DFacade.facadeDeleteScene(neo3DSceneId);
+            }
+        } catch (Throwable t) {
+            Log.e("EditorActivity", "Neo3D editor scene close failed", t);
+        }
+        neo3DSceneId = null;
+        neo3DObjectIds.clear();
+        selectedNeo3DObjectId = null;
+    }
+
+    private void populateNeo3DHierarchy() {
+        if (hierarchyRecyclerView == null || neo3DSceneId == null || !Neo3DFacade.isReady()) {
+            return;
+        }
+        Neo3DScene neoScene = Neo3DFacade.getEngineForTest().getScene(neo3DSceneId);
+        if (neoScene == null) {
+            return;
+        }
+        List<String> names = new ArrayList<>();
+        neo3DObjectIds.clear();
+        for (Neo3DGameObject obj : neoScene.getAllObjects()) {
+            names.add(obj.getName());
+            neo3DObjectIds.add(obj.getId());
+        }
+        hierarchyRecyclerView.setAdapter(new Neo3DNameAdapter(names, position -> {
+            if (position < 0 || position >= neo3DObjectIds.size()) {
+                return;
+            }
+            String objectId = neo3DObjectIds.get(position);
+            if (objectId.equals(selectedNeo3DObjectId)) {
+                showNeo3DTransformDialog(objectId);
+            } else {
+                selectNeo3DObject(objectId);
+            }
+        }, neo3DObjectIds.indexOf(selectedNeo3DObjectId)));
+    }
+
+    private void selectNeo3DObject(String objectId) {
+        selectedNeo3DObjectId = objectId;
+        if (hierarchyRecyclerView != null && hierarchyRecyclerView.getAdapter() instanceof Neo3DNameAdapter) {
+            ((Neo3DNameAdapter) hierarchyRecyclerView.getAdapter())
+                    .setSelectedPosition(neo3DObjectIds.indexOf(objectId));
+        }
+    }
+
+    private void pickNeo3DObject(float x, float y) {
+        if (neo3DSceneId == null || !Neo3DFacade.isReady() || neo3dSurfaceView == null) {
+            return;
+        }
+        try {
+            String pickedId = Neo3DFacade.facadePickObject(neo3DSceneId, x,
+                    neo3dSurfaceView.getHeight() - y);
+            if (pickedId != null && !pickedId.isEmpty()) {
+                selectNeo3DObject(pickedId);
+            }
+        } catch (Throwable t) {
+            Log.e("EditorActivity", "Neo3D pick failed", t);
+        }
+    }
+
+    private void showNeo3DTransformDialog(String objectId) {
+        if (neo3DSceneId == null || !Neo3DFacade.isReady()) {
+            return;
+        }
+        Neo3DScene neoScene = Neo3DFacade.getEngineForTest().getScene(neo3DSceneId);
+        Neo3DGameObject obj = neoScene == null ? null : neoScene.getObject(objectId);
+        if (obj == null) {
+            return;
+        }
+        float[] pos = obj.getTransform().getPosition();
+        float[] eul = obj.getTransform().getEulerDeg();
+        float[] scl = obj.getTransform().getScale();
+        android.widget.GridLayout grid = new android.widget.GridLayout(this);
+        grid.setColumnCount(3);
+        EditText[] fields = new EditText[9];
+        float[] initial = {pos[0], pos[1], pos[2], eul[0], eul[1], eul[2], scl[0], scl[1], scl[2]};
+        for (int i = 0; i < 9; i++) {
+            EditText field = new EditText(this);
+            field.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
+                    | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                    | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
+            field.setText(String.valueOf(initial[i]));
+            fields[i] = field;
+            grid.addView(field);
+        }
+        final float[] oldPos = pos;
+        final float[] oldEul = eul;
+        final float[] oldScl = scl;
+        new AlertDialog.Builder(this, R.style.Theme_NeoCatroid_Dialog)
+                .setTitle(obj.getName())
+                .setView(grid)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    float[] newPos = {parseFloat(fields[0], oldPos[0]), parseFloat(fields[1], oldPos[1]), parseFloat(fields[2], oldPos[2])};
+                    float[] newEul = {parseFloat(fields[3], oldEul[0]), parseFloat(fields[4], oldEul[1]), parseFloat(fields[5], oldEul[2])};
+                    float[] newScl = {parseFloat(fields[6], oldScl[0]), parseFloat(fields[7], oldScl[1]), parseFloat(fields[8], oldScl[2])};
+                    applyNeo3DTransform(objectId, newPos, newEul, newScl);
+                    if (getUndoManager() != null) {
+                        getUndoManager().pushCommand(new UndoManager.EditorCommand() {
+                            @Override
+                            public void undo() {
+                                applyNeo3DTransform(objectId, oldPos, oldEul, oldScl);
+                            }
+
+                            @Override
+                            public void redo() {
+                                applyNeo3DTransform(objectId, newPos, newEul, newScl);
+                            }
+                        });
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private float parseFloat(EditText field, float fallback) {
+        try {
+            return Float.parseFloat(field.getText().toString());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private void applyNeo3DTransform(String objectId, float[] pos, float[] eul, float[] scl) {
+        if (neo3DSceneId == null || !Neo3DFacade.isReady()) {
+            return;
+        }
+        try {
+            Neo3DFacade.facadeSetPosition(neo3DSceneId, objectId, pos[0], pos[1], pos[2]);
+            Neo3DFacade.facadeSetRotation(neo3DSceneId, objectId, eul[0], eul[1], eul[2]);
+            Neo3DFacade.facadeSetScale(neo3DSceneId, objectId, scl[0], scl[1], scl[2]);
+        } catch (Throwable t) {
+            Log.e("EditorActivity", "Neo3D transform apply failed", t);
+        }
+    }
+
+    private static class Neo3DNameAdapter extends RecyclerView.Adapter<Neo3DNameAdapter.NameViewHolder> {
+        interface OnNameClickListener {
+            void onNameClick(int position);
+        }
+
+        private final List<String> names;
+        private final OnNameClickListener clickListener;
+        private int selectedPosition;
+
+        Neo3DNameAdapter(List<String> names, OnNameClickListener clickListener, int selectedPosition) {
+            this.names = names;
+            this.clickListener = clickListener;
+            this.selectedPosition = selectedPosition;
+        }
+
+        void setSelectedPosition(int selectedPosition) {
+            int old = this.selectedPosition;
+            this.selectedPosition = selectedPosition;
+            if (old >= 0) {
+                notifyItemChanged(old);
+            }
+            if (selectedPosition >= 0) {
+                notifyItemChanged(selectedPosition);
+            }
+        }
+
+        static class NameViewHolder extends RecyclerView.ViewHolder {
+            final TextView textView;
+
+            NameViewHolder(TextView textView) {
+                super(textView);
+                this.textView = textView;
+            }
+        }
+
+        @Override
+        public NameViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            TextView textView = new TextView(parent.getContext());
+            textView.setTextColor(0xFFFFFFFF);
+            int padding = (int) (16 * parent.getContext().getResources().getDisplayMetrics().density);
+            textView.setPadding(padding, padding, padding, padding);
+            NameViewHolder holder = new NameViewHolder(textView);
+            textView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onNameClick(holder.getAdapterPosition());
+                }
+            });
+            return holder;
+        }
+
+        @Override
+        public void onBindViewHolder(NameViewHolder holder, int position) {
+            holder.textView.setText(names.get(position));
+            holder.itemView.setBackgroundColor(position == selectedPosition ? 0xFF00D4FF : 0x00000000);
+        }
+
+        @Override
+        public int getItemCount() {
+            return names.size();
+        }
+    }
+
+    private void restoreLegacyHierarchyAdapter() {
+        if (hierarchyRecyclerView != null && hierarchyAdapter != null) {
+            hierarchyRecyclerView.setAdapter(hierarchyAdapter);
+            updateHierarchy();
+        }
     }
 
     private void checkForRecovery() {
@@ -1306,10 +1712,15 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         Gdx.app.postRunnable(() -> {
             final String sceneJson;
             try {
+                long snapshotStart = System.currentTimeMillis();
                 SceneData currentSceneData = manager.getCurrentSceneData();
                 Json json = manager.getJson();
                 json.setOutputType(JsonWriter.OutputType.json);
                 sceneJson = json.toJson(currentSceneData);
+                long snapshotMs = System.currentTimeMillis() - snapshotStart;
+                if (snapshotMs > 500) {
+                    Log.w("EditorActivity", "Scene snapshot took " + snapshotMs + "ms on GL thread");
+                }
             } catch (Exception e) {
                 Log.e("EditorActivity", "Scene snapshot failed", e);
                 return;
@@ -1365,12 +1776,7 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
         try (java.io.FileWriter writer = new java.io.FileWriter(tmpFile)) {
             writer.write(sceneJson);
         }
-        if (recoveryFile.exists()) {
-            recoveryFile.delete();
-        }
-        if (!tmpFile.renameTo(recoveryFile)) {
-            throw new java.io.IOException("Could not move " + tmpFile.getName() + " to " + recoveryFile.getName());
-        }
+        replaceFileAtomically(tmpFile, recoveryFile);
     }
 
     private void deleteRecoveryFile() {
@@ -1386,6 +1792,17 @@ public class EditorActivity extends AppCompatActivity implements AndroidFragment
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Choreographer.getInstance().removeFrameCallback(neo3DFrameCallback);
+        closeNeo3DMode();
+        if (neo3DEngine != null) {
+            try {
+                neo3DEngine.dispose();
+            } catch (Throwable t) {
+                Log.e("EditorActivity", "Neo3D editor dispose failed", t);
+            }
+            neo3DEngine = null;
+        }
+        Neo3DFacade.uninstall();
         autosaveHandler.removeCallbacks(autosaveRunnable);
         hierarchySearchHandler.removeCallbacks(hierarchySearchRunnable);
         recoveryHandler.removeCallbacksAndMessages(null);

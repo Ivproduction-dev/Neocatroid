@@ -1454,6 +1454,19 @@ object ToolCallingEngine {
         }
     }
 
+    private fun safeOutputFile(outDir: File, baseName: String, ext: String): File? {
+        val safeName = baseName
+            .replace(" ", "_")
+            .replace(Regex("""[\\/:*?"<>|]"""), "_")
+            .trim('_', '.')
+            .ifBlank { "app" }
+        val file = File(outDir, "$safeName.$ext")
+        return runCatching {
+            val dirPath = outDir.canonicalPath + File.separator
+            if (file.canonicalPath.startsWith(dirPath)) file else null
+        }.getOrNull()
+    }
+
     class BuildApkTool : Tool {
         override val name = "buildApk"
         override val description = "Builds an APK for the current project using APK Builder V3, auto-detecting permissions and saving the result to Download/NeoCatroidApks/."
@@ -1469,7 +1482,8 @@ object ToolCallingEngine {
             val detectedPerms = org.catrobat.catroid.apkbuildV3.ProjectScanner.detectPermissions(project)
             val outDir = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "NeoCatroidApks")
             outDir.mkdirs()
-            val apkFile = File(outDir, "${appName}.apk")
+            val apkFile = safeOutputFile(outDir, appName, "apk")
+                ?: return ToolResult(false, "Invalid app name", "")
             val config = ApkBuilderV3Config(appName = appName, permissions = detectedPerms)
             return when (val result = ApkBuilderV3Engine.build(context ?: return ToolResult(false, "No context available", ""), projectDir, config, BuildProgressListener { _, _, _ -> })) {
                 is AssemblyResult.Success -> {
@@ -1505,7 +1519,8 @@ object ToolCallingEngine {
                 "CATROBAT" -> "catrobat"
                 else -> "zip"
             }
-            val outFile = File(outDir, "${project.name}.$ext")
+            val outFile = safeOutputFile(outDir, project.name, ext)
+                ?: return ToolResult(false, "Invalid project name", "")
             val projectDir = project.directory ?: return ToolResult(false, "Project has no directory", "")
             withContext(Dispatchers.IO) {
                 if (outFile.exists()) outFile.delete()

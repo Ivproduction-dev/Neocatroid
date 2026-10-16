@@ -100,6 +100,8 @@ public class ScriptSequenceAction extends SequenceAction {
 		return copy;
 	}
 
+	private static final long HEAVY_SCRIPT_THRESHOLD_NS = 8_000_000L;
+
 	@Override
     public boolean act (float delta) {
         long start = System.nanoTime();
@@ -107,6 +109,9 @@ public class ScriptSequenceAction extends SequenceAction {
         long durationNs = System.nanoTime() - start;
         org.catrobat.catroid.utils.PerformanceTracker.blocksExecuted.incrementAndGet();
         org.catrobat.catroid.utils.PerformanceTracker.totalBlockTimeNs.addAndGet(durationNs);
+        if (durationNs >= HEAVY_SCRIPT_THRESHOLD_NS) {
+            org.catrobat.catroid.utils.PerformanceTracker.logHeavyScript(script, durationNs);
+        }
 
         return isFinished;
     }

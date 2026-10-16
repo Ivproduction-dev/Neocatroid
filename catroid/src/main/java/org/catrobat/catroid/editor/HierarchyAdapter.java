@@ -76,9 +76,34 @@ public class HierarchyAdapter extends RecyclerView.Adapter<HierarchyAdapter.View
 
     public void updateData(List<HierarchyItem> newItems) {
         this.fullList = new ArrayList<>(newItems);
+        androidx.recyclerview.widget.DiffUtil.DiffResult diff =
+                androidx.recyclerview.widget.DiffUtil.calculateDiff(new androidx.recyclerview.widget.DiffUtil.Callback() {
+                    @Override
+                    public int getOldListSize() {
+                        return items.size();
+                    }
+
+                    @Override
+                    public int getNewListSize() {
+                        return newItems.size();
+                    }
+
+                    @Override
+                    public boolean areItemsTheSame(int oldPos, int newPos) {
+                        return items.get(oldPos).gameObject == newItems.get(newPos).gameObject;
+                    }
+
+                    @Override
+                    public boolean areContentsTheSame(int oldPos, int newPos) {
+                        HierarchyItem oldItem = items.get(oldPos);
+                        HierarchyItem newItem = newItems.get(newPos);
+                        return oldItem.displayName.equals(newItem.displayName)
+                                && oldItem.gameObject.isActive == newItem.gameObject.isActive;
+                    }
+                });
         this.items.clear();
         this.items.addAll(newItems);
-        notifyDataSetChanged();
+        diff.dispatchUpdatesTo(this);
     }
 
     public List<HierarchyItem> getItems() {

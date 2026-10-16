@@ -204,4 +204,32 @@ public class Commands {
             }
         }
     }
+
+    public static class RenameCommand implements UndoManager.EditorCommand {
+        private final SceneManager sceneManager;
+        private final String oldName;
+        private final String newName;
+
+        public RenameCommand(SceneManager sm, String oldName, String newName) {
+            this.sceneManager = sm;
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        @Override
+        public void undo() {
+            GameObject go = sceneManager.findGameObject(newName);
+            if (go != null) {
+                sceneManager.renameGameObject(go, oldName);
+            }
+        }
+
+        @Override
+        public void redo() {
+            GameObject go = sceneManager.findGameObject(oldName);
+            if (go != null) {
+                sceneManager.renameGameObject(go, newName);
+            }
+        }
+    }
 }

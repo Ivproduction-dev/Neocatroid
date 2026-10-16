@@ -458,7 +458,7 @@ public class ThreeDManager implements Disposable {
         public int numPointLights = 5;
         public int numSpotLights = 2;
         public int numDirectionalLights = 1;
-        public int numBones = 110;
+        public int numBones = 200;
     }
 
     private SceneManager manager;
@@ -544,6 +544,12 @@ public class ThreeDManager implements Disposable {
     private int renderWidth;
     private int renderHeight;
 
+    private boolean initialized = false;
+
+    public boolean isInitialized() {
+        return initialized;
+    }
+
     public void init() {
         init(new SceneSettings());
     }
@@ -578,7 +584,7 @@ public class ThreeDManager implements Disposable {
         collisionCallback = new CollisionCallback();
 
         net.mgsx.gltf.scene3d.shaders.PBRShaderConfig pbrConfig = net.mgsx.gltf.scene3d.shaders.PBRShaderProvider.createDefaultConfig();
-        pbrConfig.numBones = settings.numBones;
+        pbrConfig.numBones = Math.max(settings.numBones, 200);
         pbrConfig.numPointLights = settings.numPointLights;
         pbrConfig.numSpotLights = settings.numSpotLights;
         pbrConfig.numDirectionalLights = settings.numDirectionalLights;
@@ -589,7 +595,7 @@ public class ThreeDManager implements Disposable {
         config.numPointLights = settings.numPointLights;
         config.numSpotLights = settings.numSpotLights;
         config.numDirectionalLights = settings.numDirectionalLights;
-        config.numBones = settings.numBones;
+        config.numBones = Math.max(settings.numBones, 200);
 
         sceneManager = new net.mgsx.gltf.scene3d.scene.SceneManager(prov, PBRShaderProvider.createDefaultDepth(config.numBones));
         sceneManager.setCamera(camera);
@@ -768,6 +774,7 @@ public class ThreeDManager implements Disposable {
         createDefaultParticleTexture();
 
         contactListCallback = new NameAccumulatingContactCallback();
+        initialized = true;
     }
 
     public void setObjectCustomShader(String objectId, String vertexCode, String fragmentCode) {
@@ -4172,7 +4179,7 @@ public class ThreeDManager implements Disposable {
             updateMeshBounds(modelInstance.nodes);
         }
 
-        private void updateMeshBounds(Array<Node> nodes) {
+        private void updateMeshBounds(Iterable<Node> nodes) {
             for (Node node : nodes) {
                 for (NodePart part : node.parts) part.meshPart.update();
                 updateMeshBounds(node.getChildren());
@@ -4300,6 +4307,56 @@ public class ThreeDManager implements Disposable {
 
 
 
+    private static int deviceBoneCap = -1;
+
+    private int getDeviceBoneCap() {
+        if (deviceBoneCap < 0) {
+            int maxVectors = 224;
+            try {
+                IntBuffer buf = IntBuffer.allocate(1);
+                Gdx.gl.glGetIntegerv(GL20.GL_MAX_VERTEX_UNIFORM_VECTORS, buf);
+                maxVectors = buf.get(0);
+            } catch (Throwable t) {
+                Gdx.app.error("3DManager", "Could not query GL_MAX_VERTEX_UNIFORM_VECTORS, using default", t);
+            }
+            Gdx.app.log("3DManager", "GL_MAX_VERTEX_UNIFORM_VECTORS=" + maxVectors);
+            deviceBoneCap = Math.max(0, (maxVectors - 64) / 4);
+        }
+        return deviceBoneCap;
+    }
+
+    private void enqueueChildren(Array<Node> queue, Node node) {
+        for (Node child : node.getChildren()) {
+            queue.add(child);
+        }
+    }
+
+    private int countSkinBones(ModelInstance instance) {
+        int max = 0;
+        Array<Node> queue = new Array<>(instance.nodes);
+        while (queue.size > 0) {
+            Node node = queue.pop();
+            for (NodePart part : node.parts) {
+                if (part.bones != null) {
+                    max = Math.max(max, part.bones.length);
+                }
+            }
+            enqueueChildren(queue, node);
+        }
+        return max;
+    }
+
+    private void bakeStaticPose(ModelInstance instance) {
+        Array<Node> queue = new Array<>(instance.nodes);
+        while (queue.size > 0) {
+            Node node = queue.pop();
+            for (NodePart part : node.parts) {
+                part.bones = null;
+            }
+            enqueueChildren(queue, node);
+        }
+    }
+
     public boolean createObject(String objectId, String modelPath) {
         if (sceneObjects.containsKey(objectId)) return false;
 
@@ -4337,6 +4394,14 @@ public class ThreeDManager implements Disposable {
                 if (sceneAsset != null) {
 
                     FrustumCulledScene scene = new FrustumCulledScene(sceneAsset.scene);
+
+                    int neededBones = countSkinBones(scene.modelInstance);
+                    int boneCap = getDeviceBoneCap();
+                    if (neededBones > boneCap) {
+                        bakeStaticPose(scene.modelInstance);
+                        Gdx.app.log("3DManager", "Static bake fallback for '" + objectId
+                                + "': model needs " + neededBones + " bones, device cap " + boneCap);
+                    }
 
                     sceneManager.addScene(scene);
                     sceneObjects.put(objectId, scene.modelInstance);
@@ -6171,6 +6236,7 @@ public class ThreeDManager implements Disposable {
 
     @Override
     public void dispose() {
+        initialized = false;
         clearScene();
         physicsConstraints.clear();
 
@@ -6649,7 +6715,7 @@ public class ThreeDManager implements Disposable {
                 }
                 if (sceneAsset == null) return;
 
-                net.mgsx.gltf.scene3d.scene.Scene scene = new FrustumCulledScene(sceneAsset.scene);
+                FrustumCulledScene scene = new FrustumCulledScene(sceneAsset.scene);
                 ModelInstance newInstance = scene.modelInstance;
                 newInstance.transform.set(oldInstance.transform);
 
@@ -6747,7 +6813,7 @@ class DepthShader implements com.badlogic.gdx.graphics.g3d.Shader {
     private int u_objReflectivity = -1;
 
 
-    private static final float[] boneBuffer = new float[110 * 16];
+    private static final float[] boneBuffer = new float[256 * 16];
 
     public DepthShader(ShaderProgram program) {
         this.program = program;
@@ -6801,13 +6867,13 @@ class DepthShader implements com.badlogic.gdx.graphics.g3d.Shader {
 
         if (renderable.bones != null && u_bones != -1) {
             int n = renderable.bones.length;
+            int copyCount = Math.min(n, 256);
 
-            for (int i = 0; i < n && i < 110; i++) {
+            for (int i = 0; i < copyCount; i++) {
                 System.arraycopy(renderable.bones[i].val, 0, boneBuffer, i * 16, 16);
             }
 
-
-            program.setUniformMatrix4fv(u_bones, boneBuffer, 0, n * 16);
+            program.setUniformMatrix4fv(u_bones, boneBuffer, 0, copyCount * 16);
         }
 
         renderable.meshPart.render(program);
@@ -6827,8 +6893,9 @@ class MaterialShaderProvider extends DefaultShaderProvider {
             prefix += "#define HAS_UV\n";
         }
 
+        int bonesCount = renderable.bones != null ? Math.min(256, Math.max(200, renderable.bones.length)) : 200;
         if (renderable.bones != null) {
-            prefix += "#define numBones " + 110 + "\n";
+            prefix += "#define numBones " + bonesCount + "\n";
             prefix += "#define boneWeight0Flag\n";
             prefix += "#define boneWeight1Flag\n";
             prefix += "#define boneWeight2Flag\n";
@@ -6861,7 +6928,7 @@ class MaterialShaderProvider extends DefaultShaderProvider {
                 "}";
 
         DefaultShader.Config config = new DefaultShader.Config(vsh, fsh);
-        config.numBones = 110;
+        config.numBones = bonesCount;
 
         return new DefaultShader(renderable, config) {
             private final int u_metallic = register("u_metallic");

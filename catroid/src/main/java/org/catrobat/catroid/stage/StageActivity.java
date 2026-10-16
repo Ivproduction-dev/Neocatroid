@@ -2113,6 +2113,8 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 
 			this.stageListener = new StageListener();
 		}
+		org.catrobat.catroid.fast2d.mirror.MirrorScene.ENABLED =
+				PreferenceManager.getDefaultSharedPreferences(this).getBoolean("setting_mirror_render", false);
 		return this.stageListener;
 	}
 

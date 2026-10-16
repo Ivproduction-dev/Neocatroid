@@ -18,6 +18,9 @@ object TemplateManagerV3 {
     private const val CACHE_FILE_NAME = "template_runtime_v3.apk"
     private const val ETAG_FILE_NAME = "template_runtime_v3.apk.etag"
     private const val DOWNLOAD_BUFFER_SIZE = 64 * 1024
+    private const val PIN_PREFS_NAME = "v3_template_pins"
+    private const val PIN_KEY = "template_sha256"
+    private const val PIN_SIZE_KEY = "template_size"
 
     data class TemplateCacheStatus(val cached: Boolean, val sizeBytes: Long)
 
@@ -32,7 +35,7 @@ object TemplateManagerV3 {
 
     fun getCacheStatus(context: Context): TemplateCacheStatus {
         val cached = getCachedTemplate(context)
-        return if (cached != null && isZip(cached)) {
+        return if (cached != null && isValidTemplateApk(cached) && matchesPinnedSize(context, cached)) {
             TemplateCacheStatus(true, cached.length())
         } else {
             TemplateCacheStatus(false, 0L)
@@ -45,9 +48,9 @@ object TemplateManagerV3 {
         onProgress: ((Float, String) -> Unit)? = null
     ): TemplateOutcome {
         val cached = getCachedTemplate(context)
-        val validCache = if (cached != null && isZip(cached)) cached else null
+        val validCache = if (cached != null && isValidTemplateApk(cached) && matchesPinnedSize(context, cached)) cached else null
         if (!force && validCache != null) return TemplateOutcome.Ready(validCache, false)
-        return downloadTemplate(context, validCache, onProgress)
+        return downloadTemplate(context, validCache, force, onProgress)
     }
 
     fun prepareBaseApk(
@@ -60,7 +63,7 @@ object TemplateManagerV3 {
         val reasons = mutableListOf<String>()
 
         val cached = getCachedTemplate(context)
-        if (cached != null && isZip(cached)) {
+        if (cached != null && isValidTemplateApk(cached) && matchesPinnedHash(context, cached)) {
             if (copyValidTemplate(cached, target)) {
                 Log.d(TAG, "Использую кэшированный шаблон (${cached.length() / (1024 * 1024)} MB)")
                 return target
@@ -68,14 +71,14 @@ object TemplateManagerV3 {
             reasons += "кэшированный шаблон не является корректным APK"
         }
 
-        val outcome = downloadTemplate(context, null) { p, msg ->
+        val outcome = downloadTemplate(context, null, true) { p, msg ->
             onProgress?.invoke(p, msg)
         }
         val downloaded = (outcome as? TemplateOutcome.Ready)?.file
         if (downloaded != null) {
             if (!hasEnoughSpace(workDir, downloaded.length() + 64L * 1024 * 1024)) {
                 reasons += "недостаточно места в ${workDir.absolutePath} для копирования шаблона"
-            } else if (isZip(downloaded) && copyValidTemplate(downloaded, target)) {
+            } else if (isValidTemplateApk(downloaded) && copyValidTemplate(downloaded, target)) {
                 Log.d(TAG, "Базовый шаблон: скачан с GitHub (${downloaded.length() / (1024 * 1024)} MB)")
                 return target
             } else {
@@ -100,6 +103,7 @@ object TemplateManagerV3 {
     private fun downloadTemplate(
         context: Context,
         previousCache: File?,
+        repin: Boolean = false,
         onProgress: ((Float, String) -> Unit)?
     ): TemplateOutcome {
         val cacheDir = File(context.filesDir, CACHE_DIR_NAME)
@@ -128,10 +132,15 @@ object TemplateManagerV3 {
                     return TemplateOutcome.Failed(TemplateFailure.NETWORK, fetch.detail, previousCache)
                 }
             }
-            if (!isZip(tmp)) {
-                Log.e(TAG, "Скачанный файл не является ZIP/APK")
+            if (!isValidTemplateApk(tmp)) {
+                Log.e(TAG, "Скачанный файл не является корректным APK")
                 tmp.delete()
                 return TemplateOutcome.Failed(TemplateFailure.BAD_FILE, "", previousCache)
+            }
+            if (!checkAndPinHash(context, tmp, repin)) {
+                Log.e(TAG, "Хеш шаблона не совпал с закреплённым")
+                tmp.delete()
+                return TemplateOutcome.Failed(TemplateFailure.BAD_FILE, "hash mismatch", previousCache)
             }
             val storedEtag = runCatching { etagFile.readText().trim() }.getOrNull().orEmpty()
             if (previousCache != null && previousCache.exists() &&
@@ -217,7 +226,7 @@ object TemplateManagerV3 {
     private fun copyValidTemplate(source: File, target: File): Boolean {
         return runCatching {
             source.copyTo(target, overwrite = true)
-            target.exists() && target.length() > 0 && isZip(target)
+            target.exists() && target.length() > 0 && isValidTemplateApk(target)
         }.getOrDefault(false)
     }
 
@@ -229,14 +238,67 @@ object TemplateManagerV3 {
         }.getOrDefault(true)
     }
 
-    private fun isZip(file: File): Boolean {
+    private fun isValidTemplateApk(file: File): Boolean {
         if (!file.exists() || file.length() < 4) return false
         return runCatching {
-            file.inputStream().use { is32 ->
-                val head = ByteArray(4)
-                val read = is32.read(head)
-                read == 4 && head[0] == 'P'.code.toByte() && head[1] == 'K'.code.toByte()
+            java.util.zip.ZipFile(file).use { zip ->
+                zip.getEntry("AndroidManifest.xml") != null && zip.getEntry("classes.dex") != null
             }
         }.getOrDefault(false)
+    }
+
+    private fun pinnedHash(context: Context): String {
+        return runCatching {
+            context.getSharedPreferences(PIN_PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(PIN_KEY, "").orEmpty()
+        }.getOrDefault("")
+    }
+
+    private fun pinnedSize(context: Context): Long {
+        return runCatching {
+            context.getSharedPreferences(PIN_PREFS_NAME, Context.MODE_PRIVATE)
+                .getLong(PIN_SIZE_KEY, -1L)
+        }.getOrDefault(-1L)
+    }
+
+    private fun matchesPinnedSize(context: Context, file: File): Boolean {
+        val pinned = pinnedSize(context)
+        return pinned < 0 || pinned == file.length()
+    }
+
+    private fun matchesPinnedHash(context: Context, file: File): Boolean {
+        val pinned = pinnedHash(context)
+        if (pinned.isEmpty()) return true
+        return sha256Hex(file) == pinned
+    }
+
+    private fun checkAndPinHash(context: Context, file: File, repin: Boolean): Boolean {
+        val actual = sha256Hex(file) ?: return false
+        val pinned = pinnedHash(context)
+        if (pinned.isEmpty() || repin) {
+            runCatching {
+                context.getSharedPreferences(PIN_PREFS_NAME, Context.MODE_PRIVATE).edit()
+                    .putString(PIN_KEY, actual)
+                    .putLong(PIN_SIZE_KEY, file.length())
+                    .apply()
+            }
+            return true
+        }
+        return actual == pinned
+    }
+
+    private fun sha256Hex(file: File): String? {
+        return runCatching {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        }.getOrNull()
     }
 }

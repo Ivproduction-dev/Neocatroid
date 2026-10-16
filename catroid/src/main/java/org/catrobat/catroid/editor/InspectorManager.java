@@ -142,7 +142,7 @@ public class InspectorManager {
                 if (newName.equals(oldName)) return;
 
                 if (sceneManager.renameGameObject(selectedObject, newName)) {
-
+                    activity.getUndoManager().pushCommand(new Commands.RenameCommand(sceneManager, oldName, newName));
                     activity.updateHierarchy();
                 } else {
                     Toast.makeText(activity, "Invalid or duplicate name!", Toast.LENGTH_SHORT).show();
@@ -2486,7 +2486,7 @@ public class InspectorManager {
 
 
         TextView minLabel = new TextView(activity);
-        minLabel.setText("Min:");
+        minLabel.setText(activity.getString(R.string.editor_3d_min));
         minLabel.setTextColor(Color.GRAY);
         minLabel.setTextSize(10);
         minLabel.setLayoutParams(labelParams);
@@ -2502,7 +2502,7 @@ public class InspectorManager {
 
 
         TextView maxLabel = new TextView(activity);
-        maxLabel.setText("Max:");
+        maxLabel.setText(activity.getString(R.string.editor_3d_max));
         maxLabel.setTextColor(Color.GRAY);
         maxLabel.setTextSize(10);
         maxLabel.setLayoutParams(labelParams);
@@ -2627,7 +2627,7 @@ public class InspectorManager {
         container.addView(listLayout);
 
         Button addBtn = new Button(activity, null, 0, android.R.style.Widget_Material_Button_Small);
-        addBtn.setText("+ Add Color Keyframe");
+        addBtn.setText(activity.getString(R.string.editor_3d_add_color_keyframe));
         container.addView(addBtn);
 
         Runnable refreshList = new Runnable() {

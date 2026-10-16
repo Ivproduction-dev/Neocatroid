@@ -19,6 +19,8 @@ object ApkBuilderV3Engine {
     private const val TEMPLATE_RUNTIME_APK = "template_runtime.apk"
     private const val ASSET_PROJECT_PAYLOAD = "project.ncv3"
     private const val BUILD_HEADROOM_MB = 256L
+    private const val TEMPLATE_SIZE_ESTIMATE_MB = 300L
+    private const val APK_COPY_COUNT = 6L
 
     suspend fun build(
         context: Context,
@@ -34,7 +36,10 @@ object ApkBuilderV3Engine {
             tempDir.mkdirs()
 
             val projectSize = projectDir.sizeRecursively()
-            val neededSpace = projectSize * 3 + BUILD_HEADROOM_MB * 1024 * 1024
+            val templateBytes = TemplateManagerV3.getCacheStatus(context).sizeBytes
+                .takeIf { it > 0 } ?: (TEMPLATE_SIZE_ESTIMATE_MB * 1024 * 1024)
+            val neededSpace = projectSize * 3 + templateBytes * APK_COPY_COUNT +
+                BUILD_HEADROOM_MB * 1024 * 1024
             val diskSpaceError = checkDiskSpace(tempDir, neededSpace)
             if (diskSpaceError != null) {
                 return@withContext AssemblyResult.Failure(diskSpaceError)

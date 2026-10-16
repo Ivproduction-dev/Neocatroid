@@ -54,7 +54,12 @@ class TextToolCommandSerializer(version: Int, private val activityContext: Conte
     override fun read(kryo: Kryo, input: Input, type: Class<out TextToolCommand>): TextToolCommand =
         super.handleVersions(this, kryo, input, type)
 
-    override fun readV2(kryo: Kryo, input: Input, type: Class<out TextToolCommand>): TextToolCommand {
+    override fun readV2(
+        serializer: VersionSerializer<TextToolCommand>,
+        kryo: Kryo,
+        input: Input,
+        type: Class<out TextToolCommand>
+    ): TextToolCommand {
         return with(input) {
             val text = kryo.readObject(input, Array<String>::class.java)
             val paint = kryo.readObject(input, Paint::class.java)

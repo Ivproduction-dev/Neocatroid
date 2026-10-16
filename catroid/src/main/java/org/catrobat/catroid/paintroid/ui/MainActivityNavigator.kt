@@ -36,6 +36,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import org.catrobat.catroid.paintroid.FileIO
 import org.catrobat.catroid.paintroid.MainActivity
+import org.catrobat.catroid.paintroid.dialog.SaveErrorDialog
 import org.catrobat.catroid.R
 
 import org.catrobat.catroid.paintroid.UserPreferences

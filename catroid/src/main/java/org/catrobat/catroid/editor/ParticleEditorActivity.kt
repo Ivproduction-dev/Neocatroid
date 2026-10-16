@@ -1167,7 +1167,7 @@ class ParticleEditorActivity : AppCompatActivity() {
         }
         headerRow.addView(headerTv)
 
-        val minLabel = TextView(this).apply { text = "Min:"; setTextColor(Color.GRAY); textSize = 10f }
+        val minLabel = TextView(this).apply { text = getString(R.string.editor_3d_min); setTextColor(Color.GRAY); textSize = 10f }
         headerRow.addView(minLabel)
         val minEdit = EditText(this).apply {
             setText(String.format(Locale.US, "%.1f", defaultMin))
@@ -1179,7 +1179,7 @@ class ParticleEditorActivity : AppCompatActivity() {
         }
         headerRow.addView(minEdit)
 
-        val maxLabel = TextView(this).apply { text = "Max:"; setTextColor(Color.GRAY); textSize = 10f }
+        val maxLabel = TextView(this).apply { text = getString(R.string.editor_3d_max); setTextColor(Color.GRAY); textSize = 10f }
         headerRow.addView(maxLabel)
         val maxEdit = EditText(this).apply {
             setText(String.format(Locale.US, "%.1f", defaultMax))

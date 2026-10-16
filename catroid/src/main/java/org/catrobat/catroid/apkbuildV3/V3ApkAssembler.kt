@@ -103,8 +103,13 @@ object V3ApkAssembler {
         onProgress?.invoke(0.9f, alignedApk.name)
 
         val signedApk = File(workDir, "v3_signed.apk")
+        val stableKeystore = SigningKeyManager.ensureKeystore(context) { file, alias, password ->
+            generateKeystore(file, alias, password)
+        }
         val keystore = File(workDir, "v3_keystore.jks")
-        signApk(alignedApk, signedApk, keystore, "neocatroidv3", "keystore")
+        stableKeystore.copyTo(keystore, overwrite = true)
+        signApk(alignedApk, signedApk, keystore, SigningKeyManager.ALIAS,
+            SigningKeyManager.keystorePassword(context), deleteKeystoreAfterUse = true)
         onProgress?.invoke(1f, signedApk.name)
 
         verifyInstallable(signedApk)
@@ -224,7 +229,7 @@ object V3ApkAssembler {
                 manifest.versionCode = config.versionCode
                 manifest.versionName = config.versionName
 
-                manifest.minSdkVersion = config.minSdk
+                manifest.minSdkVersion = maxOf(config.minSdk, ApkBuilderV3Config.RUNTIME_MIN_SDK)
                 manifest.targetSdkVersion = config.targetSdk
 
                 val appElem = manifest.applicationElement
@@ -632,24 +637,25 @@ object V3ApkAssembler {
     }
 
     internal fun assertNoDataDescriptors(apk: File) {
-        apk.inputStream().use { ins ->
-            val data = ins.readBytes()
-            var pos = 0
+        java.io.RandomAccessFile(apk, "r").use { raf ->
+            val length = raf.length()
+            val header = ByteArray(30)
+            var pos = 0L
             var checked = 0
-            while (pos + 30 <= data.size) {
-                if (data[pos] != 0x50.toByte() || data[pos + 1] != 0x4b.toByte() ||
-                    data[pos + 2] != 0x03.toByte() || data[pos + 3] != 0x04.toByte()
+            while (pos + 30 <= length) {
+                raf.seek(pos)
+                raf.readFully(header)
+                if (header[0] != 0x50.toByte() || header[1] != 0x4b.toByte() ||
+                    header[2] != 0x03.toByte() || header[3] != 0x04.toByte()
                 ) break
-                val flags = (data[pos + 6].toInt() and 0xFF) or ((data[pos + 7].toInt() and 0xFF) shl 8)
+                val flags = leShort(header, 6)
                 require((flags and 0x08) == 0) {
                     "normalizeApkForInstall: запись #$checked использует data descriptor (флаг 0x08) — " +
                         "такой APK не ставится (INSTALL_PARSE_FAILED_NOT_APK)"
                 }
-                val method = (data[pos + 8].toInt() and 0xFF) or ((data[pos + 9].toInt() and 0xFF) shl 8)
-                val compSize = leInt(data, pos + 18)
-                val fnLen = leShort(data, pos + 26)
-                val exLen = leShort(data, pos + 28)
-                require(compSize >= 0) { "normalizeApkForInstall: битый local header #$checked" }
+                val compSize = leInt(header, 18).toLong() and 0xFFFFFFFFL
+                val fnLen = leShort(header, 26)
+                val exLen = leShort(header, 28)
                 pos += 30 + fnLen + exLen + compSize
                 checked++
                 if (checked > 200_000) break
@@ -690,12 +696,13 @@ object V3ApkAssembler {
         Log.i(TAG, "verify: подпись OK, warnings=${result.warnings}")
     }
 
-    private fun signApk(inputApk: File, outputApk: File, keystoreFile: File, alias: String, password: String) {
-        doSign(inputApk, outputApk, keystoreFile, alias, password)
+    private fun signApk(inputApk: File, outputApk: File, keystoreFile: File, alias: String, password: String,
+        deleteKeystoreAfterUse: Boolean = true) {
+        doSign(inputApk, outputApk, keystoreFile, alias, password, deleteKeystoreAfterUse)
         Log.i(TAG, "APK подписан: ${outputApk.absolutePath}")
     }
 
-    internal fun doSign(inputApk: File, outputApk: File, keystoreFile: File, alias: String, password: String) {
+    internal fun generateKeystore(keystoreFile: File, alias: String, password: String) {
         val bc = BouncyCastleProvider()
 
         val kpGen = KeyPairGenerator.getInstance("RSA", bc)
@@ -723,9 +730,19 @@ object V3ApkAssembler {
         keyStore.load(null, null)
         keyStore.setKeyEntry(alias, kp.private, password.toCharArray(), arrayOf(certificate))
         keystoreFile.outputStream().use { keyStore.store(it, password.toCharArray()) }
+    }
 
+    internal fun doSign(inputApk: File, outputApk: File, keystoreFile: File, alias: String, password: String,
+        deleteKeystoreAfterUse: Boolean = true) {
+        if (!keystoreFile.exists()) {
+            generateKeystore(keystoreFile, alias, password)
+        }
         try {
-            val signerConfig = SignerConfig.Builder(alias, kp.private as PrivateKey, listOf(certificate)).build()
+            val keyStore = KeyStore.getInstance("PKCS12")
+            keystoreFile.inputStream().use { keyStore.load(it, password.toCharArray()) }
+            val privateKey = keyStore.getKey(alias, password.toCharArray()) as PrivateKey
+            val certificate = keyStore.getCertificate(alias) as java.security.cert.X509Certificate
+            val signerConfig = SignerConfig.Builder(alias, privateKey, listOf(certificate)).build()
             ApkSigner.Builder(listOf(signerConfig))
                 .setInputApk(inputApk)
                 .setOutputApk(outputApk)
@@ -735,7 +752,9 @@ object V3ApkAssembler {
                 .build()
                 .sign()
         } finally {
-            keystoreFile.delete()
+            if (deleteKeystoreAfterUse) {
+                keystoreFile.delete()
+            }
         }
     }
 }

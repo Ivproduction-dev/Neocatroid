@@ -128,7 +128,7 @@ class ApkBuilderV3ExportDialog {
         view.findViewById<TextInputEditText>(R.id.v3_package_input)?.setText("org.neocatroid.runtime.v3")
         view.findViewById<TextInputEditText>(R.id.v3_version_input)?.setText("1.0")
         view.findViewById<TextInputEditText>(R.id.v3_version_code_input)?.setText("1")
-        view.findViewById<TextInputEditText>(R.id.v3_min_sdk_input)?.setText("21")
+        view.findViewById<TextInputEditText>(R.id.v3_min_sdk_input)?.setText(ApkBuilderV3Config.RUNTIME_MIN_SDK.toString())
         view.findViewById<TextInputEditText>(R.id.v3_target_sdk_input)?.setText("35")
 
         val permContainer = view.findViewById<LinearLayout>(R.id.v3_permissions_container)

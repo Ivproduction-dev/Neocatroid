@@ -200,6 +200,7 @@ class DefaultShapeToolOptionsView(rootView: ViewGroup) : ShapeToolOptionsView {
                 triangleButton.isSelected = true
                 setShapeToolDialogTitle(R.string.shape_tool_dialog_triangle_title)
             }
+            DrawableShape.POINT_LIGHT, DrawableShape.AURA_LIGHT, DrawableShape.SPOT_LIGHT -> Unit
         }
     }
 

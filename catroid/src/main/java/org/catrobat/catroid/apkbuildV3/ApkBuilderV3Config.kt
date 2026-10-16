@@ -9,13 +9,13 @@ data class ApkBuilderV3Config(
     val packageName: String = "org.neocatroid.runtime.v3",
     val versionName: String = "1.0",
     val versionCode: Int = 1,
-    val minSdk: Int = 21,
+    val minSdk: Int = RUNTIME_MIN_SDK,
     val targetSdk: Int = 35,
     val iconFile: File? = null,
     val permissions: List<String> = DEFAULT_PERMISSIONS,
     val templateType: TemplateType = TemplateType.FULL,
     val firebaseConfig: FirebaseConfig? = null,
-    val debuggable: Boolean = true
+    val debuggable: Boolean = false
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
@@ -50,6 +50,7 @@ data class ApkBuilderV3Config(
     override fun describeContents(): Int = 0
 
     companion object CREATOR : Parcelable.Creator<ApkBuilderV3Config> {
+        const val RUNTIME_MIN_SDK = 31
         override fun createFromParcel(parcel: Parcel): ApkBuilderV3Config = ApkBuilderV3Config(parcel)
         override fun newArray(size: Int): Array<ApkBuilderV3Config?> = arrayOfNulls(size)
 

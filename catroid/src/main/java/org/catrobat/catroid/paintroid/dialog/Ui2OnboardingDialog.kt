@@ -15,7 +15,7 @@ class Ui2OnboardingDialog : MainActivityDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val prefs = UserPreferences(
-            requireContext().getSharedPreferences(MainActivity.SHARED_PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            requireContext().getSharedPreferences("preferences", android.content.Context.MODE_PRIVATE)
         )
 
         return AlertDialog.Builder(requireContext(), R.style.PocketPaintAlertDialog)

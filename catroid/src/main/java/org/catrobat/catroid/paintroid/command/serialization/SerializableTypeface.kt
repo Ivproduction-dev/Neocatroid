@@ -49,7 +49,12 @@ data class SerializableTypeface(
         override fun read(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface =
             super.handleVersions(this, kryo, input, type)
 
-        override fun readV2(kryo: Kryo, input: Input, type: Class<out SerializableTypeface>): SerializableTypeface {
+        override fun readV2(
+            serializer: VersionSerializer<SerializableTypeface>,
+            kryo: Kryo,
+            input: Input,
+            type: Class<out SerializableTypeface>
+        ): SerializableTypeface {
             return with(input) {
                 val font = FontType.valueOf(readString())
                 val bold = readBoolean()

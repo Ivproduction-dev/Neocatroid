@@ -953,4 +953,23 @@
         <item>high</item>
     </string-array>
 
+    <string-array name="brick_sound_loop_options">
+        <item>No</item>
+        <item>Yes</item>
+    </string-array>
+
+    <string-array name="brick_physics_states_full">
+        <item>None</item>
+        <item>Static</item>
+        <item>Dynamic</item>
+        <item>Static mesh</item>
+        <item>Kinematic</item>
+    </string-array>
+
+    <string-array name="light_types">
+        <item>Directional</item>
+        <item>Point</item>
+        <item>Spot</item>
+    </string-array>
+
 </resources>

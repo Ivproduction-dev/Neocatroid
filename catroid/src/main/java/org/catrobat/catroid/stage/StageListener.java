@@ -440,7 +440,14 @@ public class StageListener implements ApplicationListener {
 
 
 	public ThreeDManager getThreeDManager() {
+		ensureThreeDInitialized();
 		return threeDManager;
+	}
+
+	private void ensureThreeDInitialized() {
+		if (threeDManager != null && !threeDManager.isInitialized()) {
+			threeDManager.init();
+		}
 	}
 
 	public SceneManager getSceneManager() {
@@ -483,7 +490,6 @@ public class StageListener implements ApplicationListener {
 		scene = ProjectManager.getInstance().getCurrentlyPlayingScene();
 
 		threeDManager = new ThreeDManager();
-		threeDManager.init();
 
 		sceneManager = new SceneManager(threeDManager);
 
@@ -1003,18 +1009,25 @@ public class StageListener implements ApplicationListener {
         InputProcessor cameraInputProcessor = new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (threeDManager == null || !threeDManager.isInitialized()) {
+                    return false;
+                }
                 return threeDManager.handleTouchDown(screenX, screenY, pointer, uiStage, stage);
             }
 
             @Override
             public boolean touchDragged(int screenX, int screenY, int pointer) {
-                threeDManager.handleTouchDragged(screenX, screenY, pointer);
+                if (threeDManager != null && threeDManager.isInitialized()) {
+                    threeDManager.handleTouchDragged(screenX, screenY, pointer);
+                }
                 return false;
             }
 
             @Override
             public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-                threeDManager.handleTouchUp(pointer);
+                if (threeDManager != null && threeDManager.isInitialized()) {
+                    threeDManager.handleTouchUp(pointer);
+                }
                 return false;
             }
         };
@@ -2355,14 +2368,13 @@ public class StageListener implements ApplicationListener {
             }
 
 			if (reloadProject) {
-				if (threeDManager != null) {
+				if (threeDManager != null && threeDManager.isInitialized()) {
 					threeDManager.dispose();
 				}
 
 			try {
 				RenderManager.INSTANCE.initialize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 				threeDManager = new ThreeDManager();
-				threeDManager.init();
 			} catch (Exception e) {
 				Log.e("StageListener", "INITIALIZE ERROR: " + e);
 			}
@@ -2482,7 +2494,7 @@ public class StageListener implements ApplicationListener {
                     executeBeforeUpdateScripts(deltaTime);
                 }
 
-                if (sceneManager != null && (threeDManager == null || !threeDManager.isRealisticMode())) {
+                if (sceneManager != null) {
                     sceneManager.update(deltaTime);
                 }
 
@@ -2544,12 +2556,12 @@ public class StageListener implements ApplicationListener {
             if (!finished) {
                 try {
                     if (!paused) {
-                        if (threeDManager != null) {
+                        if (threeDManager != null && threeDManager.isInitialized()) {
                             threeDManager.update(deltaTime);
                         }
                     }
                     try {
-						if (threeDManager != null) {
+						if (threeDManager != null && threeDManager.isInitialized()) {
 							threeDManager.render();
 						}
                     } catch (Exception e) {
@@ -2581,6 +2593,13 @@ public class StageListener implements ApplicationListener {
                         }
                     }
 
+                    if (org.catrobat.catroid.fast2d.mirror.MirrorScene.ENABLED && fastTwoDManager != null && !paused) {
+                        org.catrobat.catroid.fast2d.mirror.MirrorScene.get().sync(sprites, fastTwoDManager, camera,
+                                batch instanceof com.badlogic.gdx.graphics.g2d.SpriteBatch
+                                        ? (com.badlogic.gdx.graphics.g2d.SpriteBatch) batch : null);
+                    } else if (fastTwoDManager != null) {
+                        org.catrobat.catroid.fast2d.mirror.MirrorScene.get().clear(fastTwoDManager);
+                    }
                     if (fastTwoDManager != null && !paused && !fastTwoDManager.isEmpty()) {
                         fastTwoDManager.updateAndRender(deltaTime);
                     }
@@ -2610,6 +2629,11 @@ public class StageListener implements ApplicationListener {
                     }
 
                     stage.draw();
+                    if (org.catrobat.catroid.fast2d.mirror.MirrorScene.ENABLED
+                            && batch instanceof com.badlogic.gdx.graphics.g2d.SpriteBatch) {
+                        org.catrobat.catroid.fast2d.mirror.MirrorScene.get()
+                                .sampleRenderCalls((com.badlogic.gdx.graphics.g2d.SpriteBatch) batch);
+                    }
                     render2DLights();
                     if (transitionManager != null) {
                         transitionManager.renderOverlay((SpriteBatch) batch);
@@ -2814,7 +2838,7 @@ public class StageListener implements ApplicationListener {
             camera.update();
         }
 
-        if (threeDManager != null) threeDManager.resize(width, height);
+        if (threeDManager != null && threeDManager.isInitialized()) threeDManager.resize(width, height);
         StageActivity stageActivity = StageActivity.activeStageActivity.get();
         if (stageActivity != null && stageActivity.getNeo3DEngine() != null) {
             try {
@@ -3004,7 +3028,7 @@ public class StageListener implements ApplicationListener {
 			postProcessFbo.dispose();
 		}
 
-		if (threeDManager != null) {
+		if (threeDManager != null && threeDManager.isInitialized()) {
 			threeDManager.dispose();
 		}
 		teardownNeo3DEngine();

@@ -1193,6 +1193,8 @@ open class MainActivityPresenter(
     }
 
     companion object {
+        private const val TAG = "MainActivityPresenter"
+
         @JvmStatic
         @Suppress("DEPRECATION")
         fun getPathFromUri(context: Context, uri: Uri): String {

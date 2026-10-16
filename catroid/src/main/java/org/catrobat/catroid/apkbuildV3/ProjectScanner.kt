@@ -1,7 +1,9 @@
 package org.catrobat.catroid.apkbuildV3
 
 import org.catrobat.catroid.content.Project
+import org.catrobat.catroid.content.Scene
 import org.catrobat.catroid.content.bricks.Brick
+import org.catrobat.catroid.content.bricks.CompositeBrick
 
 object ProjectScanner {
 
@@ -17,10 +19,17 @@ object ProjectScanner {
         }
 
         val allBricks = mutableListOf<Brick>()
-        for (scene in project.sceneList) {
+        val scenes = project.sceneList.toMutableList()
+        val globalScene: Scene? = project.globalScene
+        if (globalScene != null && scenes.none { it === globalScene }) {
+            scenes.add(globalScene)
+        }
+        for (scene in scenes) {
             for (sprite in scene.spriteList) {
                 for (script in sprite.scriptList) {
-                    allBricks.addAll(script.brickList)
+                    for (brick in script.brickList) {
+                        collectBrickTree(brick, allBricks)
+                    }
                 }
             }
         }
@@ -85,5 +94,14 @@ object ProjectScanner {
         }
 
         return detected.toList()
+    }
+
+    private fun collectBrickTree(brick: Brick, out: MutableList<Brick>) {
+        brick.addToFlatList(out)
+        if (brick is CompositeBrick) {
+            for (nested in brick.nestedBricks) {
+                nested.addToFlatList(out)
+            }
+        }
     }
 }

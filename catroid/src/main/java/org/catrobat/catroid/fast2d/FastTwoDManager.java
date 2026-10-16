@@ -162,6 +162,71 @@ public class FastTwoDManager implements Disposable {
         Gdx.app.postRunnable(() -> getOrCreateEntity(id));
     }
 
+    public int obtainEntityImmediate(String id) {
+        return getOrCreateEntity(id);
+    }
+
+    public void writeTransformImmediate(String id, float x, float y, float rotation, float sx, float sy, float z) {
+        int e = getOrCreateEntity(id);
+        TransformComponent t = mTransform.get(e);
+        boolean zChanged = t.z != z;
+        t.x = x;
+        t.y = y;
+        t.rotation = rotation;
+        t.scaleX = sx;
+        t.scaleY = sy;
+        t.z = z;
+        if (zChanged) {
+            renderSystem.requestSort();
+        }
+    }
+
+    public void writeTextureImmediate(String id, String absolutePath) {
+        int e = getOrCreateEntity(id);
+        Texture texture = getOrLoadTexture(absolutePath);
+        if (texture == null) return;
+        TextureComponent tex = mTexture.create(e);
+        tex.region = new TextureRegion(texture);
+        int lastSlashIndex = absolutePath.lastIndexOf('/');
+        tex.textureName = lastSlashIndex >= 0 ? absolutePath.substring(lastSlashIndex + 1) : absolutePath;
+        tex.width = texture.getWidth();
+        tex.height = texture.getHeight();
+        tex.originX = tex.width / 2f;
+        tex.originY = tex.height / 2f;
+    }
+
+    public void writeColorImmediate(String id, float r, float g, float b, float a) {
+        int e = getOrCreateEntity(id);
+        TextureComponent tex;
+        if (mTexture.has(e)) {
+            tex = mTexture.get(e);
+        } else {
+            tex = mTexture.create(e);
+        }
+        tex.color.set(r, g, b, a);
+    }
+
+    public void writeVisibleImmediate(String id, boolean visible) {
+        int e = getOrCreateEntity(id);
+        if (mTexture.has(e)) {
+            mTexture.get(e).visible = visible;
+        }
+    }
+
+    public void removeEntityImmediate(String id) {
+        Integer e = entities.remove(id);
+        if (e != null) world.delete(e);
+    }
+
+    public void copyCameraFrom(OrthographicCamera src) {
+        if (src == null) return;
+        camera.position.set(src.position);
+        camera.zoom = src.zoom;
+        camera.viewportWidth = src.viewportWidth;
+        camera.viewportHeight = src.viewportHeight;
+        camera.update();
+    }
+
     public void destroyEntity(final String id) {
         Gdx.app.postRunnable(() -> {
             Integer e = entities.remove(id);

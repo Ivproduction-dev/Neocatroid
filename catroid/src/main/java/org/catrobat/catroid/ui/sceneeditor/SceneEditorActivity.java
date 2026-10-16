@@ -933,19 +933,19 @@ private Sprite pendingLookSprite;
 		items.add("Опции проекта 2.0");
 		actions.add(() -> openProjectPanel("project_options"));
 
-		items.add("Рюкзак");
+		items.add(getString(R.string.scene_editor_2_backpack));
 		actions.add(() -> {
 			Intent intent = new Intent(this, org.catrobat.catroid.ui.recyclerview.backpack.BackpackActivity.class);
 			startActivity(intent);
 		});
 
-		items.add("3D Редактор");
+		items.add(getString(R.string.scene_editor_2_3d_editor));
 		actions.add(() -> startActivity(new Intent(this, EditorActivity.class)));
 
-		items.add("Управление сценами");
+		items.add(getString(R.string.scene_editor_2_scene_management));
 		actions.add(this::showSceneSwitcher);
 
-		items.add("Настройки приложения");
+		items.add(getString(R.string.scene_editor_2_app_settings));
 		actions.add(() -> startActivity(new Intent(this, SettingsActivity.class)));
 
 		new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)

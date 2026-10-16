@@ -330,6 +330,7 @@ public class EditorListener extends ApplicationAdapter {
         }
 
         threeDManager.update(delta);
+        sceneManager.update(delta);
         threeDManager.render();
 
         renderKeyframeVisuals();

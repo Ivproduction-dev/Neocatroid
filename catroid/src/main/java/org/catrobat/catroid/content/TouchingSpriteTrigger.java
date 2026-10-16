@@ -69,6 +69,11 @@ public class TouchingSpriteTrigger {
 		}
 		Sprite background = scene.getBackgroundSprite();
 
+		float selfX = self.look.getXInUserInterfaceDimensionUnit();
+		float selfY = self.look.getYInUserInterfaceDimensionUnit();
+		float selfHalfWidth = self.look.getWidthInUserInterfaceDimensionUnit() / 2f;
+		float selfHalfHeight = self.look.getHeightInUserInterfaceDimensionUnit() / 2f;
+
 		for (Sprite other : getStageSprites()) {
 			if (other == null || other == self || other.look == null || !other.look.isVisible()) {
 				continue;
@@ -79,7 +84,11 @@ public class TouchingSpriteTrigger {
 			if (!matchesTargetName(other)) {
 				continue;
 			}
-			if (overlap(self.look, other.look)) {
+			float dx = Math.abs(selfX - other.look.getXInUserInterfaceDimensionUnit());
+			float dy = Math.abs(selfY - other.look.getYInUserInterfaceDimensionUnit());
+			float halfWidths = selfHalfWidth + other.look.getWidthInUserInterfaceDimensionUnit() / 2f;
+			float halfHeights = selfHalfHeight + other.look.getHeightInUserInterfaceDimensionUnit() / 2f;
+			if (dx < halfWidths && dy < halfHeights) {
 				return true;
 			}
 		}
@@ -94,14 +103,6 @@ public class TouchingSpriteTrigger {
 			return true;
 		}
 		return other.isClone && other.myOriginal != null && touchedSpriteName.equals(other.myOriginal.getName());
-	}
-
-	private boolean overlap(Look selfLook, Look otherLook) {
-		float dx = Math.abs(selfLook.getXInUserInterfaceDimensionUnit() - otherLook.getXInUserInterfaceDimensionUnit());
-		float dy = Math.abs(selfLook.getYInUserInterfaceDimensionUnit() - otherLook.getYInUserInterfaceDimensionUnit());
-		float halfWidths = (selfLook.getWidthInUserInterfaceDimensionUnit() + otherLook.getWidthInUserInterfaceDimensionUnit()) / 2f;
-		float halfHeights = (selfLook.getHeightInUserInterfaceDimensionUnit() + otherLook.getHeightInUserInterfaceDimensionUnit()) / 2f;
-		return dx < halfWidths && dy < halfHeights;
 	}
 
 	private List<Sprite> getStageSprites() {

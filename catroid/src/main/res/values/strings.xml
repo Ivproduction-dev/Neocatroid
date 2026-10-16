@@ -463,6 +463,21 @@
     <string name="editor_3d_load_scene">Load Scene</string>
     <string name="editor_3d_no_scenes_found">No saved scenes (.rscene) found.</string>
     <string name="editor_3d_loading_scene">Loading scene: %1$s</string>
+    <string name="editor_3d_neo3d_entry">Neo3D objects of current scene</string>
+    <string name="editor_3d_neo3d_unavailable">Neo3D engine is not available</string>
+    <string name="editor_3d_choose_sky_color">Choose Sky Color</string>
+    <string name="editor_3d_close">Close</string>
+    <string name="editor_3d_min">Min:</string>
+    <string name="editor_3d_max">Max:</string>
+    <string name="editor_3d_add_color_keyframe">+ Add Color Keyframe</string>
+    <string name="editor_3d_cd_move_to_cam">Move to Cam</string>
+    <string name="editor_3d_cd_rotate_to_cam">Rotate to Camera</string>
+    <string name="editor_3d_cd_focus">Focus</string>
+    <string name="editor_3d_cd_inspector">Inspector</string>
+    <string name="editor_3d_overwrite_title">File Exists</string>
+    <string name="editor_3d_overwrite_msg">Overwrite %1$s?</string>
+    <string name="editor_3d_load_unsaved_msg">Loading a scene will discard unsaved changes. Save first?</string>
+    <string name="editor_3d_load_no_save">Load without Saving</string>
     <string name="editor_3d_shadow_applied">Shadow settings applied.</string>
     <string name="editor_3d_invalid_shadow">Invalid shadow values.</string>
     <string name="editor_3d_restart_engine_title">Restart 3D Engine</string>
@@ -2427,6 +2442,8 @@
 <string formatted="false" name="preference_title_enable_arduino_bricks">Arduino extension</string>
 <string formatted="false" name="preference_description_arduino_bricks">Allow the app to control Arduino boards</string>
 <string formatted="false" name="preference_title_enable_embroidery_bricks">Embroidery extension</string>
+<string formatted="false" name="preference_title_mirror_render">Mirror render (experimental)</string>
+<string formatted="false" name="preference_summary_mirror_render">Draw classic sprites through the batched Fast2D renderer</string>
 <string formatted="false" name="preference_description_embroidery_bricks">Create patterns for stitching machines</string>
 <string formatted="false" name="preference_title_cast_feature_globally_enabled">Chromecast extension</string>
 <string formatted="false" name="preference_description_cast_feature_globally_enabled">Show cast button and enable cast projects</string>
@@ -6364,4 +6381,8 @@ needs read and write access to it. You can always change permissions through you
     <string name="formula_editor_bitwise_shift_right" formatted="false">&gt;&gt;</string>
     <string name="formula_editor_bitwise_unsigned_shift_right" formatted="false">&gt;&gt;&gt;</string>
     <string name="formula_editor_bitwise_category" formatted="false">Bitwise</string>
+    <plurals name="imported_projects">
+        <item quantity="one">Imported %d project.</item>
+        <item quantity="other">Imported %d projects.</item>
+    </plurals>
 </resources>
