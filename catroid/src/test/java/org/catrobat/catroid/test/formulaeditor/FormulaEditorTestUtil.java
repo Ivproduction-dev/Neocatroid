@@ -251,6 +251,16 @@ public final class FormulaEditorTestUtil {
 		assertEquals(expected, parseTree.interpretRecursive(testScope));
 	}
 
+	public static void testBinaryOperator(InternTokenType firstInternTokenType, String firstOperand,
+			Operators operatorType, List<InternToken> secondOperand, Object expected, Scope testScope) {
+		List<InternToken> internTokenList = buildBinaryOperator(firstInternTokenType, firstOperand, operatorType,
+				secondOperand);
+		FormulaElement parseTree = new InternFormulaParser(internTokenList).parseFormula(testScope);
+
+		assertNotNull(parseTree);
+		assertEquals(expected, parseTree.interpretRecursive(testScope));
+	}
+
 	public static void testBinaryOperator(List<InternToken> firstOperand, Operators operatorType,
 			List<InternToken> secondOperand, Object expected, Scope testScope) {
 		List<InternToken> internTokenList = buildBinaryOperator(firstOperand, operatorType, secondOperand);
@@ -321,6 +331,13 @@ public final class FormulaEditorTestUtil {
 		internTokenList.add(new InternToken(InternTokenType.OPERATOR, operatorType.name()));
 		internTokenList.addAll(secondOperand);
 		return internTokenList;
+	}
+
+	public static List<InternToken> buildBinaryOperator(InternTokenType firstInternTokenType, String firstOperand,
+			Operators operatorType, List<InternToken> secondOperand) {
+		List<InternToken> firstOperandList = new LinkedList<>();
+		firstOperandList.add(new InternToken(firstInternTokenType, firstOperand));
+		return buildBinaryOperator(firstOperandList, operatorType, secondOperand);
 	}
 
 	public static List<InternToken> buildBinaryOperator(List<InternToken> firstOperandList,

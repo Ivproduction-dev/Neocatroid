@@ -70,13 +70,26 @@ public abstract class FormulaBrick extends BrickBaseType implements View.OnClick
 
 	public transient BiMap<FormulaField, Integer> brickFieldToTextViewIdMap = HashBiMap.create(2);
 
+	/**
+	 * Snapshot of the values the constructor registered for every brick field. The formula list of a project
+	 * file only contains the fields the brick had when the project got saved, therefore projects saved by an
+	 * older version of the app can miss fields that were added later (e.g. the server name of the TCP bricks).
+	 * Transient on purpose: it only exists for freshly created and for restored bricks, never in a project file.
+	 */
+	private transient Map<FormulaField, Formula> defaultFormulaMap = new java.util.concurrent.ConcurrentHashMap<>();
+
 	public Formula getFormulaWithBrickField(FormulaField formulaField) throws IllegalArgumentException {
-		if (formulaMap.containsKey(formulaField)) {
-			return formulaMap.get(formulaField);
-		} else {
-			throw new IllegalArgumentException("Incompatible Brick Field: " + this.getClass().getSimpleName()
-					+ " does not have BrickField." + formulaField.toString());
+		Formula formula = formulaMap == null ? null : formulaMap.get(formulaField);
+		if (formula != null) {
+			return formula;
 		}
+		Formula restored = restoreMissingFormulaField(formulaField);
+		if (restored != null) {
+			Log.w(getClass().getSimpleName(), "Missing formula for field " + formulaField + ", restored default value");
+			return restored;
+		}
+		throw new IllegalArgumentException("Incompatible Brick Field: " + this.getClass().getSimpleName()
+				+ " does not have BrickField." + formulaField.toString());
 	}
 
 	public Formula getFormulaWithBrickField(FormulaField formulaField, Boolean ret) {
@@ -145,6 +158,7 @@ public abstract class FormulaBrick extends BrickBaseType implements View.OnClick
 	public void setFormulaWithBrickField(FormulaField formulaField, Formula formula) throws IllegalArgumentException {
 		if (formulaMap.containsKey(formulaField)) {
 			formulaMap.replace(formulaField, formula);
+			defaultFormulaMap.put(formulaField, formula);
 		} else {
 			throw new IllegalArgumentException("Incompatible Brick Field: Cannot set BrickField."
 					+ formulaField.toString() + " for " + this.getClass().getSimpleName());
@@ -153,7 +167,27 @@ public abstract class FormulaBrick extends BrickBaseType implements View.OnClick
 
 	protected void addAllowedBrickField(FormulaField formulaField, int textViewResourceId) {
 		formulaMap.putIfAbsent(formulaField, new Formula(0));
+		defaultFormulaMap.putIfAbsent(formulaField, new Formula(0));
 		brickFieldToTextViewIdMap.put(formulaField, textViewResourceId);
+	}
+
+	private Formula defaultFormulaFor(FormulaField formulaField) {
+		Formula defaultFormula = defaultFormulaMap == null ? null : defaultFormulaMap.get(formulaField);
+		return defaultFormula != null ? defaultFormula.clone() : new Formula(0);
+	}
+
+	/**
+	 * Restores the default value of a brick field that an older project file does not contain. Returns null
+	 * if the brick does not know this field at all, so programming errors are still reported.
+	 */
+	private Formula restoreMissingFormulaField(FormulaField formulaField) {
+		if (formulaMap == null || brickFieldToTextViewIdMap == null
+				|| !brickFieldToTextViewIdMap.containsKey(formulaField)) {
+			return null;
+		}
+		Formula restored = defaultFormulaFor(formulaField);
+		formulaMap.put(formulaField, restored);
+		return restored;
 	}
 
 	@Override
@@ -188,7 +222,7 @@ public abstract class FormulaBrick extends BrickBaseType implements View.OnClick
 				continue;
 			}
 			if (!formulaMap.containsKey(entry.getKey())) {
-				formulaMap.put(entry.getKey(), new Formula(0));
+				formulaMap.put(entry.getKey(), defaultFormulaFor(entry.getKey()));
 			}
 			String text =
 					getFormulaWithBrickField(entry.getKey()).clone().getTrimmedFormulaString(context);

@@ -22,6 +22,8 @@
  */
 package org.catrobat.catroid.content;
 
+import android.util.Log;
+
 import com.danvexteam.lunoscript_annotations.LunoClass;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 
@@ -44,6 +46,8 @@ import java.util.UUID;
 public abstract class Script implements Serializable, Cloneable {
 
 	private static final long serialVersionUID = 1L;
+
+	private static final String TAG = "Script";
 
 	protected List<Brick> brickList = new ArrayList<>();
 	protected boolean commentedOut = false;
@@ -139,7 +143,12 @@ public abstract class Script implements Serializable, Cloneable {
 
 		for (Brick brick : brickList) {
 			if (!brick.isCommentedOut()) {
-				brick.addActionToSequence(sprite, sequence);
+				try {
+					brick.addActionToSequence(sprite, sequence);
+				} catch (Exception exception) {
+					Log.e(TAG, "Could not prepare " + brick.getClass().getSimpleName()
+							+ ", skipping this brick", exception);
+				}
 			}
 		}
 	}
