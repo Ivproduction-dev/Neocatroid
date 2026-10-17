@@ -329,7 +329,6 @@ public class ThreeDManager implements Disposable {
 
     private FrameBuffer depthFbo;
     private ModelBatch depthBatch;
-    private ShaderProgram depthShader;
 
     private static class RayCastResult {
         public boolean hasHit = false;
@@ -355,6 +354,7 @@ public class ThreeDManager implements Disposable {
 
     private Map<String, ModelInstance> sceneObjects = new HashMap<>();
     private final Map<String, FrustumCulledScene> objectRenderProviders = new HashMap<>();
+    private boolean partCullingEnabled = true;
     private final Map<String, com.badlogic.gdx.graphics.glutils.ShaderProgram> objectShaderPrograms = new HashMap<>();
     private final Map<String, Map<String, Object>> objectShaderUniformValues = new HashMap<>();
 
@@ -444,6 +444,7 @@ public class ThreeDManager implements Disposable {
 
     private final Map<String, com.badlogic.gdx.math.collision.BoundingBox> objectLocalBounds = new HashMap<>();
     private final Map<String, com.badlogic.gdx.math.collision.BoundingBox> objectWorldBounds = new HashMap<>();
+    private final Set<String> skinnedObjectIds = new HashSet<>();
 
     private SceneSettings currentSettings;
 
@@ -496,8 +497,6 @@ public class ThreeDManager implements Disposable {
 
     private ShaderProgram fsrShader;
     private PostProcessingData.Upscaler currentUpscaler;
-
-    private DepthShader depthShaderWrapper;
 
     private FrameBuffer materialFbo;
     private ModelBatch materialBatch;
@@ -698,21 +697,7 @@ public class ThreeDManager implements Disposable {
                 "    gl_FragColor = vec4(d.x, d.y, packNormal(normalize(v_normal)).x, u_objReflectivity * 0.00001 + packNormal(normalize(v_normal)).y);\n" +
                 "}";
 
-        depthShader = new ShaderProgram(depthVSH, depthFSH);
-        if (!depthShader.isCompiled()) {
-            Log.e("3DManager", "Depth Shader Error: " + depthShader.getLog());
-        }
-
-        depthShaderWrapper = new DepthShader(depthShader);
-
-        ShaderProvider depthShaderProvider = new DefaultShaderProvider() {
-            @Override
-            protected Shader createShader(Renderable renderable) {
-                return depthShaderWrapper;
-            }
-        };
-
-        depthBatch = new ModelBatch(depthShaderProvider);
+        depthBatch = new ModelBatch(new DepthShaderProvider(depthVSH, depthFSH));
 
         materialBatch = new ModelBatch(new MaterialShaderProvider());
 
@@ -857,7 +842,6 @@ public class ThreeDManager implements Disposable {
         this.cameraPitch = pitch;
 
         if (target == null) {
-            // The scene may still be rebuilding on the GL thread: attach as soon as the object appears.
             this.cameraTargetBound = false;
             Gdx.app.log("3DManager", "Camera target '" + targetObjectId + "' not found yet; will attach when it appears");
             return;
@@ -1302,6 +1286,12 @@ public class ThreeDManager implements Disposable {
     }
 
     private void applyCameraEffects(float delta) {
+        if (shakeTimer <= 0 && currentShakeOffset.isZero()) {
+            return;
+        }
+
+        camera.position.sub(currentShakeOffset);
+
         if (shakeTimer > 0) {
             float currentPower = shakeIntensity * (shakeTimer / shakeDuration);
 
@@ -1313,8 +1303,10 @@ public class ThreeDManager implements Disposable {
 
             camera.position.add(currentShakeOffset);
             shakeTimer -= delta;
-            camera.update();
+        } else {
+            currentShakeOffset.set(0f, 0f, 0f);
         }
+        camera.update();
     }
 
     private final Vector3[] chosenDirections = new Vector3[8];
@@ -2642,6 +2634,9 @@ public class ThreeDManager implements Disposable {
         if (objectWorldBounds.containsKey(oldId)) {
             objectWorldBounds.put(newId, objectWorldBounds.remove(oldId));
         }
+        if (skinnedObjectIds.remove(oldId)) {
+            skinnedObjectIds.add(newId);
+        }
         if (objectRenderProviders.containsKey(oldId)) {
             objectRenderProviders.put(newId, objectRenderProviders.remove(oldId));
         }
@@ -2903,6 +2898,7 @@ public class ThreeDManager implements Disposable {
         }
 
         Matrix4 tempBoneMat = new Matrix4();
+        Matrix4 parentGlobal = new Matrix4();
         for (BoneOverride override : boneOverrides) {
             ModelInstance model = sceneObjects.get(override.modelId);
             ModelInstance target = sceneObjects.get(override.targetId);
@@ -2911,10 +2907,19 @@ public class ThreeDManager implements Disposable {
                 Node bone = model.getNode(override.boneName, true);
                 if (bone != null) {
 
+                    model.calculateTransforms();
+
                     tempBoneMat.set(model.transform).inv().mul(target.transform);
 
+                    Node parent = bone.getParent();
+                    if (parent != null) {
+                        parentGlobal.set(parent.globalTransform);
+                    } else {
+                        parentGlobal.idt();
+                    }
 
-                    bone.globalTransform.set(tempBoneMat);
+                    bone.localTransform.set(parentGlobal).inv().mul(tempBoneMat);
+
                     model.calculateTransforms();
                 } else {
                     Log.e("ThreeDManager", "ОШИБКА IK: Кость '" + override.boneName + "' не найдена!");
@@ -2936,9 +2941,14 @@ public class ThreeDManager implements Disposable {
         for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
             String id = entry.getKey();
             if (inactiveRenderObjects.contains(id)) continue;
+            if (skinnedObjectIds.contains(id)) continue;
             ModelInstance inst = entry.getValue();
             com.badlogic.gdx.math.collision.BoundingBox local = objectLocalBounds.get(id);
             if (local == null) {
+                if (countSkinBones(inst) > 0) {
+                    skinnedObjectIds.add(id);
+                    continue;
+                }
                 local = new com.badlogic.gdx.math.collision.BoundingBox();
                 try {
                     inst.calculateBoundingBox(local);
@@ -3386,7 +3396,12 @@ public class ThreeDManager implements Disposable {
             }
             Gdx.gl.glCullFace(GL20.GL_FRONT);
 
-            sceneManager.renderShadows();
+            partCullingEnabled = false;
+            try {
+                sceneManager.renderShadows();
+            } finally {
+                partCullingEnabled = true;
+            }
 
             Gdx.gl.glCullFace(wasCullFace ? prevCullFaceBuf.get(0) : GL20.GL_BACK);
             if (!wasCullFace) {
@@ -3404,6 +3419,7 @@ public class ThreeDManager implements Disposable {
                 Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a);
                 Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
             }
+            partCullingEnabled = false;
             try {
                 sceneManager.renderMirror();
             } catch (Throwable t) {
@@ -3414,6 +3430,7 @@ public class ThreeDManager implements Disposable {
             } catch (Throwable t) {
                 Gdx.app.error("3DManager", "renderTransmission failed", t);
             }
+            partCullingEnabled = true;
             try {
                 sceneManager.renderColors();
             } catch (Throwable t) {
@@ -3579,30 +3596,31 @@ public class ThreeDManager implements Disposable {
 
                     if (realisticMode && sceneManager != null) {
                         depthBatch.render(sceneManager.getRenderableProviders());
-                    }
-                    for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
-                        String id = entry.getKey();
+                    } else {
+                        for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
+                            String id = entry.getKey();
 
-                        if (inactiveRenderObjects.contains(id)) {
-                            continue;
-                        }
+                            if (inactiveRenderObjects.contains(id)) {
+                                continue;
+                            }
 
-                        ModelInstance inst = entry.getValue();
-                        boolean isTransparent = false;
-                        for (Material mat : inst.materials) {
-                            if (mat.has(BlendingAttribute.Type)) {
-                                BlendingAttribute blend = (BlendingAttribute) mat.get(BlendingAttribute.Type);
-                                if (blend.opacity < 0.1f) {
-                                    isTransparent = true;
-                                    break;
+                            ModelInstance inst = entry.getValue();
+                            boolean isTransparent = false;
+                            for (Material mat : inst.materials) {
+                                if (mat.has(BlendingAttribute.Type)) {
+                                    BlendingAttribute blend = (BlendingAttribute) mat.get(BlendingAttribute.Type);
+                                    if (blend.opacity < 0.1f) {
+                                        isTransparent = true;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        if (isTransparent) {
-                            continue;
-                        }
+                            if (isTransparent) {
+                                continue;
+                            }
 
-                        depthBatch.render(getObjectRenderProvider(id, inst));
+                            depthBatch.render(getObjectRenderProvider(id, inst));
+                        }
                     }
 
                     depthBatch.end();
@@ -3668,9 +3686,10 @@ public class ThreeDManager implements Disposable {
 
                     if (realisticMode && sceneManager != null) {
                         materialBatch.render(sceneManager.getRenderableProviders());
-                    }
-                    for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
-                        materialBatch.render(getObjectRenderProvider(entry.getKey(), entry.getValue()));
+                    } else {
+                        for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
+                            materialBatch.render(getObjectRenderProvider(entry.getKey(), entry.getValue()));
+                        }
                     }
 
                     materialBatch.end();
@@ -3693,7 +3712,16 @@ public class ThreeDManager implements Disposable {
                         godRaysEffect.setCamera(camera);
                         godRaysEffect.setSunDirection(getSunLightDirection());
                     }
+                    if (ssgiEffect != null && currentConfig.hasEffect(PostProcessingData.SSGI.class)) {
+                        ssgiEffect.setDepthTexture(depthFbo.getColorBufferTexture());
+                        ssgiEffect.setCamera(camera);
+                    }
+                    if (dofEffect != null && currentConfig.hasEffect(PostProcessingData.DepthOfField.class)) {
+                        dofEffect.setDepthTexture(depthFbo.getColorBufferTexture());
+                        dofEffect.setCamera(camera);
+                    }
                     if (volumetricFogEffect != null && currentConfig.hasEffect(PostProcessingData.VolumetricFog.class)) {
+                        volumetricFogEffect.setDepthTexture(depthFbo.getColorBufferTexture());
                         volumetricFogEffect.setCamera(camera);
 
                         if (pbrLight instanceof net.mgsx.gltf.scene3d.lights.DirectionalShadowLight) {
@@ -3809,7 +3837,15 @@ public class ThreeDManager implements Disposable {
                             Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, skyColor.a);
                             Gdx.gl.glClear(com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT | com.badlogic.gdx.graphics.GL20.GL_DEPTH_BUFFER_BIT);
                         }
-                        sceneManager.render();
+                        partCullingEnabled = false;
+                        try {
+                            sceneManager.renderShadows();
+                            sceneManager.renderMirror();
+                            sceneManager.renderTransmission();
+                        } finally {
+                            partCullingEnabled = true;
+                        }
+                        sceneManager.renderColors();
                     } else {
                         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -3820,14 +3856,27 @@ public class ThreeDManager implements Disposable {
 
                         modelBatch.begin(camera);
 
+                        List<String> failedObjects = new java.util.ArrayList<>();
                         for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
                             String id = entry.getKey();
                             if (inactiveRenderObjects.contains(id)) continue;
                             com.badlogic.gdx.math.collision.BoundingBox world = objectWorldBounds.get(id);
                             if (world != null && !camera.frustum.boundsInFrustum(world)) continue;
-                            modelBatch.render(getObjectRenderProvider(id, entry.getValue()), environment);
+                            try {
+                                modelBatch.render(getObjectRenderProvider(id, entry.getValue()), environment);
+                            } catch (Throwable t) {
+                                Gdx.app.error("3DManager", "Render failed for object '" + id + "' — removing it to keep the game running", t);
+                                failedObjects.add(id);
+                            }
                         }
                         modelBatch.end();
+
+                        for (String id : failedObjects) {
+                            sceneObjects.remove(id);
+                            objectRenderProviders.remove(id);
+                            gltfObjectIds.remove(id);
+                            animationControllers.remove(id);
+                        }
                     }
 
                     if (particleSystemInitialized && !activeParticleEffects.isEmpty()) {
@@ -3889,6 +3938,7 @@ public class ThreeDManager implements Disposable {
             renderScale = 1.0f;
             aspectMode = 0;
             lastRenderedTexture = null;
+            try { resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()); } catch (Exception ignored) { }
 
             try { depthFbo.end(); } catch (Exception ignored) { }
             try { depthBatch.end(); } catch (Exception ignored) { }
@@ -4190,6 +4240,7 @@ public class ThreeDManager implements Disposable {
         public void getRenderables(Array<Renderable> renderables, Pool<Renderable> pool) {
             int startIndex = renderables.size;
             super.getRenderables(renderables, pool);
+            if (!partCullingEnabled) return;
             Camera frustumCamera = realisticMode && sceneManager != null ? sceneManager.camera : camera;
             if (frustumCamera == null) return;
 
@@ -4197,7 +4248,9 @@ public class ThreeDManager implements Disposable {
                 Renderable renderable = renderables.get(index);
                 if (renderable.bones != null) continue;
 
-                renderableBounds.set(renderable.meshPart.center, renderable.meshPart.halfExtents);
+                renderableBounds.min.set(renderable.meshPart.center).sub(renderable.meshPart.halfExtents);
+                renderableBounds.max.set(renderable.meshPart.center).add(renderable.meshPart.halfExtents);
+                renderableBounds.update();
                 renderableBounds.mul(renderable.worldTransform);
                 if (!frustumCamera.frustum.boundsInFrustum(renderableBounds)) {
                     pool.free(renderable);
@@ -5085,6 +5138,7 @@ public class ThreeDManager implements Disposable {
         objectRenderProviders.remove(objectId);
         objectLocalBounds.remove(objectId);
         objectWorldBounds.remove(objectId);
+        skinnedObjectIds.remove(objectId);
         objectShaderPrograms.remove(objectId);
         objectShaderUniformValues.remove(objectId);
         if (instance != null) {
@@ -6273,7 +6327,8 @@ public class ThreeDManager implements Disposable {
         if (csm != null) csm.dispose();
         if (voxelExecutor != null) voxelExecutor.dispose();
         if (fsrShader != null) fsrShader.dispose();
-        if (depthShader != null) depthShader.dispose();
+        if (depthBatch != null) depthBatch.dispose();
+        if (materialBatch != null) materialBatch.dispose();
         if (cachedBloomEffect != null) { cachedBloomEffect.dispose(); cachedBloomEffect = null; }
         if (cachedGaussianBlurEffect != null) { cachedGaussianBlurEffect.dispose(); cachedGaussianBlurEffect = null; }
         if (cachedMotionBlurEffect != null) { cachedMotionBlurEffect.dispose(); cachedMotionBlurEffect = null; }
@@ -6435,7 +6490,12 @@ public class ThreeDManager implements Disposable {
 
         try {
             if (realisticMode && sceneManager != null) {
-                sceneManager.renderShadows();
+                partCullingEnabled = false;
+                try {
+                    sceneManager.renderShadows();
+                } finally {
+                    partCullingEnabled = true;
+                }
             }
 
             targetFbo.begin();
@@ -6444,17 +6504,35 @@ public class ThreeDManager implements Disposable {
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
             if (realisticMode && sceneManager != null) {
-                sceneManager.renderMirror();
-                sceneManager.renderTransmission();
+                partCullingEnabled = false;
+                try {
+                    sceneManager.renderMirror();
+                    sceneManager.renderTransmission();
+                } finally {
+                    partCullingEnabled = true;
+                }
                 sceneManager.renderColors();
             } else {
                 modelBatch.begin(customCamera);
+                List<String> failedObjects = new java.util.ArrayList<>();
                 for (Map.Entry<String, ModelInstance> entry : sceneObjects.entrySet()) {
-                    if (!inactiveRenderObjects.contains(entry.getKey())) {
-                        modelBatch.render(getObjectRenderProvider(entry.getKey(), entry.getValue()), environment);
+                    String id = entry.getKey();
+                    if (inactiveRenderObjects.contains(id)) continue;
+                    try {
+                        modelBatch.render(getObjectRenderProvider(id, entry.getValue()), environment);
+                    } catch (Throwable t) {
+                        Gdx.app.error("3DManager", "Render failed for object '" + id + "' — removing it to keep the game running", t);
+                        failedObjects.add(id);
                     }
                 }
                 modelBatch.end();
+
+                for (String id : failedObjects) {
+                    sceneObjects.remove(id);
+                    objectRenderProviders.remove(id);
+                    gltfObjectIds.remove(id);
+                    animationControllers.remove(id);
+                }
             }
 
             if (particleSystemInitialized && !activeParticleEffects.isEmpty()) {
@@ -6579,8 +6657,21 @@ public class ThreeDManager implements Disposable {
                 newInstance.calculateTransforms();
                 newInstance.calculateBoundingBox(new BoundingBox());
 
-                if (realisticMode) sceneManager.addScene(new net.mgsx.gltf.scene3d.scene.Scene(newInstance));
+                FrustumCulledScene provider = new FrustumCulledScene(newInstance);
+                objectRenderProviders.put(objectId, provider);
+                if (realisticMode) {
+                    if (inactiveRenderObjects.contains(objectId)) {
+                        inactivePbrScenes.put(objectId, provider);
+                    } else {
+                        sceneManager.addScene(provider);
+                    }
+                }
                 sceneObjects.put(objectId, newInstance);
+
+                Model staleModel = oldInstance != null ? oldInstance.model : null;
+                if (staleModel != null && staleModel != model && !loadedModels.containsValue(staleModel)) {
+                    staleModel.dispose();
+                }
 
                 btRigidBody body = physicsBodies.get(objectId);
                 if (body != null) {
@@ -6805,25 +6896,59 @@ public class ThreeDManager implements Disposable {
     }
 }
 
+class DepthShaderProvider extends DefaultShaderProvider {
+    private final String vertexSource;
+    private final String fragmentSource;
+
+    DepthShaderProvider(String vertexSource, String fragmentSource) {
+        this.vertexSource = vertexSource;
+        this.fragmentSource = fragmentSource;
+    }
+
+    @Override
+    protected Shader createShader(Renderable renderable) {
+        int boneCount = renderable.bones != null ? Math.min(256, renderable.bones.length) : 0;
+        String prefix = "";
+        if (boneCount > 0) {
+            prefix += "#define numBones " + boneCount + "\n";
+            prefix += "#define boneWeight0Flag\n";
+            prefix += "#define boneWeight1Flag\n";
+            prefix += "#define boneWeight2Flag\n";
+            prefix += "#define boneWeight3Flag\n";
+        }
+        ShaderProgram program = new ShaderProgram(prefix + vertexSource, prefix + fragmentSource);
+        if (!program.isCompiled()) {
+            Log.e("3DManager", "Depth Shader Error: " + program.getLog());
+        }
+        return new DepthShader(program, boneCount);
+    }
+}
+
 class DepthShader implements com.badlogic.gdx.graphics.g3d.Shader {
     ShaderProgram program;
     Camera camera;
 
+    private final int boneCount;
     private int u_bones = -1;
     private int u_objReflectivity = -1;
 
 
     private static final float[] boneBuffer = new float[256 * 16];
 
-    public DepthShader(ShaderProgram program) {
+    public DepthShader(ShaderProgram program, int boneCount) {
         this.program = program;
+        this.boneCount = boneCount;
         this.u_bones = program.getUniformLocation("u_bones");
         this.u_objReflectivity = program.getUniformLocation("u_objReflectivity");
     }
 
     @Override public void init() {}
     @Override public int compareTo(Shader other) { return 0; }
-    @Override public boolean canRender(Renderable instance) { return true; }
+    @Override public boolean canRender(Renderable instance) {
+        int n = instance.bones == null ? 0 : instance.bones.length;
+        if (n == 0) return boneCount == 0;
+        return boneCount > 0 && (n <= boneCount || boneCount >= 256);
+    }
 
     @Override
     public void begin(Camera camera, com.badlogic.gdx.graphics.g3d.utils.RenderContext context) {
@@ -6904,12 +7029,24 @@ class MaterialShaderProvider extends DefaultShaderProvider {
 
         String vsh = prefix +
                 "attribute vec3 a_position;\n" +
+                "#ifdef boneWeight0Flag\nattribute vec2 a_boneWeight0;\n#endif\n" +
+                "#ifdef boneWeight1Flag\nattribute vec2 a_boneWeight1;\n#endif\n" +
+                "#ifdef boneWeight2Flag\nattribute vec2 a_boneWeight2;\n#endif\n" +
+                "#ifdef boneWeight3Flag\nattribute vec2 a_boneWeight3;\n#endif\n" +
+                "#ifdef numBones\nuniform mat4 u_bones[numBones];\n#endif\n" +
                 "#ifdef HAS_UV\nattribute vec2 a_texCoord0;\nvarying vec2 v_uv;\n#endif\n" +
                 "uniform mat4 u_projViewTrans;\n" +
                 "uniform mat4 u_worldTrans;\n" +
                 "void main() {\n" +
                 "#ifdef HAS_UV\n    v_uv = a_texCoord0;\n#endif\n" +
-                "    gl_Position = u_projViewTrans * u_worldTrans * vec4(a_position, 1.0);\n" +
+                "    mat4 skinning = mat4(1.0);\n" +
+                "#ifdef numBones\n" +
+                "    skinning = (a_boneWeight0.y * u_bones[int(a_boneWeight0.x)])\n" +
+                "               + (a_boneWeight1.y * u_bones[int(a_boneWeight1.x)])\n" +
+                "               + (a_boneWeight2.y * u_bones[int(a_boneWeight2.x)])\n" +
+                "               + (a_boneWeight3.y * u_bones[int(a_boneWeight3.x)]);\n" +
+                "#endif\n" +
+                "    gl_Position = u_projViewTrans * u_worldTrans * skinning * vec4(a_position, 1.0);\n" +
                 "}";
 
         String fsh = prefix +
