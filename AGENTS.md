@@ -287,3 +287,26 @@ Neo-раздел «Neo3D» в OBJECT_TAG — пример массовой ре�
 
 Протухший инкрементальный kapt (`cannot find symbol` на ровном месте): `./gradlew --stop` + удалить `catroid/build/tmp/kapt3`.
 Jolt abi: `armeabi-v7a` + `arm64-v8a` + `x86_64`, проверять `:catroid:buildCMakeDebug[<abi>]`.
+
+# Задачи сборки APK (имена забываются):
+
+Схема: `assemble<Flavor><BuildType>` (регистр верблюжий, флавор — имя из `productFlavors`).
+
+```bash
+./gradlew :catroid:assembleChatDebug              # chat, отладка
+./gradlew :catroid:assembleChatRelease            # chat, релиз (proguard)
+./gradlew :catroid:assembleChatStoreRelease       # chat, стор (без minify)
+./gradlew :catroid:assembleDebugChatStoreRelease  # chat с debug-пакетом (org.ivproduction.neocatroid.debug.chat), стор-тип
+
+./gradlew :catroid:assembleCatroidDebug           # catroid, отладка
+./gradlew :catroid:assembleCatroidRelease         # catroid, релиз
+./gradlew :catroid:assembleCatroidStoreRelease    # catroid, стор
+./gradlew :catroid:assembleDanvexDebug            # danvex (дефолтный флавор, org.DanVexTeam.NeoCatroid), отладка
+./gradlew :catroid:assembleDanvexStoreRelease     # danvex, стор
+```
+
+*   Флаворы: `danvex` (дефолт), `catroid`, `chat`, `debugChat`, `standalone`, `runtime`, `createAtSchool`, `embroideryDesigner`, `lunaAndCat`, `phiro`, `pocketCodeBeta`, `mindstorms`.
+*   `chat` / `debugChat` — лёгкие: только `arm64-v8a`, Python/QEMU-блоки скрыты из палитры. `debugChat` ставится рядом (отдельный applicationId).
+*   Типы: `debug`, `release` (minify+proguard), `signedRelease` (proguard+ключ), `storeRelease` (без minify; подпись своим ключом только с `-PsigningKeystore=... -PsigningKeystorePassword=... -PsigningKeyAlias=... -PsigningKeyPassword=...`, иначе debug-ключ), `template`.
+*   APK лежит в `catroid/build/outputs/apk/<флавор>/<тип>/`.
+*   Прочие варианты (в play не собирать): `assembleDebugTest`, `:catroid:assembleStandaloneDebug`, `:catroid:assembleRuntimeDebug`.
