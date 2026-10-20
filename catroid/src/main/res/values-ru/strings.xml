@@ -6260,7 +6260,6 @@
     <string formatted="false" name="dialog_privacy_policy_text">Чтобы предоставить вам все преимущества наших сервисов и связанной с ними учётной записи, необходимо собирать определённые данные о вас. Подробная политика конфиденциальности Catrobat (версия 2.2, 17 октября 2019) доступна по адресу https://catrob.at/privacypolicy. Если вам меньше 14 лет, эту политику должен принять законный представитель (обычно родитель). Чтобы связаться с нами, напишите на contact@catrobat.org.</string>
 
     <!-- Misc missing strings -->
-    <string name="admob_application_id">ca-app-pub-3940256099942544~3347511713</string>
     <string name="cancel_button_text">Отмена</string>
     <string name="category_global">Глобальные</string>
     <string name="discard_button_text">Отменить</string>
@@ -7227,4 +7226,8 @@ Catrobat — это визуальный язык программировани
     <string name="formula_editor_bitwise_shift_right" formatted="false">&gt;&gt;</string>
     <string name="formula_editor_bitwise_unsigned_shift_right" formatted="false">&gt;&gt;&gt;</string>
     <string name="formula_editor_bitwise_category" formatted="false">Битовые</string>
+    <string name="developer_support_prompt_title">Поддержи разработчика</string>
+    <string name="developer_support_prompt_message">Проект делает один человек. Посмотри короткую рекламу в знак поддержки.</string>
+    <string name="developer_support_watch_ad">Посмотреть рекламу</string>
+    <string name="developer_support_not_now">Не сейчас</string>
 </resources>

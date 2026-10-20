@@ -51,6 +51,7 @@ object AdMobManager {
     private var appOpenAd: AppOpenAd? = null
     @Volatile private var isSdkInitializing = false
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val initializationCallbacks = mutableListOf<Pair<(() -> Unit)?, (() -> Unit)?>>()
 
     private val eventCallbacks = mutableListOf<(EventId) -> Unit>()
 
@@ -83,11 +84,6 @@ object AdMobManager {
     }
 
     fun enableTestMode() {
-        if (isInitialized) {
-            Log.w(TAG, "enableTestMode() after initialize() has no effect: " +
-                "test device configuration must be set before MobileAds.initialize(). " +
-                "Put the Enable test mode brick before the Init AdMob brick.")
-        }
         isTestMode = true
         val testDeviceIds = listOf(AdRequest.DEVICE_ID_EMULATOR)
         MobileAds.setRequestConfiguration(
@@ -96,29 +92,61 @@ object AdMobManager {
     }
 
 
-    fun initialize(activity: Activity) {
-        if (isInitialized || isSdkInitializing) return
-        isSdkInitializing = true
-        try {
-            MobileAds.initialize(activity) { status ->
-                isSdkInitializing = false
-                isInitialized = true
-                mainHandler.post {
-                    if (status.adapterStatusMap.values.any { it.initializationState == com.google.android.gms.ads.initialization.AdapterStatus.State.READY }) {
-                        Log.d(TAG, "AdMob initialized successfully")
-                        fireEvent(EventId.ADMOB_INITIALIZED)
-                    } else {
-                        Log.w(TAG, "AdMob initialization incomplete")
-                        fireEvent(EventId.ADMOB_INIT_FAILED)
+    fun initialize(activity: Activity) = initialize(activity, null, null)
+
+    fun initialize(activity: Activity, onInitialized: (() -> Unit)?) =
+        initialize(activity, onInitialized, null)
+
+    fun initialize(
+        activity: Activity,
+        onInitialized: (() -> Unit)?,
+        onInitializationFailed: (() -> Unit)?
+    ) {
+        mainHandler.post {
+            if (isInitialized) {
+                if (onInitialized == null) fireEvent(EventId.ADMOB_INITIALIZED)
+                onInitialized?.invoke()
+                return@post
+            }
+            initializationCallbacks.add(onInitialized to onInitializationFailed)
+            if (isSdkInitializing) return@post
+
+            isSdkInitializing = true
+            try {
+                MobileAds.initialize(activity) { status ->
+                    mainHandler.post {
+                        isSdkInitializing = false
+                        isInitialized = true
+                        if (status.adapterStatusMap.values.any { it.initializationState == com.google.android.gms.ads.initialization.AdapterStatus.State.READY }) {
+                            Log.d(TAG, "AdMob initialized successfully")
+                            fireEvent(EventId.ADMOB_INITIALIZED)
+                        } else {
+                            Log.w(TAG, "AdMob initialization incomplete")
+                            fireEvent(EventId.ADMOB_INIT_FAILED)
+                        }
+                        invokeInitializationCallbacks(success = true)
                     }
                 }
+            } catch (e: Exception) {
+                isSdkInitializing = false
+                lastErrorCode = -1
+                lastErrorMessage = e.message ?: "Unknown error"
+                Log.e(TAG, "AdMob initialization failed", e)
+                invokeInitializationCallbacks(success = false)
+                fireEvent(EventId.ADMOB_INIT_FAILED)
             }
-        } catch (e: Exception) {
-            isSdkInitializing = false
-            lastErrorCode = -1
-            lastErrorMessage = e.message ?: "Unknown error"
-            Log.e(TAG, "AdMob initialization failed", e)
-            mainHandler.post { fireEvent(EventId.ADMOB_INIT_FAILED) }
+        }
+    }
+
+    private fun invokeInitializationCallbacks(success: Boolean) {
+        val callbacks = initializationCallbacks.toList()
+        initializationCallbacks.clear()
+        callbacks.forEach { (onInitialized, onInitializationFailed) ->
+            try {
+                (if (success) onInitialized else onInitializationFailed)?.invoke()
+            } catch (e: Exception) {
+                Log.e(TAG, "AdMob initialization callback failed", e)
+            }
         }
     }
 

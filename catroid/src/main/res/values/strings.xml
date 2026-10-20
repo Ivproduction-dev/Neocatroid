@@ -4208,6 +4208,7 @@
 <string formatted="false" name="brick_enable_background">Enable background work</string>
 <string formatted="false" name="brick_stop_background">Stop background work</string>
 <string name="category_admob">AdMob</string>
+<!-- TODO(release): Replace Google's test App ID with NeoCatroid's production App ID. -->
 <string name="admob_application_id">ca-app-pub-3940256099942544~3347511713</string>
 <string name="brick_admob_enable_test_mode">Enable test mode</string>
 <string name="brick_admob_set_app_id">Set App ID</string>
@@ -6407,4 +6408,10 @@ needs read and write access to it. You can always change permissions through you
         <item quantity="one">Imported %d project.</item>
         <item quantity="other">Imported %d projects.</item>
     </plurals>
+    <string name="developer_support_prompt_title">Support the developer</string>
+    <string name="developer_support_prompt_message">This project is made by one person. Watch a short ad to show your support.</string>
+    <string name="developer_support_watch_ad">Watch ad</string>
+    <string name="developer_support_not_now">Not now</string>
+    <!-- TODO(release): Replace Google's test rewarded ad unit ID with the production ID. -->
+    <string name="developer_support_rewarded_ad_unit_id">ca-app-pub-3940256099942544/5224354917</string>
 </resources>

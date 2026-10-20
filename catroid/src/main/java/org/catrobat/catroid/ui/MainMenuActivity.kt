@@ -40,6 +40,7 @@ import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.Lifecycle
 import androidx.core.text.HtmlCompat
 import androidx.lifecycle.lifecycleScope
 import com.danvexteam.lunoscript_annotations.LunoClass
@@ -50,6 +51,7 @@ import org.catrobat.catroid.BuildConfig
 import org.catrobat.catroid.CatroidApplication
 import org.catrobat.catroid.ProjectManager
 import org.catrobat.catroid.R
+import org.catrobat.catroid.admob.DeveloperSupportPrompt
 import org.catrobat.catroid.apkbuild.PayloadDecryptor
 import org.catrobat.catroid.apkbuild.ProtectedProjectPayload
 import org.catrobat.catroid.cast.CastManager
@@ -105,9 +107,13 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
 
     private var safeModeTapCounter = 0
     private var lastTapTime: Long = 0
+    private var developerSupportAdLoaded = false
+    private var developerSupportUiReady = false
+    private var developerSupportPromptShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestDeveloperSupportPrompt()
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             BaseExceptionHandler(applicationContext).uncaughtException(thread, throwable)
@@ -256,6 +262,8 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
                             .setInterpolator(android.view.animation.AccelerateInterpolator())
                             .withEndAction {
                                 windowContent.removeView(loadingBinding.root)
+                                developerSupportUiReady = true
+                                maybeShowDeveloperSupportPrompt()
                             }
                             .start()
                     }
@@ -293,8 +301,36 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
                     Log.e(TAG, "heavyInitialization failed", e)
                 }
                 loadFinalContent()
+                developerSupportUiReady = true
+                maybeShowDeveloperSupportPrompt()
             }
         }
+    }
+
+    private fun requestDeveloperSupportPrompt() {
+        DeveloperSupportPrompt.request(
+            this,
+            getString(R.string.developer_support_rewarded_ad_unit_id)
+        ) {
+            developerSupportAdLoaded = true
+            maybeShowDeveloperSupportPrompt()
+        }
+    }
+
+    private fun maybeShowDeveloperSupportPrompt() {
+        if (!developerSupportAdLoaded || !developerSupportUiReady || developerSupportPromptShown) return
+        if (isFinishing || isDestroyed || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+
+        developerSupportPromptShown = true
+        DeveloperSupportPrompt.markPromptDisplayed()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.developer_support_prompt_title)
+            .setMessage(R.string.developer_support_prompt_message)
+            .setPositiveButton(R.string.developer_support_watch_ad) { _, _ ->
+                DeveloperSupportPrompt.show(this)
+            }
+            .setNegativeButton(R.string.developer_support_not_now, null)
+            .show()
     }
 
     private fun showRandomFacts() {
@@ -430,6 +466,8 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
 
             CastManager.getInstance().addCallback()
         }
+
+        maybeShowDeveloperSupportPrompt()
 
 
     }
