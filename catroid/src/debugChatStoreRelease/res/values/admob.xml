@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Production AdMob IDs for the DebugChatStoreRelease APK. -->
+    <string name="admob_application_id">ca-app-pub-3716612835624842~9254390016</string>
+    <string name="developer_support_rewarded_ad_unit_id">ca-app-pub-3716612835624842/2936393679</string>
+</resources>
