@@ -37,11 +37,14 @@ struct Endpoint {
     std::string peerIp;
     int peerPort = -1;
     std::atomic<bool> running{false};
+    std::atomic<bool> destroyed{false};
     std::thread recvThread;
     std::mutex mutex;
     std::deque<Message> queue;
     long lastSeq = -2;
     std::string lastText;
+    std::string lastIp;
+    int lastPort = -1;
     long sendSeq = 0;
 };
 
@@ -74,26 +77,26 @@ int makeSocket() {
     if (fd < 0) {
         return -1;
     }
-    int reuse = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
     int broadcast = 1;
     setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
     return fd;
 }
 
-sockaddr_in makeAddr(const std::string &ip, int port) {
-    sockaddr_in addr{};
+bool parseAddr(const std::string &ip, int port, sockaddr_in &addr) {
+    addr = sockaddr_in{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(static_cast<uint16_t>(port));
-    inet_pton(AF_INET, ip.c_str(), &addr.sin_addr);
-    return addr;
+    return inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) == 1;
 }
 
 bool sendRaw(int fd, const std::string &ip, int port, const std::string &data) {
     if (data.size() > static_cast<size_t>(MAX_DATAGRAM)) {
         return false;
     }
-    sockaddr_in addr = makeAddr(ip, port);
+    sockaddr_in addr{};
+    if (!parseAddr(ip, port, addr)) {
+        return false;
+    }
     ssize_t sent = sendto(fd, data.data(), data.size(), 0,
             reinterpret_cast<sockaddr *>(&addr), sizeof(addr));
     return sent == static_cast<ssize_t>(data.size());
@@ -102,11 +105,14 @@ bool sendRaw(int fd, const std::string &ip, int port, const std::string &data) {
 void pushMessage(Endpoint *endpoint, long seq, const std::string &text,
         const std::string &fromIp, int fromPort) {
     std::lock_guard<std::mutex> lock(endpoint->mutex);
-    if (seq == endpoint->lastSeq && text == endpoint->lastText) {
+    if (seq >= 0 && seq == endpoint->lastSeq && text == endpoint->lastText &&
+            fromIp == endpoint->lastIp && fromPort == endpoint->lastPort) {
         return;
     }
     endpoint->lastSeq = seq;
     endpoint->lastText = text;
+    endpoint->lastIp = fromIp;
+    endpoint->lastPort = fromPort;
     Message message{seq, text, fromIp, fromPort};
     endpoint->queue.push_back(std::move(message));
     while (endpoint->queue.size() > static_cast<size_t>(MAX_QUEUE)) {
@@ -117,13 +123,17 @@ void pushMessage(Endpoint *endpoint, long seq, const std::string &text,
 void recvLoop(Endpoint *endpoint) {
     std::vector<char> buffer(MAX_DATAGRAM);
     while (endpoint->running.load()) {
+        int fd = endpoint->fd;
+        if (fd < 0) {
+            break;
+        }
         fd_set readSet;
         FD_ZERO(&readSet);
-        FD_SET(endpoint->fd, &readSet);
+        FD_SET(fd, &readSet);
         timeval timeout{};
         timeout.tv_sec = 0;
         timeout.tv_usec = 100000;
-        int ready = select(endpoint->fd + 1, &readSet, nullptr, nullptr, &timeout);
+        int ready = select(fd + 1, &readSet, nullptr, nullptr, &timeout);
         if (!endpoint->running.load()) {
             break;
         }
@@ -132,7 +142,7 @@ void recvLoop(Endpoint *endpoint) {
         }
         sockaddr_in sender{};
         socklen_t senderLen = sizeof(sender);
-        ssize_t received = recvfrom(endpoint->fd, buffer.data(), buffer.size(), 0,
+        ssize_t received = recvfrom(fd, buffer.data(), buffer.size(), 0,
                 reinterpret_cast<sockaddr *>(&sender), &senderLen);
         if (received <= 0) {
             continue;
@@ -145,14 +155,6 @@ void recvLoop(Endpoint *endpoint) {
         inet_ntop(AF_INET, &sender.sin_addr, ipText, sizeof(ipText));
         std::string fromIp(ipText);
         int fromPort = ntohs(sender.sin_port);
-        if (startsWith(text, PING_PREFIX)) {
-            std::string reply = std::string(PONG_PREFIX) + text.substr(strlen(PING_PREFIX));
-            sendRaw(endpoint->fd, fromIp, fromPort, reply);
-            continue;
-        }
-        if (startsWith(text, PONG_PREFIX)) {
-            continue;
-        }
         long seq = -1;
         std::string payload = text;
         if (!text.empty() && text[0] == U_PREFIX) {
@@ -166,18 +168,28 @@ void recvLoop(Endpoint *endpoint) {
                 }
             }
         }
+        if (startsWith(payload, PING_PREFIX)) {
+            std::string reply = std::string(PONG_PREFIX) + payload.substr(strlen(PING_PREFIX));
+            sendRaw(fd, fromIp, fromPort, reply);
+            continue;
+        }
         pushMessage(endpoint, seq, payload, fromIp, fromPort);
     }
 }
 
-void stopLocked(Endpoint *endpoint) {
-    endpoint->running.store(false);
+void closeFdLocked(Endpoint *endpoint) {
     if (endpoint->fd >= 0) {
-        shutdown(endpoint->fd, SHUT_RDWR);
         close(endpoint->fd);
         endpoint->fd = -1;
     }
     endpoint->boundPort = -1;
+}
+
+void resetDedupLocked(Endpoint *endpoint) {
+    endpoint->lastSeq = -2;
+    endpoint->lastText.clear();
+    endpoint->lastIp.clear();
+    endpoint->lastPort = -1;
 }
 
 }
@@ -193,15 +205,16 @@ jlong Java_org_catrobat_catroid_content_UdpNative_nativeCreate(JNIEnv *env, jobj
 
 void Java_org_catrobat_catroid_content_UdpNative_nativeDestroy(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.exchange(true)) {
         return;
+    }
+    endpoint->running.store(false);
+    if (endpoint->recvThread.joinable()) {
+        endpoint->recvThread.join();
     }
     {
         std::lock_guard<std::mutex> lock(endpoint->mutex);
-        stopLocked(endpoint);
-    }
-    if (endpoint->recvThread.joinable()) {
-        endpoint->recvThread.join();
+        closeFdLocked(endpoint);
     }
     {
         std::lock_guard<std::mutex> lock(g_mutex);
@@ -217,15 +230,20 @@ void Java_org_catrobat_catroid_content_UdpNative_nativeDestroy(JNIEnv *env, jobj
 
 jboolean Java_org_catrobat_catroid_content_UdpNative_nativeStart(JNIEnv *env, jobject, jlong handle, jint port) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return JNI_FALSE;
     }
+    if (port < 0 || port > 65535) {
+        return JNI_FALSE;
+    }
+    endpoint->running.store(false);
     if (endpoint->recvThread.joinable()) {
         endpoint->recvThread.join();
     }
     {
         std::lock_guard<std::mutex> lock(endpoint->mutex);
-        stopLocked(endpoint);
+        closeFdLocked(endpoint);
+        resetDedupLocked(endpoint);
         int fd = makeSocket();
         if (fd < 0) {
             return JNI_FALSE;
@@ -238,15 +256,22 @@ jboolean Java_org_catrobat_catroid_content_UdpNative_nativeStart(JNIEnv *env, jo
             close(fd);
             return JNI_FALSE;
         }
+        sockaddr_in boundAddr{};
+        socklen_t boundLen = sizeof(boundAddr);
+        if (getsockname(fd, reinterpret_cast<sockaddr *>(&boundAddr), &boundLen) == 0) {
+            endpoint->boundPort = ntohs(boundAddr.sin_port);
+        } else {
+            endpoint->boundPort = port;
+        }
         endpoint->fd = fd;
-        endpoint->boundPort = port;
         endpoint->running.store(true);
     }
     try {
         endpoint->recvThread = std::thread(recvLoop, endpoint);
     } catch (...) {
+        endpoint->running.store(false);
         std::lock_guard<std::mutex> lock(endpoint->mutex);
-        stopLocked(endpoint);
+        closeFdLocked(endpoint);
         return JNI_FALSE;
     }
     return JNI_TRUE;
@@ -254,22 +279,21 @@ jboolean Java_org_catrobat_catroid_content_UdpNative_nativeStart(JNIEnv *env, jo
 
 void Java_org_catrobat_catroid_content_UdpNative_nativeStop(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return;
     }
-    {
-        std::lock_guard<std::mutex> lock(endpoint->mutex);
-        stopLocked(endpoint);
-    }
+    endpoint->running.store(false);
     if (endpoint->recvThread.joinable()) {
         endpoint->recvThread.join();
     }
+    std::lock_guard<std::mutex> lock(endpoint->mutex);
+    closeFdLocked(endpoint);
 }
 
 void Java_org_catrobat_catroid_content_UdpNative_nativeConnect(JNIEnv *env, jobject, jlong handle,
         jstring ip, jint port) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return;
     }
     std::lock_guard<std::mutex> lock(endpoint->mutex);
@@ -279,7 +303,7 @@ void Java_org_catrobat_catroid_content_UdpNative_nativeConnect(JNIEnv *env, jobj
 
 void Java_org_catrobat_catroid_content_UdpNative_nativeDisconnectPeer(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return;
     }
     std::lock_guard<std::mutex> lock(endpoint->mutex);
@@ -290,7 +314,7 @@ void Java_org_catrobat_catroid_content_UdpNative_nativeDisconnectPeer(JNIEnv *en
 jstring Java_org_catrobat_catroid_content_UdpNative_nativeGetPeerIp(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
     std::string ip;
-    if (endpoint) {
+    if (endpoint && !endpoint->destroyed.load()) {
         std::lock_guard<std::mutex> lock(endpoint->mutex);
         ip = endpoint->peerIp;
     }
@@ -299,7 +323,7 @@ jstring Java_org_catrobat_catroid_content_UdpNative_nativeGetPeerIp(JNIEnv *env,
 
 jint Java_org_catrobat_catroid_content_UdpNative_nativeGetPeerPort(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return -1;
     }
     std::lock_guard<std::mutex> lock(endpoint->mutex);
@@ -308,7 +332,7 @@ jint Java_org_catrobat_catroid_content_UdpNative_nativeGetPeerPort(JNIEnv *env, 
 
 jint Java_org_catrobat_catroid_content_UdpNative_nativeGetBoundPort(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return -1;
     }
     std::lock_guard<std::mutex> lock(endpoint->mutex);
@@ -317,7 +341,7 @@ jint Java_org_catrobat_catroid_content_UdpNative_nativeGetBoundPort(JNIEnv *env,
 
 jboolean Java_org_catrobat_catroid_content_UdpNative_nativeIsRunning(JNIEnv *env, jobject, jlong handle) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return JNI_FALSE;
     }
     return endpoint->running.load() ? JNI_TRUE : JNI_FALSE;
@@ -326,27 +350,23 @@ jboolean Java_org_catrobat_catroid_content_UdpNative_nativeIsRunning(JNIEnv *env
 jboolean Java_org_catrobat_catroid_content_UdpNative_nativeSendTo(JNIEnv *env, jobject, jlong handle,
         jstring ip, jint port, jstring text) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return JNI_FALSE;
     }
     std::string targetIp = jstringToString(env, ip);
     std::string payload = jstringToString(env, text);
-    long seq;
-    int fd;
+    std::string data;
+    data.reserve(payload.size() + 16);
     {
         std::lock_guard<std::mutex> lock(endpoint->mutex);
         endpoint->sendSeq++;
-        seq = endpoint->sendSeq;
-        fd = endpoint->fd;
-    }
-    std::string data;
-    data.reserve(payload.size() + 16);
-    data.push_back(U_PREFIX);
-    data += std::to_string(seq);
-    data.push_back(':');
-    data += payload;
-    if (fd >= 0) {
-        return sendRaw(fd, targetIp, port, data) ? JNI_TRUE : JNI_FALSE;
+        data.push_back(U_PREFIX);
+        data += std::to_string(endpoint->sendSeq);
+        data.push_back(':');
+        data += payload;
+        if (endpoint->fd >= 0) {
+            return sendRaw(endpoint->fd, targetIp, port, data) ? JNI_TRUE : JNI_FALSE;
+        }
     }
     int tmp = makeSocket();
     if (tmp < 0) {
@@ -360,7 +380,7 @@ jboolean Java_org_catrobat_catroid_content_UdpNative_nativeSendTo(JNIEnv *env, j
 jboolean Java_org_catrobat_catroid_content_UdpNative_nativeSendToPeer(JNIEnv *env, jobject, jlong handle,
         jstring text) {
     Endpoint *endpoint = fromHandle(handle);
-    if (!endpoint) {
+    if (!endpoint || endpoint->destroyed.load()) {
         return JNI_FALSE;
     }
     std::string peerIp;
@@ -388,12 +408,15 @@ jobjectArray Java_org_catrobat_catroid_content_UdpNative_nativeDrain(JNIEnv *env
         return nullptr;
     }
     std::vector<Message> taken;
-    if (endpoint) {
+    if (endpoint && !endpoint->destroyed.load()) {
         std::lock_guard<std::mutex> lock(endpoint->mutex);
         taken.assign(endpoint->queue.begin(), endpoint->queue.end());
         endpoint->queue.clear();
     }
     jobjectArray result = env->NewObjectArray(static_cast<jsize>(taken.size()), messageClass, nullptr);
+    if (!result) {
+        return nullptr;
+    }
     for (size_t i = 0; i < taken.size(); i++) {
         jstring text = env->NewStringUTF(taken[i].text.c_str());
         jstring fromIp = env->NewStringUTF(taken[i].fromIp.c_str());

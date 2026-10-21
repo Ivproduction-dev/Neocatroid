@@ -1,6 +1,6 @@
 package org.catrobat.catroid.content.actions
 
-import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction
+import com.badlogic.gdx.scenes.scene2d.Action
 import org.catrobat.catroid.content.LocalServer
 import org.catrobat.catroid.content.Scope
 import org.catrobat.catroid.content.TcpNode
@@ -8,7 +8,7 @@ import org.catrobat.catroid.formulaeditor.Formula
 import org.catrobat.catroid.formulaeditor.UserVariable
 import kotlin.concurrent.thread
 
-class TcpPingAction() : TemporalAction() {
+class TcpPingAction() : Action() {
     var scope: Scope? = null
     var serverName: Formula? = null
     var ip: Formula? = null
@@ -16,22 +16,42 @@ class TcpPingAction() : TemporalAction() {
     var variable: UserVariable? = null
     var measure: Boolean = false
     var timeout: Formula? = null
-    @Volatile private var started = false
 
-    override fun update(percent: Float) {
-        if (started) {
+    @Volatile private var started = false
+    @Volatile private var finished = false
+    @Volatile private var generation = 0
+
+    override fun act(delta: Float): Boolean {
+        if (!started) {
+            started = true
+            start()
+        }
+        return finished
+    }
+
+    override fun reset() {
+        generation++
+        started = false
+        finished = false
+        super.reset()
+    }
+
+    private fun start() {
+        val scope = scope
+        if (scope == null) {
+            finished = true
             return
         }
-        started = true
-        val scope = scope ?: return
+        val gen = generation
         val name = serverName?.interpretString(scope)
         val ipStr = ip?.interpretString(scope)
         val portInt = port?.interpretString(scope)?.toIntOrNull()
-        val timeoutMs = timeout?.interpretString(scope)?.toIntOrNull()?.coerceAtLeast(500)
-            ?: TcpNode.PING_TIMEOUT_MS
+        val timeoutMs = timeout?.interpretString(scope)?.toIntOrNull()
+            ?.coerceIn(MIN_TIMEOUT_MS, MAX_TIMEOUT_MS) ?: TcpNode.PING_TIMEOUT_MS
         val target = variable
+        val measure = measure
         thread {
-            try {
+            val value = try {
                 val result = if (!name.isNullOrEmpty()) {
                     LocalServer.pingNamed(name, timeoutMs)
                 } else if (ipStr != null && portInt != null) {
@@ -39,18 +59,19 @@ class TcpPingAction() : TemporalAction() {
                 } else {
                     null
                 }
-                if (target != null) {
-                    if (measure) {
-                        target.value = result?.ms?.toString() ?: "-1"
-                    } else {
-                        target.value = (result?.ok == true).toString()
-                    }
-                }
+                if (measure) result?.ms?.toString() ?: "-1" else (result?.ok == true).toString()
             } catch (e: Exception) {
-                if (target != null) {
-                    target.value = if (measure) "-1" else "false"
-                }
+                if (measure) "-1" else "false"
+            }
+            if (gen == generation) {
+                target?.value = value
+                finished = true
             }
         }
+    }
+
+    companion object {
+        const val MIN_TIMEOUT_MS = 200
+        const val MAX_TIMEOUT_MS = 60000
     }
 }

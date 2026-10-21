@@ -28,6 +28,15 @@ public class SetTcpServerTimeoutBrick extends FormulaBrick {
 		setFormulaWithBrickField(BrickField.VALUE, timeout);
 	}
 
+	public SetTcpServerTimeoutBrick(int timeout, String serverName) {
+		this(new Formula(String.valueOf(timeout)), new Formula(serverName));
+	}
+
+	public SetTcpServerTimeoutBrick(Formula timeout, Formula serverName) {
+		this(timeout);
+		setFormulaWithBrickField(BrickField.TEXT, serverName);
+	}
+
 	@Override
 	public int getViewResource() {
 		return R.layout.brick_set_tcp_timeout;

@@ -2124,7 +2124,7 @@
     <string formatted="false" name="brick_send_to_tcp_clients_echo_no">without echo to self</string>
     <string formatted="false" name="brick_send_to_tcp_clients_echo_yes">with echo to self</string>
     <string formatted="false" name="brick_when_tcp_message">When TCP message received</string>
-    <string formatted="false" name="brick_when_tcp_disconnected">When disconnected by TCP server timeout</string>
+    <string formatted="false" name="brick_when_tcp_disconnected">When TCP server timeout</string>
 <string formatted="false" name="brick_listen_tcp_server">Listen TCP server and store</string>
 <string formatted="false" name="brick_tcp_server_name">server</string>
 <string formatted="false" name="brick_start_tcp_server_named">Start TCP server</string>
@@ -2148,6 +2148,11 @@
 <string formatted="false" name="brick_send_udp">Send UDP</string>
 <string formatted="false" name="brick_listen_udp">Listen UDP and store</string>
 <string formatted="false" name="brick_when_udp_message">When UDP message received</string>
+<string formatted="false" name="brick_udp_ping">PING-PONG UDP endpoint</string>
+<string formatted="false" name="brick_udp_ping2">store answer in</string>
+<string formatted="false" name="brick_udp_measure_ping">Measure PING-PONG of UDP endpoint</string>
+<string formatted="false" name="brick_udp_measure_ping2">store value in</string>
+<string formatted="false" name="brick_udp_ping_timeout">wait reply (ms)</string>
 <string formatted="false" name="formula_external_ip">External_ip</string>
 <string formatted="false" name="brick_screenshot">Take screenshot and store it as look</string>
 <string formatted="false" name="formula_editor_function_distance">levenshtein distance</string>

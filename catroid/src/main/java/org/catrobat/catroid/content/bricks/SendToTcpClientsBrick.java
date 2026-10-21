@@ -52,12 +52,27 @@ public class SendToTcpClientsBrick extends FormulaBrick implements BrickSpinner.
 		setFormulaWithBrickField(BrickField.VALUE, value);
 	}
 
+	public SendToTcpClientsBrick(String serverName, String value) {
+		this(new Formula(serverName), new Formula(value));
+	}
+
+	public SendToTcpClientsBrick(Formula serverName, Formula value) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, serverName);
+		setFormulaWithBrickField(BrickField.VALUE, value);
+	}
+
 	public int getVisibleFields() {
 		return visibleFields;
 	}
 
 	public void setVisibleFields(int visibleFields) {
 		this.visibleFields = visibleFields;
+		this.rowVisible = newRowVisible();
+		int count = Math.max(1, Math.min(ROW_COUNT, visibleFields));
+		for (int i = 0; i < count; i++) {
+			rowVisible[i] = true;
+		}
 	}
 
 	public int getEchoMode() {
@@ -69,7 +84,7 @@ public class SendToTcpClientsBrick extends FormulaBrick implements BrickSpinner.
 	}
 
 	public boolean[] getRowVisible() {
-		if (rowVisible == null) {
+		if (rowVisible == null || isLegacyRowState()) {
 			rowVisible = newRowVisible();
 			int count = Math.max(1, Math.min(ROW_COUNT, visibleFields));
 			for (int i = 0; i < count; i++) {
@@ -77,6 +92,18 @@ public class SendToTcpClientsBrick extends FormulaBrick implements BrickSpinner.
 			}
 		}
 		return rowVisible;
+	}
+
+	private boolean isLegacyRowState() {
+		if (rowVisible == null || visibleFields <= 1 || rowVisible.length != ROW_COUNT || !rowVisible[0]) {
+			return false;
+		}
+		for (int i = 1; i < ROW_COUNT; i++) {
+			if (rowVisible[i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void setRowVisible(boolean[] rowVisible) {
@@ -90,8 +117,11 @@ public class SendToTcpClientsBrick extends FormulaBrick implements BrickSpinner.
 	}
 
 	private void syncVisibleFields() {
+		if (rowVisible == null) {
+			return;
+		}
 		int count = 0;
-		for (boolean visible : getRowVisible()) {
+		for (boolean visible : rowVisible) {
 			if (visible) {
 				count++;
 			}

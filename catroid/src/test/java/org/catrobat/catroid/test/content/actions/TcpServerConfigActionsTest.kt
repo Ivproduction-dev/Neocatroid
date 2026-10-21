@@ -1,9 +1,13 @@
 package org.catrobat.catroid.test.content.actions
 
 import org.catrobat.catroid.content.LocalServer
+import org.catrobat.catroid.content.Scope
+import org.catrobat.catroid.content.Sprite
 import org.catrobat.catroid.content.actions.SetTcpServerClientLimitAction
 import org.catrobat.catroid.content.actions.SetTcpServerTimeoutAction
 import org.catrobat.catroid.formulaeditor.Formula
+import org.catrobat.catroid.formulaeditor.FormulaElement
+import org.catrobat.catroid.formulaeditor.Operators
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -12,6 +16,8 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class TcpServerConfigActionsTest {
+
+	private val scope = Scope(null, Sprite("Sprite"), null)
 
 	@After
 	fun tearDown() {
@@ -22,13 +28,22 @@ class TcpServerConfigActionsTest {
 	private fun applyLimit(formula: Formula?) {
 		val action = SetTcpServerClientLimitAction()
 		action.limit = formula
+		action.scope = scope
 		action.act(1f)
 	}
 
 	private fun applyTimeout(formula: Formula?) {
 		val action = SetTcpServerTimeoutAction()
 		action.timeout = formula
+		action.scope = scope
 		action.act(1f)
+	}
+
+	private fun binaryFormula(left: Int, operator: Operators, right: Int): Formula {
+		val root = FormulaElement(FormulaElement.ElementType.OPERATOR, operator.toString(), null)
+		root.leftChild = FormulaElement(FormulaElement.ElementType.NUMBER, left.toString(), null)
+		root.rightChild = FormulaElement(FormulaElement.ElementType.NUMBER, right.toString(), null)
+		return Formula(root)
 	}
 
 	@Test
@@ -72,11 +87,17 @@ class TcpServerConfigActionsTest {
 
 	@Test
 	fun testNonNumericLimitIgnored() {
-		val invalid = arrayOf("abc", "", " 5", "5.5", "0x5", "NaN", "null", "ten", "1e2", "--5", "+5")
+		val invalid = arrayOf("abc", "", " 5", "5.5", "0x5", "NaN", "null", "ten", "1e2", "--5")
 		for (value in invalid) {
 			applyLimit(Formula(value))
 			assertEquals("лимит '$value' не применяется", 10, LocalServer.clientLimit)
 		}
+	}
+
+	@Test
+	fun testPlusPrefixedLimitApplied() {
+		applyLimit(Formula("+5"))
+		assertEquals(5, LocalServer.clientLimit)
 	}
 
 	@Test
@@ -87,7 +108,7 @@ class TcpServerConfigActionsTest {
 
 	@Test
 	fun testLimitFormulaWithExpression() {
-		applyLimit(Formula("2 + 3"))
+		applyLimit(binaryFormula(2, Operators.PLUS, 3))
 		assertEquals(5, LocalServer.clientLimit)
 	}
 
@@ -163,7 +184,7 @@ class TcpServerConfigActionsTest {
 
 	@Test
 	fun testTimeoutFormulaWithExpression() {
-		applyTimeout(Formula("10 * 3"))
+		applyTimeout(binaryFormula(10, Operators.MULT, 3))
 		assertEquals(30, LocalServer.serverTimeoutSeconds)
 	}
 

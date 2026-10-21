@@ -85,7 +85,7 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createSetTcpServerClientLimitAction(eq(sprite),
-				any(SequenceAction.class), any(Formula.class));
+				any(SequenceAction.class), any(Formula.class), any(Formula.class));
 	}
 
 	@Test
@@ -97,7 +97,7 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createSetTcpServerTimeoutAction(eq(sprite),
-				any(SequenceAction.class), any(Formula.class));
+				any(SequenceAction.class), any(Formula.class), any(Formula.class));
 	}
 
 	@Test
@@ -109,7 +109,7 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createSendToTcpServerAction(eq(sprite),
-				any(SequenceAction.class), anyList());
+				any(SequenceAction.class), anyList(), any(Formula.class));
 	}
 
 	@Test
@@ -121,7 +121,7 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createListenTcpServerAction(eq(sprite),
-				any(SequenceAction.class), anyList(), eq(0));
+				any(SequenceAction.class), anyList(), eq(0), any(Formula.class));
 	}
 
 	@Test
@@ -135,7 +135,7 @@ public class TcpNetworkBricksTest {
 		brick.addActionToSequence(sprite, new ScriptSequenceAction(Mockito.mock(Script.class)));
 
 		verify(actionFactory).createListenTcpServerAction(eq(sprite),
-				any(SequenceAction.class), anyList(), eq(1));
+				any(SequenceAction.class), anyList(), eq(1), any(Formula.class));
 	}
 
 	@Test

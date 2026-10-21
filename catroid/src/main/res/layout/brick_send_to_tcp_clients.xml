@@ -496,7 +496,8 @@
             android:id="@+id/brick_send_tcp_clients_echo_spinner"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:spinnerMode="dropdown" />
+            android:spinnerMode="dropdown"
+            android:textDirection="locale" />
 
     </org.catrobat.catroid.ui.BrickLayout>
 

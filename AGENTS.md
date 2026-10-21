@@ -275,6 +275,9 @@ Neo-раздел «Neo3D» в OBJECT_TAG — пример массовой ре�
 *   **Backpack:** JSON + файлы, звуки/значения внутри скрипт-группы (`backpackedScriptSounds`,
     `backpackedVariableValues/ListValues`), dedup звуков по имени при unpack.
 *   **Paintroid:** сейв из Catroid-режима копируется в `Download/Paintroid` (MediaStore), возвращаемый URI не меняется.
+*   **Сеть TCP/UDP:** имя узла нормализуется (`null`/`""`/`"0"` → `""`), палитра подставляет `"server"` (TCP) и `"udp"` (UDP),
+    legacy-брики живут на `""`; Listen/When матчатся по нормализованному имени. Пинг асинхронный (результат в переменную позже).
+    Ограничения: на desktop — no-op (нет реализаций Udp/Tcp), формулы IP/PORT отдают только TCP-узел `""`.
 
 # Сборка / проверка:
 

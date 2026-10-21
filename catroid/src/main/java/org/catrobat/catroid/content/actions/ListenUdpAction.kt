@@ -20,35 +20,39 @@ class ListenUdpAction() : Action() {
         private val tasks = mutableListOf<ScheduledFuture<*>>()
 
         @Synchronized
-        private fun register(action: ListenUdpAction) {
+        private fun scheduler(): ScheduledExecutorService {
             var scheduler = sharedScheduler
             if (scheduler == null || scheduler.isShutdown) {
                 scheduler = Executors.newSingleThreadScheduledExecutor()
                 sharedScheduler = scheduler
             }
+            return scheduler
+        }
+
+        @Synchronized
+        private fun pruneTasks() {
             while (tasks.size >= MAX_TASKS) {
                 tasks.removeAt(0).cancel(false)
             }
-            tasks.add(scheduler.scheduleAtFixedRate({ action.poll() }, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS))
+        }
+
+        @Synchronized
+        private fun register(action: ListenUdpAction) {
+            pruneTasks()
+            action.future = scheduler().scheduleAtFixedRate(
+                { action.poll() }, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS)
+            action.future?.let { tasks.add(it) }
         }
 
         @Synchronized
         private fun registerOneShot(action: ListenUdpAction) {
-            var scheduler = sharedScheduler
-            if (scheduler == null || scheduler.isShutdown) {
-                scheduler = Executors.newSingleThreadScheduledExecutor()
-                sharedScheduler = scheduler
-            }
-            while (tasks.size >= MAX_TASKS) {
-                tasks.removeAt(0).cancel(false)
-            }
-            val self = scheduler
-            action.oneShotFuture = self.scheduleAtFixedRate({
+            pruneTasks()
+            action.future = scheduler().scheduleAtFixedRate({
                 if (action.pollOnce()) {
-                    action.oneShotFuture?.cancel(false)
+                    action.future?.cancel(false)
                 }
             }, 0, POLL_INTERVAL_MS, TimeUnit.MILLISECONDS)
-            action.oneShotFuture?.let { tasks.add(it) }
+            action.future?.let { tasks.add(it) }
         }
 
         @Synchronized
@@ -67,15 +71,17 @@ class ListenUdpAction() : Action() {
     var listenMode: Int = 0
     var serverName: Formula? = null
 
-    private var oneShotFuture: ScheduledFuture<*>? = null
+    @Volatile private var future: ScheduledFuture<*>? = null
+    private var deliveredCount = 0L
 
     override fun act(delta: Float): Boolean {
-        val vars = variables ?: return true
+        val vars = variables?.filterNotNull() ?: return true
         if (vars.isEmpty()) {
             return true
         }
+        future?.cancel(false)
+        future = null
         if (listenMode == 1) {
-            oneShotFuture?.cancel(false)
             registerOneShot(this)
         } else {
             register(this)
@@ -88,12 +94,18 @@ class ListenUdpAction() : Action() {
     }
 
     private fun pollOnce(): Boolean {
-        val vars = variables ?: return false
+        val vars = variables?.filterNotNull() ?: return false
         if (vars.isEmpty()) {
             return false
         }
         val name = serverName?.interpretString(scope).orEmpty()
-        val messages = UdpManager.node(name).getMessages()
+        val endpoint = UdpManager.node(name)
+        val total = endpoint.getReceivedCount()
+        if (total <= deliveredCount) {
+            return false
+        }
+        val messages = endpoint.getMessages()
+        deliveredCount = total
         if (messages.isEmpty()) {
             return false
         }
@@ -102,7 +114,7 @@ class ListenUdpAction() : Action() {
             val parts = last.split(LocalServer.VALUE_SEPARATOR)
             for (i in vars.indices) {
                 val part = parts.getOrNull(i) ?: continue
-                vars[i]?.value = part
+                vars[i].value = part
             }
         } else {
             val k = vars.size
@@ -110,7 +122,7 @@ class ListenUdpAction() : Action() {
             for (i in 0 until k) {
                 val index = start + i
                 if (index < messages.size) {
-                    vars[i]?.value = messages[index]
+                    vars[i].value = messages[index]
                 }
             }
         }

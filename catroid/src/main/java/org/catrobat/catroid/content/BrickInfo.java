@@ -385,6 +385,10 @@ public final class BrickInfo {
         add(SendUdpBrick.class, "Отправляет значения UDP пакетом запомненному адресату или своему адресу");
         add(ListenUdpBrick.class, "Слушает UDP пакеты и сохраняет значения в переменные");
         add(WhenUdpMessageBrick.class, "Вызывается, когда получен UDP пакет, и сохраняет его в переменные");
+        add(UdpPingBrick.class, "PING-PONG UDP точки по IP и порту, ответ true/false в переменную");
+        add(UdpPingNamedBrick.class, "PING-PONG именованной UDP точки, ответ true/false в переменную");
+        add(UdpMeasurePingBrick.class, "Измеряет PING-PONG UDP точки по IP и порту в мс в переменную");
+        add(UdpMeasurePingNamedBrick.class, "Измеряет PING-PONG именованной UDP точки в мс в переменную");
         add(WriteBaseBrick.class, "Записывает значение в FireBase ВАЖНО: если айди базы неправильный - может вызывать фатальную ошибку");
         add(ReadBaseBrick.class, "Читает значение из FireBase ВАЖНО: если айди базы неправильный - может вызывать фатальную ошибку");
         add(DeleteBaseBrick.class, "Удаляет ключ из FireBase ВАЖНО: если айди базы неправильный - может вызывать фатальную ошибку");
@@ -1552,6 +1556,10 @@ public final class BrickInfo {
         addEn(SendUdpBrick.class, "Sends values as a UDP packet to the remembered peer or a custom address");
         addEn(ListenUdpBrick.class, "Listens for UDP packets and stores values into variables");
         addEn(WhenUdpMessageBrick.class, "Triggered when a UDP packet is received and stores it into variables");
+        addEn(UdpPingBrick.class, "PING-PONG of a UDP endpoint by IP and port, true/false answer into a variable");
+        addEn(UdpPingNamedBrick.class, "PING-PONG of a named UDP endpoint, true/false answer into a variable");
+        addEn(UdpMeasurePingBrick.class, "Measures PING-PONG of a UDP endpoint by IP and port in ms into a variable");
+        addEn(UdpMeasurePingNamedBrick.class, "Measures PING-PONG of a named UDP endpoint in ms into a variable");
         addEn(WriteBaseBrick.class, "Writes a value to Firebase IMPORTANT: if the database ID is incorrect, may cause a fatal error");
         addEn(ReadBaseBrick.class, "Reads a value from Firebase IMPORTANT: if the database ID is incorrect, may cause a fatal error");
         addEn(DeleteBaseBrick.class, "Deletes a key from Firebase IMPORTANT: if the database ID is incorrect, may cause a fatal error");

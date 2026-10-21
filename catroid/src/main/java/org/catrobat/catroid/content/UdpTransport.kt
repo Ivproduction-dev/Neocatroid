@@ -3,6 +3,7 @@ package org.catrobat.catroid.content
 interface UdpTransport {
     fun start(port: Int): Boolean
     fun stop()
+    fun destroy()
     fun connect(ip: String, port: Int)
     fun disconnectPeer()
     fun getPeerIp(): String

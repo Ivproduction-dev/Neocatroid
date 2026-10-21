@@ -57,6 +57,11 @@ public class WhenTcpMessageBrick extends FormulaBrick implements ScriptBrick, Us
 		rowVisible = newRowVisible();
 	}
 
+	public WhenTcpMessageBrick(String serverName) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(serverName));
+	}
+
 	@Override
 	public Brick clone() throws CloneNotSupportedException {
 		WhenTcpMessageBrick clone = (WhenTcpMessageBrick) super.clone();

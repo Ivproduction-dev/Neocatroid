@@ -28,6 +28,15 @@ public class SetTcpServerClientLimitBrick extends FormulaBrick {
 		setFormulaWithBrickField(BrickField.VALUE, limit);
 	}
 
+	public SetTcpServerClientLimitBrick(int limit, String serverName) {
+		this(new Formula(String.valueOf(limit)), new Formula(serverName));
+	}
+
+	public SetTcpServerClientLimitBrick(Formula limit, Formula serverName) {
+		this(limit);
+		setFormulaWithBrickField(BrickField.TEXT, serverName);
+	}
+
 	@Override
 	public int getViewResource() {
 		return R.layout.brick_set_tcp_client_limit;

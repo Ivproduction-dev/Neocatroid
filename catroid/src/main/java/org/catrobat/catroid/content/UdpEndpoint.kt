@@ -5,8 +5,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
@@ -15,35 +18,48 @@ data class UdpMessage(val seq: Long, val text: String, val fromIp: String, val f
 
 class UdpEndpoint(val name: String) {
 
-    @Volatile var timeoutMs: Int = 3000
+    @Volatile var timeoutMs: Int = DEFAULT_PING_TIMEOUT_MS
 
     private val transport: UdpTransport =
         if (UdpNative.available) UdpNativeTransport() else UdpJvmTransport()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var pollJob: Job? = null
     private val messages = ArrayDeque<UdpMessage>()
+    private var receivedCount = 0L
 
     fun start(port: Int): Boolean {
         pollJob?.cancel()
         pollJob = null
-        clearMessages()
+        transport.stop()
         val ok = transport.start(port)
-        if (ok) {
-            pollJob = scope.launch {
-                while (transport.isRunning()) {
-                    drainTransport()
-                    delay(POLL_MS)
-                }
-                drainTransport()
-            }
+        if (!ok) {
+            return false
         }
-        return ok
+        clearMessages()
+        pollJob = scope.launch {
+            while (transport.isRunning()) {
+                drainTransport()
+                delay(POLL_MS)
+            }
+            drainTransport()
+        }
+        return true
     }
 
     fun stop() {
         pollJob?.cancel()
         pollJob = null
         transport.stop()
+    }
+
+    fun shutdown() {
+        runBlocking {
+            pollJob?.cancelAndJoin()
+        }
+        pollJob = null
+        transport.destroy()
+        scope.cancel()
+        clearMessages()
     }
 
     fun connect(ip: String, port: Int) {
@@ -83,6 +99,12 @@ class UdpEndpoint(val name: String) {
         }
     }
 
+    fun getReceivedCount(): Long {
+        synchronized(messages) {
+            return receivedCount
+        }
+    }
+
     fun getPort(): String = transport.getPort()
     fun isRunning(): Boolean = transport.isRunning()
     fun usesNative(): Boolean = transport is UdpNativeTransport
@@ -100,6 +122,7 @@ class UdpEndpoint(val name: String) {
         val fresh = try {
             transport.drain()
         } catch (e: Exception) {
+            Log.w(TAG, e.message.orEmpty())
             return
         }
         if (fresh.isEmpty()) {
@@ -108,6 +131,7 @@ class UdpEndpoint(val name: String) {
         synchronized(messages) {
             for (m in fresh) {
                 messages.addLast(m)
+                receivedCount++
                 while (messages.size > MAX_MESSAGES) {
                     messages.removeFirst()
                 }
@@ -122,8 +146,9 @@ class UdpEndpoint(val name: String) {
         const val TAG = "UdpEndpoint"
         const val POLL_MS = 30L
         const val MAX_MESSAGES = 50
+        const val DEFAULT_PING_TIMEOUT_MS = 3000
 
-        fun pingHost(ip: String, port: Int, timeoutMs: Int = 3000): PingResult {
+        fun pingHost(ip: String, port: Int, timeoutMs: Int = DEFAULT_PING_TIMEOUT_MS): PingResult {
             val token = System.currentTimeMillis().toString() + "-" + (Math.random() * Int.MAX_VALUE).toInt().toString()
             val start = System.currentTimeMillis()
             var socket: DatagramSocket? = null

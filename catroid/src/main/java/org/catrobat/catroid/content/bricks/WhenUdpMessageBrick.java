@@ -57,6 +57,11 @@ public class WhenUdpMessageBrick extends FormulaBrick implements ScriptBrick, Us
 		rowVisible = newRowVisible();
 	}
 
+	public WhenUdpMessageBrick(String serverName) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(serverName));
+	}
+
 	@Override
 	public Brick clone() throws CloneNotSupportedException {
 		WhenUdpMessageBrick clone = (WhenUdpMessageBrick) super.clone();

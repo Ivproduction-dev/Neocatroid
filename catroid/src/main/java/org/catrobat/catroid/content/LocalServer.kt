@@ -114,6 +114,9 @@ class LocalServer private constructor() {
         fun getMessagesNamed(name: String?): List<String> = node(name).getMessages()
 
         @JvmStatic
+        fun getMessageCountNamed(name: String?): Long = node(name).getMessageCount()
+
+        @JvmStatic
         fun clearRecentMessages() {
             node(null).clearRecentMessages()
         }

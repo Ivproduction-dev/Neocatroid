@@ -1,7 +1,11 @@
 package org.catrobat.catroid.test.content.actions
 
 import org.catrobat.catroid.content.actions.CheckPortAction
+import org.catrobat.catroid.content.Scope
+import org.catrobat.catroid.content.Sprite
 import org.catrobat.catroid.formulaeditor.Formula
+import org.catrobat.catroid.formulaeditor.FormulaElement
+import org.catrobat.catroid.formulaeditor.Operators
 import org.catrobat.catroid.formulaeditor.UserVariable
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -14,6 +18,7 @@ import java.net.ServerSocket
 class CheckPortActionTest {
 
 	private val occupiedSockets = mutableListOf<ServerSocket>()
+	private val scope = Scope(null, Sprite("Sprite"), null)
 
 	private fun occupyPort(): Int {
 		val socket = ServerSocket(0)
@@ -32,7 +37,15 @@ class CheckPortActionTest {
 		val action = CheckPortAction()
 		action.port = portFormula
 		action.variable = variable
+		action.scope = scope
 		action.act(1f)
+	}
+
+	private fun binaryFormula(left: Int, operator: Operators, right: Int): Formula {
+		val root = FormulaElement(FormulaElement.ElementType.OPERATOR, operator.toString(), null)
+		root.leftChild = FormulaElement(FormulaElement.ElementType.NUMBER, left.toString(), null)
+		root.rightChild = FormulaElement(FormulaElement.ElementType.NUMBER, right.toString(), null)
+		return Formula(root)
 	}
 
 	private fun assertResult(portFormula: Formula?, expected: String, variable: UserVariable) {
@@ -206,7 +219,7 @@ class CheckPortActionTest {
 	@Test
 	fun testFormulaResultingInNumberWorks() {
 		val variable = UserVariable("v")
-		runAction(Formula("80 + 0"), variable)
+		runAction(binaryFormula(freePort(), Operators.PLUS, 0), variable)
 		assertEquals("false", variable.value)
 	}
 
@@ -214,7 +227,7 @@ class CheckPortActionTest {
 	fun testFormulaResultingInNumberForOccupiedPortWorks() {
 		val port = occupyPort()
 		val variable = UserVariable("v")
-		runAction(Formula("$port + 0"), variable)
+		runAction(binaryFormula(port, Operators.PLUS, 0), variable)
 		assertEquals("true", variable.value)
 	}
 }

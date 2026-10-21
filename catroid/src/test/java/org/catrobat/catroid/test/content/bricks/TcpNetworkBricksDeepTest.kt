@@ -13,6 +13,7 @@ import org.catrobat.catroid.content.bricks.Brick
 import org.catrobat.catroid.content.bricks.CheckPortBrick
 import org.catrobat.catroid.content.bricks.GetFromPastebinBrick
 import org.catrobat.catroid.content.bricks.ListenTcpServerBrick
+import org.catrobat.catroid.content.bricks.SendToTcpClientsBrick
 import org.catrobat.catroid.content.bricks.SendToTcpServerBrick
 import org.catrobat.catroid.content.bricks.SetTcpServerClientLimitBrick
 import org.catrobat.catroid.content.bricks.SetTcpServerTimeoutBrick
@@ -215,7 +216,7 @@ class TcpNetworkBricksDeepTest {
 		sprite.setActionFactory(actionFactory)
 		SendToTcpServerBrick("only").addActionToSequence(sprite, sequence)
 		Mockito.verify(actionFactory).createSendToTcpServerAction(
-			Mockito.eq(sprite), Mockito.any(), Mockito.anyList())
+			Mockito.eq(sprite), Mockito.any(), Mockito.anyList(), Mockito.any())
 	}
 
 	@Test
@@ -229,7 +230,7 @@ class TcpNetworkBricksDeepTest {
 		brick.setVisibleFields(4)
 		brick.addActionToSequence(sprite, sequence)
 		Mockito.verify(actionFactory).createSendToTcpServerAction(
-			Mockito.eq(sprite), Mockito.any(), Mockito.anyList())
+			Mockito.eq(sprite), Mockito.any(), Mockito.anyList(), Mockito.any())
 	}
 
 	@Test
@@ -297,7 +298,7 @@ class TcpNetworkBricksDeepTest {
 		brick.setVisibleVariables(2)
 		brick.addActionToSequence(sprite, sequence)
 		Mockito.verify(actionFactory).createListenTcpServerAction(
-			Mockito.eq(sprite), Mockito.any(), Mockito.anyList(), Mockito.eq(0))
+			Mockito.eq(sprite), Mockito.any(), Mockito.anyList(), Mockito.eq(0), Mockito.any())
 	}
 
 	@Test
@@ -317,11 +318,11 @@ class TcpNetworkBricksDeepTest {
 	}
 
 	@Test
-	fun testSendViewHidesExtraFieldsInitially() {
+	fun testSendViewHidesExtraRowsInitially() {
 		val view = SendToTcpServerBrick("okay").getView(RuntimeEnvironment.getApplication())
-		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_edit2).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_edit3).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_edit4).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row2).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row3).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row4).visibility)
 	}
 
 	@Test
@@ -338,23 +339,23 @@ class TcpNetworkBricksDeepTest {
 	}
 
 	@Test
-	fun testSendViewShowsFieldsAfterIncrement() {
+	fun testSendViewShowsRowsAfterIncrement() {
 		val brick = SendToTcpServerBrick("okay")
 		val view = brick.getView(RuntimeEnvironment.getApplication())
 		val addButton = view.findViewById<View>(R.id.brick_send_tcp_add)
 		addButton.performClick()
 		addButton.performClick()
-		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_edit2).visibility)
-		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_edit3).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_edit4).visibility)
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_row2).visibility)
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_row3).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row4).visibility)
 	}
 
 	@Test
-	fun testListenViewHidesExtraSpinnersInitially() {
+	fun testListenViewHidesExtraRowsInitially() {
 		val view = ListenTcpServerBrick().getView(RuntimeEnvironment.getApplication())
-		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_spinner2).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_spinner3).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_spinner4).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_row2).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_row3).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_row4).visibility)
 	}
 
 	@Test
@@ -371,13 +372,13 @@ class TcpNetworkBricksDeepTest {
 	}
 
 	@Test
-	fun testListenViewShowsSpinnersAfterIncrement() {
+	fun testListenViewShowsRowsAfterIncrement() {
 		val brick = ListenTcpServerBrick()
 		val view = brick.getView(RuntimeEnvironment.getApplication())
 		val addButton = view.findViewById<View>(R.id.brick_listen_tcp_add)
 		addButton.performClick()
-		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.listen_tcp_spinner2).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_spinner3).visibility)
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.listen_tcp_row2).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_row3).visibility)
 	}
 
 	@Test
@@ -395,7 +396,44 @@ class TcpNetworkBricksDeepTest {
 		brick.setVisibleFields(3)
 		val restored = roundTrip(brick) as SendToTcpServerBrick
 		val view = restored.getView(RuntimeEnvironment.getApplication())
-		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_edit3).visibility)
-		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_edit4).visibility)
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_row3).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row4).visibility)
+	}
+
+	@Test
+	fun testLegacyWithoutStoredRowsRestoresSendFields() {
+		val brick = SendToTcpServerBrick("okay")
+		brick.setVisibleFields(3)
+		val legacy = BooleanArray(SendToTcpServerBrick.ROW_COUNT)
+		legacy[0] = true
+		brick.setRowVisible(legacy)
+		val view = brick.getView(RuntimeEnvironment.getApplication())
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_row2).visibility)
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_row3).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_row4).visibility)
+	}
+
+	@Test
+	fun testLegacyWithoutStoredRowsRestoresClientSendFields() {
+		val brick = SendToTcpClientsBrick("server", "hi")
+		brick.setVisibleFields(2)
+		val legacy = BooleanArray(SendToTcpClientsBrick.ROW_COUNT)
+		legacy[0] = true
+		brick.setRowVisible(legacy)
+		val view = brick.getView(RuntimeEnvironment.getApplication())
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.brick_send_tcp_clients_row2).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.brick_send_tcp_clients_row3).visibility)
+	}
+
+	@Test
+	fun testLegacyWithoutStoredRowsRestoresListenVariables() {
+		val brick = ListenTcpServerBrick()
+		brick.setVisibleVariables(2)
+		val legacy = BooleanArray(ListenTcpServerBrick.ROW_COUNT)
+		legacy[0] = true
+		brick.setRowVisible(legacy)
+		val view = brick.getView(RuntimeEnvironment.getApplication())
+		assertEquals(View.VISIBLE, view.findViewById<View>(R.id.listen_tcp_row2).visibility)
+		assertEquals(View.GONE, view.findViewById<View>(R.id.listen_tcp_row3).visibility)
 	}
 }

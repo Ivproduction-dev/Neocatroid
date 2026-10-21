@@ -10,7 +10,7 @@ class UdpManager private constructor() {
 
         @JvmStatic
         fun node(name: String?): UdpEndpoint {
-            val key = name?.trim().orEmpty()
+            val key = LocalServer.normServerKey(name)
             synchronized(nodes) {
                 return nodes.getOrPut(key) { UdpEndpoint(key) }
             }
@@ -22,6 +22,18 @@ class UdpManager private constructor() {
                 for (n in nodes.values) {
                     n.stop()
                 }
+            }
+        }
+
+        @JvmStatic
+        fun shutdown() {
+            var endpoints: List<UdpEndpoint> = emptyList()
+            synchronized(nodes) {
+                endpoints = nodes.values.toList()
+                nodes.clear()
+            }
+            for (n in endpoints) {
+                n.shutdown()
             }
         }
 

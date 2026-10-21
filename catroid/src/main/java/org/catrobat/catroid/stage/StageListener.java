@@ -3070,6 +3070,12 @@ public class StageListener implements ApplicationListener {
 		axes.dispose();
 		ColorAtXYDetection.Companion.disposeShared();
 
+		org.catrobat.catroid.content.actions.ListenUdpAction.Companion.stopAll();
+		org.catrobat.catroid.content.actions.ListenTcpServerAction.Companion.stopAll();
+		org.catrobat.catroid.content.actions.ListenServerAction.Companion.stopAll();
+		org.catrobat.catroid.content.UdpManager.shutdown();
+		org.catrobat.catroid.content.LocalServer.stopAll();
+
 		sceneFbo.dispose();
 		GlobalShaderManager.INSTANCE.dispose();
 		GlobalShaderManager.INSTANCE.clear();

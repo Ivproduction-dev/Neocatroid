@@ -3448,6 +3448,21 @@ public class ActionFactory extends Actions {
 		return action;
 	}
 
+	public Action createUdpPingAction(Sprite sprite, SequenceAction sequence,
+									  Formula serverName, Formula ip, Formula port,
+									  UserVariable variable, boolean measure, Formula timeout) {
+		UdpPingAction action = action(UdpPingAction.class);
+		Scope scope = new Scope(ProjectManager.getInstance().getCurrentProject(), sprite, sequence);
+		action.setScope(scope);
+		action.setServerName(serverName);
+		action.setIp(ip);
+		action.setPort(port);
+		action.setVariable(variable);
+		action.setMeasure(measure);
+		action.setTimeout(timeout);
+		return action;
+	}
+
 	public static String generateRandomString(int length) {
 
 		String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

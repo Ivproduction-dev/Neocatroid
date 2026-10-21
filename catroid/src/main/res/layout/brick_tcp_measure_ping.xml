@@ -24,9 +24,17 @@
             android:text="@string/brick_tcp_measure_ping" />
 
         <TextView
-            android:id="@+id/brick_tcp_measure_ping_ip_edit"
-            style="@style/BrickEditText"
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_connect_server2"
             app:layout_newLine="true" />
+
+        <TextView
+            android:id="@+id/brick_tcp_measure_ping_ip_edit"
+            style="@style/BrickEditText" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_connect_server3" />
 
         <TextView
             android:id="@+id/brick_tcp_measure_ping_port_edit"

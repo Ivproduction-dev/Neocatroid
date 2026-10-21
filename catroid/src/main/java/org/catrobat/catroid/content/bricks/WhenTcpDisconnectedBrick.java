@@ -29,6 +29,11 @@ public class WhenTcpDisconnectedBrick extends FormulaBrick implements ScriptBric
 		this.script = script;
 	}
 
+	public WhenTcpDisconnectedBrick(String serverName) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(serverName));
+	}
+
 	public String resolveServerName(Sprite sprite) {
 		Formula name = getFormulaWithBrickField(BrickField.TEXT);
 		if (name == null) {

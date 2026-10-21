@@ -809,6 +809,10 @@ import org.catrobat.catroid.content.bricks.DisconnectUdpBrick
 import org.catrobat.catroid.content.bricks.SendUdpBrick
 import org.catrobat.catroid.content.bricks.ListenUdpBrick
 import org.catrobat.catroid.content.bricks.WhenUdpMessageBrick
+import org.catrobat.catroid.content.bricks.UdpPingBrick
+import org.catrobat.catroid.content.bricks.UdpPingNamedBrick
+import org.catrobat.catroid.content.bricks.UdpMeasurePingBrick
+import org.catrobat.catroid.content.bricks.UdpMeasurePingNamedBrick
 import org.catrobat.catroid.content.bricks.ListenTcpServerBrick
 import org.catrobat.catroid.content.bricks.StopBufferRecordingBrick
 import org.catrobat.catroid.content.bricks.StopGifBrick
@@ -1215,8 +1219,8 @@ open class CategoryBricksFactory {
                 addIfMissing(WhenNeo3DRayHitBrick())
             }
             context.getString(R.string.category_internet) -> {
-                addIfMissing(WhenTcpMessageBrick())
-                addIfMissing(WhenTcpDisconnectedBrick())
+                addIfMissing(WhenTcpMessageBrick("server"))
+                addIfMissing(WhenTcpDisconnectedBrick("server"))
                 addIfMissing(WhenHttpResponseReceivedBrick())
                 addIfMissing(WhenHttpRequestFailedBrick())
                 addIfMissing(WhenFirestoreChangedBrick())
@@ -1372,8 +1376,8 @@ open class CategoryBricksFactory {
                 eventBrickList.add(WhenNeo3DTouchBrick())
                 eventBrickList.add(WhenNeo3DRayHitBrick())
                 eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
-                eventBrickList.add(WhenTcpMessageBrick())
-                eventBrickList.add(WhenTcpDisconnectedBrick())
+                eventBrickList.add(WhenTcpMessageBrick("server"))
+                eventBrickList.add(WhenTcpDisconnectedBrick("server"))
                 eventBrickList.add(WhenHttpResponseReceivedBrick())
                 eventBrickList.add(WhenHttpRequestFailedBrick())
                 eventBrickList.add(WhenFirestoreChangedBrick())
@@ -1436,8 +1440,8 @@ open class CategoryBricksFactory {
         eventBrickList.add(WhenNeo3DTouchBrick())
         eventBrickList.add(WhenNeo3DRayHitBrick())
         eventBrickList.add(WhenIntervalBrick(WhenIntervalScript(Formula(1))))
-        eventBrickList.add(WhenTcpMessageBrick())
-        eventBrickList.add(WhenTcpDisconnectedBrick())
+        eventBrickList.add(WhenTcpMessageBrick("server"))
+        eventBrickList.add(WhenTcpDisconnectedBrick("server"))
         eventBrickList.add(WhenBackgroundChangesBrick())
         eventBrickList.add(WhenHttpResponseReceivedBrick())
         eventBrickList.add(WhenHttpRequestFailedBrick())
@@ -3904,11 +3908,11 @@ void main() {
         internetBrickList.add(ClearServerMessagesBrick())
         internetBrickList.add(GetFromPastebinBrick("https://pastebin.com/raw/..."))
         internetBrickList.add(CheckPortBrick("8888"))
-        internetBrickList.add(SetTcpServerClientLimitBrick(10))
-        internetBrickList.add(SetTcpServerTimeoutBrick(30))
-        internetBrickList.add(SendToTcpServerBrick("okay"))
-        internetBrickList.add(SendToTcpClientsBrick("hello"))
-        internetBrickList.add(ListenTcpServerBrick())
+        internetBrickList.add(SetTcpServerClientLimitBrick(10, "server"))
+        internetBrickList.add(SetTcpServerTimeoutBrick(30, "server"))
+        internetBrickList.add(SendToTcpServerBrick("server", "okay"))
+        internetBrickList.add(SendToTcpClientsBrick("server", "hello"))
+        internetBrickList.add(ListenTcpServerBrick("server"))
         internetBrickList.add(WriteBaseBrick("firebase_id", "key", "hello"))
         internetBrickList.add(ReadBaseBrick("firebase_id", "key"))
         internetBrickList.add(DeleteBaseBrick("firebase_id", "key"))
@@ -3969,9 +3973,13 @@ void main() {
         internetBrickList.add(StopUdpBrick("udp"))
         internetBrickList.add(ConnectUdpBrick("udp", "127.0.0.1", "1234"))
         internetBrickList.add(DisconnectUdpBrick("udp"))
-        internetBrickList.add(SendUdpBrick("Hi"))
-        internetBrickList.add(ListenUdpBrick())
-        internetBrickList.add(WhenUdpMessageBrick())
+        internetBrickList.add(SendUdpBrick("udp", "Hi"))
+        internetBrickList.add(ListenUdpBrick("udp"))
+        internetBrickList.add(WhenUdpMessageBrick("udp"))
+        internetBrickList.add(UdpPingBrick("127.0.0.1", "1234"))
+        internetBrickList.add(UdpPingNamedBrick("udp"))
+        internetBrickList.add(UdpMeasurePingBrick("127.0.0.1", "1234"))
+        internetBrickList.add(UdpMeasurePingNamedBrick("udp"))
         return internetBrickList
     }
 

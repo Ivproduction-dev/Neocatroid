@@ -15,7 +15,7 @@
 
     <org.catrobat.catroid.ui.BrickLayout
         android:id="@+id/brick_tcp_timeout_layout"
-        style="@style/BrickContainer.Internet.Small">
+        style="@style/BrickContainer.Internet.Medium">
 
         <include layout="@layout/icon_brick_category_internet" />
 

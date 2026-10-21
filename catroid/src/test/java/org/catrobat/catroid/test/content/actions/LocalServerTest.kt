@@ -154,12 +154,13 @@ class LocalServerTest {
 	}
 
 	@Test
-	fun testServerStoresEmptyMessage() {
+	fun testServerDropsEmptyMessage() {
 		val port = freePort()
 		LocalServer.startOrJoin(null, port.toString())
 		await { LocalServer.getPort() == port.toString() }
 		sendLine(port, "")
-		await { LocalServer.getMessages().isNotEmpty() }
+		Thread.sleep(300)
+		assertTrue(LocalServer.getMessages().isEmpty())
 		assertEquals("", LocalServer.getValue())
 	}
 

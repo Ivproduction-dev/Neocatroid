@@ -50,6 +50,16 @@ public class SendUdpBrick extends FormulaBrick {
 		setFormulaWithBrickField(BrickField.VALUE, value);
 	}
 
+	public SendUdpBrick(String serverName, String value) {
+		this(new Formula(serverName), new Formula(value));
+	}
+
+	public SendUdpBrick(Formula serverName, Formula value) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, serverName);
+		setFormulaWithBrickField(BrickField.VALUE, value);
+	}
+
 	public int getVisibleFields() {
 		return visibleFields;
 	}

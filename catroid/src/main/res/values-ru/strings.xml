@@ -2492,7 +2492,7 @@
     <string formatted="false" name="brick_send_to_tcp_clients_echo_no">без эха себе</string>
     <string formatted="false" name="brick_send_to_tcp_clients_echo_yes">с эхом себе</string>
     <string formatted="false" name="brick_when_tcp_message">Когда получено сообщение TCP</string>
-    <string formatted="false" name="brick_when_tcp_disconnected">Когда отключен по таймауту TCP сервера</string>
+    <string formatted="false" name="brick_when_tcp_disconnected">Когда таймаут TCP сервера</string>
     <string formatted="false" name="brick_listen_tcp_server">Слушать TCP сервер и сохранить в</string>
     <string formatted="false" name="brick_tcp_server_name">сервер</string>
     <string formatted="false" name="brick_start_tcp_server_named">Запустить TCP сервер</string>
@@ -2516,6 +2516,11 @@
     <string formatted="false" name="brick_send_udp">Отправить UDP</string>
     <string formatted="false" name="brick_listen_udp">Слушать UDP и сохранить в</string>
     <string formatted="false" name="brick_when_udp_message">Когда получено UDP сообщение</string>
+<string formatted="false" name="brick_udp_ping">PING-PONG UDP точки</string>
+<string formatted="false" name="brick_udp_ping2">сохранить ответ в</string>
+<string formatted="false" name="brick_udp_measure_ping">Измерить PING-PONG UDP точки</string>
+<string formatted="false" name="brick_udp_measure_ping2">сохранить значение в</string>
+<string formatted="false" name="brick_udp_ping_timeout">ждать ответ (мс)</string>
     <string formatted="false" name="formula_external_ip">Внешний_IP</string>
     <string formatted="false" name="brick_screenshot">Сделать скриншот и использовать как образ</string>
     <string formatted="false" name="create_web_url">Создать WebView с названием</string>

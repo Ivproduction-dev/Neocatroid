@@ -52,6 +52,11 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 		this.userVariable = userVariable;
 	}
 
+	public ListenTcpServerBrick(String serverName) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(serverName));
+	}
+
 	@Override
 	public UserVariable getUserVariable() {
 		return userVariable;
@@ -97,6 +102,11 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 
 	public void setVisibleVariables(int visibleVariables) {
 		this.visibleVariables = visibleVariables;
+		this.rowVisible = newRowVisible();
+		int count = Math.max(1, Math.min(ROW_COUNT, visibleVariables));
+		for (int i = 0; i < count; i++) {
+			rowVisible[i] = true;
+		}
 	}
 
 	public int getListenModeSelection() {
@@ -108,7 +118,7 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 	}
 
 	public boolean[] getRowVisible() {
-		if (rowVisible == null) {
+		if (rowVisible == null || isLegacyRowState()) {
 			rowVisible = newRowVisible();
 			int count = Math.max(1, Math.min(ROW_COUNT, visibleVariables));
 			for (int i = 0; i < count; i++) {
@@ -116,6 +126,18 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 			}
 		}
 		return rowVisible;
+	}
+
+	private boolean isLegacyRowState() {
+		if (rowVisible == null || visibleVariables <= 1 || rowVisible.length != ROW_COUNT || !rowVisible[0]) {
+			return false;
+		}
+		for (int i = 1; i < ROW_COUNT; i++) {
+			if (rowVisible[i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void setRowVisible(boolean[] rowVisible) {
@@ -129,8 +151,11 @@ public class ListenTcpServerBrick extends FormulaBrick implements UserVariableBr
 	}
 
 	private void syncVisibleVariables() {
+		if (rowVisible == null) {
+			return;
+		}
 		int count = 0;
-		for (boolean visible : getRowVisible()) {
+		for (boolean visible : rowVisible) {
 			if (visible) {
 				count++;
 			}

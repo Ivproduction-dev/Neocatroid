@@ -52,6 +52,11 @@ public class ListenUdpBrick extends FormulaBrick implements UserVariableBrickInt
 		this.userVariable = userVariable;
 	}
 
+	public ListenUdpBrick(String serverName) {
+		this();
+		setFormulaWithBrickField(BrickField.TEXT, new Formula(serverName));
+	}
+
 	@Override
 	public UserVariable getUserVariable() {
 		return userVariable;

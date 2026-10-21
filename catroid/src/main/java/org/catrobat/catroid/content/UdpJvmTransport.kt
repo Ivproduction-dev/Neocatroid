@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.DatagramPacket
@@ -26,6 +27,8 @@ class UdpJvmTransport : UdpTransport {
     private val queue = ArrayDeque<UdpMessage>()
     private var lastSeq = -2L
     private var lastText = ""
+    private var lastFromIp = ""
+    private var lastFromPort = -1
     private var sendSeq = 0L
 
     @Synchronized
@@ -33,11 +36,17 @@ class UdpJvmTransport : UdpTransport {
         stop()
         return try {
             val s = DatagramSocket(null)
-            s.reuseAddress = true
             s.broadcast = true
             s.bind(InetSocketAddress(port))
             socket = s
-            boundPort = port
+            boundPort = s.localPort
+            synchronized(queue) {
+                queue.clear()
+            }
+            lastSeq = -2L
+            lastText = ""
+            lastFromIp = ""
+            lastFromPort = -1
             running = true
             recvJob = scope.launch { receiveLoop(s) }
             true
@@ -65,6 +74,16 @@ class UdpJvmTransport : UdpTransport {
         }
         socket = null
         boundPort = null
+    }
+
+    @Synchronized
+    override fun destroy() {
+        stop()
+        synchronized(queue) {
+            queue.clear()
+        }
+        disconnectPeer()
+        scope.cancel()
     }
 
     override fun connect(ip: String, port: Int) {
@@ -158,39 +177,68 @@ class UdpJvmTransport : UdpTransport {
         if (text.isEmpty()) {
             return
         }
-        if (text.startsWith(LocalServer.PING_PREFIX)) {
+        var seq = -1L
+        var payload = text
+        if (text.startsWith(UDP_PREFIX)) {
+            val cut = text.indexOf(':', 1)
+            if (cut > 1) {
+                val parsed = parseSeq(text.substring(1, cut))
+                if (parsed != null) {
+                    seq = parsed
+                    payload = text.substring(cut + 1)
+                }
+            }
+        }
+        if (payload.startsWith(LocalServer.PING_PREFIX)) {
             try {
-                val reply = (LocalServer.PONG_PREFIX + text.removePrefix(LocalServer.PING_PREFIX)).toByteArray(Charsets.UTF_8)
+                val reply = (LocalServer.PONG_PREFIX + payload.removePrefix(LocalServer.PING_PREFIX))
+                    .toByteArray(Charsets.UTF_8)
                 s.send(DatagramPacket(reply, reply.size, InetSocketAddress(fromIp, fromPort)))
             } catch (e: Exception) {
                 Log.w(TAG, e.message.orEmpty())
             }
             return
         }
-        if (text.startsWith(LocalServer.PONG_PREFIX)) {
-            return
-        }
-        var seq = -1L
-        var payload = text
-        if (text.startsWith(UDP_PREFIX)) {
-            val cut = text.indexOf(':', UDP_PREFIX.length)
-            if (cut > 0) {
-                seq = text.substring(UDP_PREFIX.length, cut).toLongOrNull() ?: -1L
-                payload = text.substring(cut + 1)
-            }
-        }
         synchronized(queue) {
-            if (seq == lastSeq && payload == lastText) {
+            if (seq >= 0 && seq == lastSeq && payload == lastText &&
+                fromIp == lastFromIp && fromPort == lastFromPort) {
                 return
             }
             lastSeq = seq
             lastText = payload
+            lastFromIp = fromIp
+            lastFromPort = fromPort
             queue.addLast(UdpMessage(seq, payload, fromIp, fromPort))
             while (queue.size > MAX_MESSAGES) {
                 queue.removeFirst()
             }
         }
     }
+
+    private fun parseSeq(raw: String): Long? {
+        var index = 0
+        while (index < raw.length && isAsciiSpace(raw[index])) {
+            index++
+        }
+        var negative = false
+        if (index < raw.length && (raw[index] == '+' || raw[index] == '-')) {
+            negative = raw[index] == '-'
+            index++
+        }
+        val digitsStart = index
+        while (index < raw.length && raw[index] in '0'..'9') {
+            index++
+        }
+        if (index == digitsStart || index != raw.length) {
+            return null
+        }
+        val value = raw.substring(digitsStart, index).toLongOrNull()
+            ?: return if (negative) Long.MIN_VALUE else Long.MAX_VALUE
+        return if (negative) -value else value
+    }
+
+    private fun isAsciiSpace(c: Char): Boolean =
+        c == ' ' || c == '\t' || c == '\n' || c == '\u000b' || c == '\u000c' || c == '\r'
 
     companion object {
         const val TAG = "UdpJvmTransport"

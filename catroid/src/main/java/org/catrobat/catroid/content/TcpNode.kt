@@ -31,12 +31,15 @@ class TcpNode(val name: String) {
     @Volatile private var isRunning = false
     @Volatile private var clientSocket: Socket? = null
 
-    private var serverSocket: ServerSocket? = null
-    private val clients = mutableListOf<Socket>()
-    private val outputStreams = mutableListOf<OutputStream>()
+    @Volatile private var serverSocket: ServerSocket? = null
+    @Volatile private var serverPort: String? = null
+    private val clients = LinkedHashMap<Socket, OutputStream>()
+    private var messageCount = 0L
 
     private val recentMessages = ArrayDeque<String>()
     private var lastMessageAt = 0L
+    @Volatile private var lastActivityAt = 0L
+    @Volatile private var pendingTarget: String? = null
 
     private var serverJob: Job? = null
     private val sendJobs = mutableListOf<Job>()
@@ -45,6 +48,9 @@ class TcpNode(val name: String) {
 
     fun startOrJoin(ip: String?, port: String) {
         if (ip.isNullOrEmpty()) {
+            if (isRunning && serverSocket != null && serverPort == port) {
+                return
+            }
             stop()
             synchronized(recentMessages) {
                 recentMessages.clear()
@@ -65,13 +71,29 @@ class TcpNode(val name: String) {
                 }
             }
         } else {
+            val target = "$ip:$port"
+            if (isRunning && (pendingTarget == target ||
+                    (clientSocket != null && connectedIP == ip && connectedPort == port))) {
+                return
+            }
             isRunning = true
             val session = sessionCounter
+            pendingTarget = target
             coroutineScope.launch {
                 try {
                     connectToServer(ip, port, session)
                 } catch (e: Exception) {
+                    if (isRunning && session == sessionCounter) {
+                        connectedIP = null
+                        connectedPort = null
+                        isRunning = false
+                        LocalServer.fireTcpDisconnectedEvent("refused", name)
+                    }
                     Log.e(TAG, e.message.orEmpty())
+                } finally {
+                    if (pendingTarget == target) {
+                        pendingTarget = null
+                    }
                 }
             }
         }
@@ -88,6 +110,7 @@ class TcpNode(val name: String) {
                     if (v.startsWith(ALL_ECHO_PREFIX)) {
                         val clean = v.removePrefix(ALL_ECHO_PREFIX)
                         recentMessages.addLast(clean)
+                        messageCount++
                         while (recentMessages.size > MAX_MESSAGES) recentMessages.removeFirst()
                         lastMessageAt = System.currentTimeMillis()
                     }
@@ -100,7 +123,7 @@ class TcpNode(val name: String) {
             while (System.currentTimeMillis() < deadline && isRunning) {
                 val outs: List<OutputStream>
                 synchronized(clients) {
-                    outs = outputStreams.toList()
+                    outs = clients.values.toList()
                 }
                 if (outs.isEmpty()) {
                     delay(10)
@@ -135,12 +158,24 @@ class TcpNode(val name: String) {
     }
 
     fun pingPeer(timeoutMs: Int = PING_TIMEOUT_MS): PingResult {
-        val ip = connectedIP
-        val port = connectedPort?.toIntOrNull()
+        val deadline = System.currentTimeMillis() + timeoutMs.coerceAtLeast(200)
+        val localPort = serverPort?.toIntOrNull()
+        if (serverSocket != null && localPort != null) {
+            val remaining = (deadline - System.currentTimeMillis()).toInt().coerceAtLeast(200)
+            return pingHost("127.0.0.1", localPort, remaining)
+        }
+        var ip = connectedIP
+        var port = connectedPort?.toIntOrNull()
+        while ((ip == null || port == null) && isRunning && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            ip = connectedIP
+            port = connectedPort?.toIntOrNull()
+        }
         if (ip == null || port == null) {
             return PingResult(false, -1)
         }
-        return pingHost(ip, port, timeoutMs)
+        val remaining = (deadline - System.currentTimeMillis()).toInt().coerceAtLeast(200)
+        return pingHost(ip, port, remaining)
     }
 
     @Synchronized
@@ -158,14 +193,12 @@ class TcpNode(val name: String) {
                 sendJobs.clear()
             }
             synchronized(clients) {
-                for (out in outputStreams) {
+                for ((socket, out) in clients) {
                     try {
                         out.close()
                     } catch (e: IOException) {
                         Log.w(TAG, e.message.orEmpty())
                     }
-                }
-                for (socket in clients) {
                     try {
                         socket.close()
                     } catch (e: IOException) {
@@ -173,18 +206,19 @@ class TcpNode(val name: String) {
                     }
                 }
                 clients.clear()
-                outputStreams.clear()
             }
             serverSocket?.close()
         } catch (e: IOException) {
             Log.w(TAG, e.message.orEmpty())
         } finally {
             serverSocket = null
+            serverPort = null
             serverJob?.cancel()
             serverJob = null
             connectedIP = null
             connectedPort = null
             clientSocket = null
+            pendingTarget = null
         }
     }
 
@@ -194,13 +228,22 @@ class TcpNode(val name: String) {
             return
         }
         clientSocket = null
-        try {
-            socket.getOutputStream().write("nil\n".toByteArray(Charsets.UTF_8))
-            socket.getOutputStream().flush()
-        } catch (e: IOException) {
-            Log.w(TAG, e.message.orEmpty())
+        pendingTarget = null
+        if (serverSocket == null) {
+            connectedIP = null
+            connectedPort = null
+            isRunning = false
         }
-        removeClient(socket)
+        coroutineScope.launch {
+            try {
+                val out = socket.getOutputStream()
+                out.write("nil\n".toByteArray(Charsets.UTF_8))
+                out.flush()
+            } catch (e: IOException) {
+                Log.w(TAG, e.message.orEmpty())
+            }
+            removeClient(socket)
+        }
     }
 
     fun getValue(): String {
@@ -212,6 +255,12 @@ class TcpNode(val name: String) {
     fun getMessages(): List<String> {
         synchronized(recentMessages) {
             return recentMessages.toList()
+        }
+    }
+
+    fun getMessageCount(): Long {
+        synchronized(recentMessages) {
+            return messageCount
         }
     }
 
@@ -229,31 +278,55 @@ class TcpNode(val name: String) {
             return@withContext
         }
         val server = ServerSocket(port.toInt())
-        serverSocket = server
-        server.soTimeout = serverTimeoutSeconds * 1000
-        val ip = getLocalIPAddress()
         if (session != sessionCounter || !isRunning) {
             try {
                 server.close()
             } catch (e: IOException) {
                 Log.w(TAG, e.message.orEmpty())
             }
-            serverSocket = null
             return@withContext
         }
+        serverSocket = server
+        serverPort = port
+        lastActivityAt = System.currentTimeMillis()
         connectedPort = port
-        connectedIP = ip
+        connectedIP = getLocalIPAddress()
         while (isRunning && session == sessionCounter) {
+            val idleLimitMs = serverTimeoutSeconds.coerceAtLeast(1) * 1000L
+            val remaining = idleLimitMs - (System.currentTimeMillis() - lastActivityAt)
+            if (remaining <= 0) {
+                break
+            }
+            server.soTimeout = remaining.coerceIn(200L, Int.MAX_VALUE.toLong()).toInt()
             try {
                 val socket = server.accept()
-                if (clients.size >= clientLimit) {
-                    socket.close()
+                lastActivityAt = System.currentTimeMillis()
+                if (!acceptClient(socket, true)) {
+                    launch { probeRejectedClient(socket) }
                     continue
                 }
-                addClient(socket)
                 launch { setupConnection(socket) }
             } catch (e: java.net.SocketTimeoutException) {
-                break
+            }
+        }
+    }
+
+    private suspend fun probeRejectedClient(socket: Socket) = withContext(Dispatchers.IO) {
+        try {
+            socket.soTimeout = REJECT_PROBE_TIMEOUT_MS
+            val message = readFramedLine(BufferedInputStream(socket.getInputStream()))
+            if (message != null && message.startsWith(LocalServer.PING_PREFIX)) {
+                val out = socket.getOutputStream()
+                out.write((LocalServer.PONG_PREFIX + message.removePrefix(LocalServer.PING_PREFIX) + "\n").toByteArray(Charsets.UTF_8))
+                out.flush()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, e.message.orEmpty())
+        } finally {
+            try {
+                socket.close()
+            } catch (e: IOException) {
+                Log.w(TAG, e.message.orEmpty())
             }
         }
     }
@@ -280,27 +353,42 @@ class TcpNode(val name: String) {
         }
         connectedIP = ip
         connectedPort = port
-        addClient(socket)
+        if (!acceptClient(socket, false)) {
+            try {
+                socket.close()
+            } catch (e: IOException) {
+                Log.w(TAG, e.message.orEmpty())
+            }
+            return@withContext
+        }
         clientSocket = socket
         setupConnection(socket)
     }
 
-    private fun addClient(socket: Socket) {
+    private fun acceptClient(socket: Socket, respectLimit: Boolean): Boolean {
         synchronized(clients) {
-            clients.add(socket)
-            outputStreams.add(socket.getOutputStream())
+            if (respectLimit && clients.size >= clientLimit.coerceAtLeast(1)) {
+                return false
+            }
+            return try {
+                clients[socket] = socket.getOutputStream()
+                true
+            } catch (e: IOException) {
+                Log.w(TAG, e.message.orEmpty())
+                false
+            }
         }
     }
 
     private fun removeClient(socket: Socket) {
+        val out: OutputStream?
         synchronized(clients) {
-            val index = clients.indexOf(socket)
-            if (index >= 0) {
-                clients.removeAt(index)
-                if (index < outputStreams.size) {
-                    outputStreams.removeAt(index)
-                }
-            }
+            out = clients.remove(socket)
+        }
+        try {
+            out?.close()
+        } catch (e: IOException) {
+            Log.w(TAG, e.message.orEmpty())
         }
         try {
             socket.close()
@@ -310,17 +398,20 @@ class TcpNode(val name: String) {
     }
 
     private suspend fun setupConnection(socket: Socket) = withContext(Dispatchers.IO) {
-        socket.soTimeout = serverTimeoutSeconds * 1000
+        socket.soTimeout = serverTimeoutSeconds.coerceAtLeast(1) * 1000
+        var sawEof = false
         try {
             val input = BufferedInputStream(socket.getInputStream())
             while (isRunning && !socket.isClosed) {
                 val message = readFramedLine(input)
                 if (message == null) {
+                    sawEof = true
                     break
                 }
                 if (message.isEmpty()) {
                     continue
                 }
+                lastActivityAt = System.currentTimeMillis()
                 if (message == "nil") {
                     clearRecentMessages()
                     continue
@@ -352,6 +443,7 @@ class TcpNode(val name: String) {
                             now - lastMessageAt < DUPLICATE_WINDOW_MS
                     if (!isDuplicate) {
                         recentMessages.addLast(cleanMessage)
+                        messageCount++
                         while (recentMessages.size > MAX_MESSAGES) {
                             recentMessages.removeFirst()
                         }
@@ -362,17 +454,17 @@ class TcpNode(val name: String) {
                     LocalServer.fireTcpMessageEvent(cleanMessage, name)
                     if (isBroadcast && serverSocket != null) {
                         val data = (cleanMessage + "\n").toByteArray(Charsets.UTF_8)
-                        val outs: List<OutputStream>
-                        val senderIndex: Int
+                        val targets: List<Map.Entry<Socket, OutputStream>>
                         synchronized(clients) {
-                            outs = outputStreams.toList()
-                            senderIndex = clients.indexOf(socket)
+                            targets = clients.entries.toList()
                         }
-                        for (i in outs.indices) {
-                            if (!isBroadcastEcho && i == senderIndex) continue
+                        for (entry in targets) {
+                            if (!isBroadcastEcho && entry.key === socket) {
+                                continue
+                            }
                             try {
-                                outs[i].write(data)
-                                outs[i].flush()
+                                entry.value.write(data)
+                                entry.value.flush()
                             } catch (e: Exception) {
                                 Log.e(TAG, e.message.orEmpty())
                             }
@@ -380,14 +472,31 @@ class TcpNode(val name: String) {
                     }
                 }
             }
+            if (sawEof && isRunning && !socket.isClosed) {
+                LocalServer.fireTcpDisconnectedEvent("eof", name)
+            }
         } catch (e: Exception) {
-            if (isRunning && e is java.net.SocketTimeoutException) {
-                LocalServer.fireTcpDisconnectedEvent("timeout", name)
-            } else if (isRunning) {
+            if (isRunning && !socket.isClosed) {
+                if (e is java.net.SocketTimeoutException) {
+                    LocalServer.fireTcpDisconnectedEvent("timeout", name)
+                } else {
+                    Log.e(TAG, e.message.orEmpty())
+                    LocalServer.fireTcpDisconnectedEvent("eof", name)
+                }
+            } else {
                 Log.e(TAG, e.message.orEmpty())
             }
         } finally {
             removeClient(socket)
+            if (socket === clientSocket) {
+                clientSocket = null
+                pendingTarget = null
+                if (serverSocket == null) {
+                    connectedIP = null
+                    connectedPort = null
+                    isRunning = false
+                }
+            }
         }
     }
 
@@ -451,6 +560,7 @@ class TcpNode(val name: String) {
         const val ALL_PREFIX = "ALL:"
         const val ALL_ECHO_PREFIX = "ALL_ECHO:"
         const val PING_TIMEOUT_MS = 3000
+        const val REJECT_PROBE_TIMEOUT_MS = 2000
 
         fun pingHost(ip: String, port: Int, timeoutMs: Int = PING_TIMEOUT_MS): PingResult {
             val token = System.currentTimeMillis().toString() + "-" + (Math.random() * Int.MAX_VALUE).toInt().toString()

@@ -57,19 +57,29 @@ class ColorAtXYDetection(
     stageListener: StageListener?
 ) : ColorDetection(scope, stageListener) {
     companion object {
-        private val batch: SpriteBatch by lazy { SpriteBatch() }
         private val camera: OrthographicCamera by lazy { OrthographicCamera(1f, 1f) }
-        private val fbo: FrameBuffer by lazy {
-            FrameBuffer(Pixmap.Format.RGBA8888, 1, 1, false)
-        }
+
+        private var batchRef: SpriteBatch? = null
+        private var fboRef: FrameBuffer? = null
+
+        private val batch: SpriteBatch
+            get() = batchRef ?: SpriteBatch().also { batchRef = it }
+        private val fbo: FrameBuffer
+            get() = fboRef
+                ?: FrameBuffer(Pixmap.Format.RGBA8888, 1, 1, false).also { fboRef = it }
 
         fun disposeShared() {
             try {
-                if (batch.isDrawing) batch.end()
-                batch.dispose()
-                fbo.dispose()
+                batchRef?.let {
+                    if (it.isDrawing) it.end()
+                    it.dispose()
+                }
+                fboRef?.dispose()
             } catch (e: Exception) {
-                Log.e("ColorAtXYDetection", "Error when disponse")
+                Log.e(TAG, "Error when disposing shared ColorAtXY resources", e)
+            } finally {
+                batchRef = null
+                fboRef = null
             }
         }
     }
