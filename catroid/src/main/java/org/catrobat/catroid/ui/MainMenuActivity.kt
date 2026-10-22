@@ -308,6 +308,8 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
     }
 
     private fun requestDeveloperSupportPrompt() {
+        if (!resources.getBoolean(R.bool.developer_support_prompt_enabled)) return
+
         DeveloperSupportPrompt.request(
             this,
             getString(R.string.developer_support_rewarded_ad_unit_id)
@@ -318,6 +320,7 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
     }
 
     private fun maybeShowDeveloperSupportPrompt() {
+        if (!resources.getBoolean(R.bool.developer_support_prompt_enabled)) return
         if (!developerSupportAdLoaded || !developerSupportUiReady || developerSupportPromptShown) return
         if (isFinishing || isDestroyed || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
 
