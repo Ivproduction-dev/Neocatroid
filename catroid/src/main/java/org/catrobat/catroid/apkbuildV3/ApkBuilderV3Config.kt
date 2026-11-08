@@ -15,7 +15,15 @@ data class ApkBuilderV3Config(
     val permissions: List<String> = DEFAULT_PERMISSIONS,
     val templateType: TemplateType = TemplateType.FULL,
     val firebaseConfig: FirebaseConfig? = null,
-    val debuggable: Boolean = false
+    val admobAppId: String? = null,
+    val allowSplitScreen: Boolean = true,
+    val allowPip: Boolean = false,
+    val debuggable: Boolean = false,
+    val loadingScreenMode: String = "AUTO",
+    val loadingScreenLayoutJson: String? = null,
+    val loadingScreenBgImage: File? = null,
+    val compilationScreenLayoutJson: String? = null,
+    val compilationScreenBgImage: File? = null
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
@@ -29,7 +37,15 @@ data class ApkBuilderV3Config(
         permissions = parcel.createStringArrayList() ?: DEFAULT_PERMISSIONS,
         templateType = TemplateType.valueOf(parcel.readString() ?: TemplateType.FULL.name),
         firebaseConfig = parcel.readSerializable() as? FirebaseConfig,
-        debuggable = parcel.readInt() == 1
+        admobAppId = parcel.readString(),
+        allowSplitScreen = parcel.readInt() == 1,
+        allowPip = parcel.readInt() == 1,
+        debuggable = parcel.readInt() == 1,
+        loadingScreenMode = parcel.readString() ?: "AUTO",
+        loadingScreenLayoutJson = parcel.readString(),
+        loadingScreenBgImage = parcel.readString()?.let { File(it) },
+        compilationScreenLayoutJson = parcel.readString(),
+        compilationScreenBgImage = parcel.readString()?.let { File(it) }
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -44,7 +60,15 @@ data class ApkBuilderV3Config(
         parcel.writeString(templateType.name)
         @Suppress("UNCHECKED_CAST")
         parcel.writeSerializable(firebaseConfig as java.io.Serializable?)
+        parcel.writeString(admobAppId)
+        parcel.writeInt(if (allowSplitScreen) 1 else 0)
+        parcel.writeInt(if (allowPip) 1 else 0)
         parcel.writeInt(if (debuggable) 1 else 0)
+        parcel.writeString(loadingScreenMode)
+        parcel.writeString(loadingScreenLayoutJson)
+        parcel.writeString(loadingScreenBgImage?.absolutePath)
+        parcel.writeString(compilationScreenLayoutJson)
+        parcel.writeString(compilationScreenBgImage?.absolutePath)
     }
 
     override fun describeContents(): Int = 0

@@ -58,7 +58,15 @@ class DefaultZoomWindowController
             Bitmap.Config.ARGB_8888
         )
 
-    private var mergedBackgroundCache: Bitmap? = null
+    private var zoomCropBitmap: Bitmap? = null
+    private val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    private val srcInPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        isFilterBitmap = false
+    }
 
     init {
         framePaint.color = Color.BLACK
@@ -105,7 +113,8 @@ class DefaultZoomWindowController
             isPointOnCanvas(drawingSurfaceCoordinates.x, drawingSurfaceCoordinates.y)) {
             setZoomWindowPosition(displayCoordinates)
             zoomWindow.visibility = View.VISIBLE
-            zoomWindowImage.setImageBitmap(cropBitmap(workspace.bitmapOfAllLayers, drawingSurfaceCoordinates))
+            coordinates = PointF(drawingSurfaceCoordinates.x, drawingSurfaceCoordinates.y)
+            zoomWindowImage.setImageBitmap(cropBitmap(drawingSurfaceCoordinates, null))
         }
     }
 
@@ -140,7 +149,7 @@ class DefaultZoomWindowController
     }
 
     override fun setBitmap(bitmap: Bitmap?) {
-        zoomWindowImage.setImageBitmap(coordinates?.let { cropBitmap(bitmap, it) })
+        zoomWindowImage.setImageBitmap(coordinates?.let { cropBitmap(it, bitmap) })
         zoomWindowBitmap = bitmap
     }
 
@@ -170,68 +179,45 @@ class DefaultZoomWindowController
         zoomWindowImage.layoutParams = params
     }
 
-    private fun cropBitmap(bitmap: Bitmap?, coordinates: PointF): Bitmap? {
-
-        val bitmapWithBackground: Bitmap? = mergeBackground(bitmap)
-
-        val startX: Int = coordinates.x.roundToInt() + zoomWindowDiameter / 2 - getSizeOfZoomWindow() / 2
-        val startY: Int = coordinates.y.roundToInt() + zoomWindowDiameter / 2 - getSizeOfZoomWindow() / 2
-
-        val croppedBitmap: Bitmap? =
-            Bitmap.createBitmap(getSizeOfZoomWindow(), getSizeOfZoomWindow(), Bitmap.Config.ARGB_8888)
-
-        val canvas: Canvas? = croppedBitmap?.let { Canvas(it) }
-
-        val paint = Paint()
-        paint.isAntiAlias = true
-
-        val rect = Rect(0, 0, getSizeOfZoomWindow(), getSizeOfZoomWindow())
-        val rectF = RectF(rect)
-
-        canvas?.drawOval(rectF, paint)
-
-        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-
-        bitmapWithBackground?.let {
-            canvas?.drawBitmap(it,
-                Rect(startX, startY, startX + getSizeOfZoomWindow(), startY + getSizeOfZoomWindow()),
-                rect,
-                paint
-            )
-            it.recycle()
+    private fun cropBitmap(coordinates: PointF, composite: Bitmap?): Bitmap? {
+        val size = getSizeOfZoomWindow()
+        if (size <= 0) return null
+        val cached = zoomCropBitmap
+        if (cached == null || cached.isRecycled || cached.width != size) {
+            cached?.recycle()
+            zoomCropBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         }
+        val bitmap = zoomCropBitmap ?: return null
+        bitmap.eraseColor(Color.TRANSPARENT)
 
-        return croppedBitmap
-    }
+        val canvas = Canvas(bitmap)
+        val rectF = RectF(0f, 0f, size.toFloat(), size.toFloat())
+        canvas.drawOval(rectF, circlePaint)
 
-    private fun mergeBackground(bitmap: Bitmap?): Bitmap? {
+        val startX = coordinates.x.roundToInt() + zoomWindowDiameter / 2 - size / 2
+        val startY = coordinates.y.roundToInt() + zoomWindowDiameter / 2 - size / 2
 
-        val cached = mergedBackgroundCache
-        if (cached != null && !cached.isRecycled) {
-            val bitmapOverlay = Bitmap.createBitmap(cached)
-            val canvas = Canvas(bitmapOverlay)
-            bitmap?.let { canvas.drawBitmap(it, zoomWindowDiameter / 2f, zoomWindowDiameter / 2f, null) }
-            return bitmapOverlay
+        canvas.save()
+        canvas.translate(-startX.toFloat(), -startY.toFloat())
+        canvas.drawBitmap(backgroundBitmap, 0f, 0f, srcInPaint)
+        if (composite != null) {
+            canvas.drawBitmap(composite, zoomWindowDiameter / 2f, zoomWindowDiameter / 2f, srcInPaint)
+        } else {
+            for (i in layerModel.layerCount - 1 downTo 0) {
+                val layer = layerModel.getLayerAt(i) ?: continue
+                if (!layer.isVisible) continue
+                srcInPaint.alpha = layer.getValueForOpacityPercentage()
+                canvas.drawBitmap(
+                    layer.bitmap,
+                    zoomWindowDiameter / 2f,
+                    zoomWindowDiameter / 2f,
+                    srcInPaint
+                )
+            }
+            srcInPaint.alpha = 255
         }
-
-        val bitmapOverlay =
-            Bitmap.createBitmap(
-                layerModel.width + zoomWindowDiameter,
-                layerModel.height + zoomWindowDiameter,
-                Bitmap.Config.ARGB_8888
-            )
-        val canvas = Canvas(bitmapOverlay)
-
-        canvas.drawBitmap(backgroundBitmap, Matrix(), null)
-
-        bitmap?.let { canvas.drawBitmap(it, zoomWindowDiameter / 2f, zoomWindowDiameter / 2f, null) }
-
-        return bitmapOverlay
-    }
-
-    fun invalidateBackgroundCache() {
-        mergedBackgroundCache?.recycle()
-        mergedBackgroundCache = null
+        canvas.restore()
+        return bitmap
     }
 
     private fun getSizeOfZoomWindow(): Int {

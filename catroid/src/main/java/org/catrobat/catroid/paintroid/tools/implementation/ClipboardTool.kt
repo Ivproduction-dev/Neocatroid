@@ -118,7 +118,43 @@ class ClipboardTool(
                 }
             }
         }
+        if (clipboardToolOptionsView.isTrimEnabled()) {
+            drawingBitmap = trimToObject(drawingBitmap)
+        }
         readyForPaste = true
+    }
+
+    private fun trimToObject(bitmap: Bitmap?): Bitmap? {
+        bitmap ?: return null
+        val width = bitmap.width
+        val height = bitmap.height
+        if (width <= 0 || height <= 0) return bitmap
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        var left = width
+        var top = height
+        var right = -1
+        var bottom = -1
+        for (y in 0 until height) {
+            val rowOffset = y * width
+            for (x in 0 until width) {
+                if (pixels[rowOffset + x] ushr 24 != 0) {
+                    if (x < left) left = x
+                    if (x > right) right = x
+                    if (y < top) top = y
+                    if (y > bottom) bottom = y
+                }
+            }
+        }
+        if (right < left || bottom < top) {
+            return bitmap
+        }
+        val trimWidth = right - left + 1
+        val trimHeight = bottom - top + 1
+        if (trimWidth == width && trimHeight == height) {
+            return bitmap
+        }
+        return Bitmap.createBitmap(bitmap, left, top, trimWidth, trimHeight)
     }
 
     private fun pasteBoxContent() {

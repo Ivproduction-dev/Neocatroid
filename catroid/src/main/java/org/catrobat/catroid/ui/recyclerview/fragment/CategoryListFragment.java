@@ -330,7 +330,7 @@ public class CategoryListFragment extends Fragment implements CategoryListRVAdap
             R.string.formula_device_name, R.string.formula_device_manufacturer,
             R.string.formula_android_version, R.string.formula_api_level,
             R.string.formula_system_language, R.string.formula_system_theme,
-            R.string.formula_cpu_name, R.string.formula_cpu_architecture,
+            R.string.formula_cpu_name, R.string.formula_cpu_marketing_name, R.string.formula_cpu_architecture,
             R.string.formula_cpu_cores, R.string.formula_cpu_frequency,
             R.string.formula_total_ram, R.string.formula_free_ram,
             R.string.formula_total_storage, R.string.formula_free_storage,

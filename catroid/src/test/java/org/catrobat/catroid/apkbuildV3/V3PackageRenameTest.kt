@@ -156,7 +156,7 @@ class V3PackageRenameTest {
             .setValueAsString("android.intent.category.LAUNCHER")
 
         V3ApkAssembler.applyPackageRename(manifest, "com.example.mygame")
-        V3ApkAssembler.makeRuntimeLoaderLauncher(manifest)
+        V3ApkAssembler.makeRuntimeLoaderLauncher(manifest, ApkBuilderV3Config(appName = "test"))
 
         val launcherNames = manifest.listApplicationElementsByTag("activity")
             .filter { act ->
@@ -248,7 +248,7 @@ class V3PackageRenameTest {
             module.add(FileInputSource(payload, "assets/project.ncv3"))
 
             V3ApkAssembler.applyPackageRename(manifest, packageName)
-            V3ApkAssembler.makeRuntimeLoaderLauncher(manifest)
+            V3ApkAssembler.makeRuntimeLoaderLauncher(manifest, ApkBuilderV3Config(appName = "test"))
 
             module.writeApk(repacked)
         }

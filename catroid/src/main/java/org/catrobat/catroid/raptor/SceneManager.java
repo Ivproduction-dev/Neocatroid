@@ -130,6 +130,7 @@ public class SceneManager {
         json.addClassTag("ShapeModule", ParticleSystem3DComponent.ShapeModule.class);
         json.addClassTag("CollisionPlane", ParticleSystem3DComponent.CollisionPlane.class);
         json.addClassTag("SubEmitterEntry", ParticleSystem3DComponent.SubEmitterEntry.class);
+        json.addClassTag("AudioComponent", AudioComponent.class);
     }
 
     private void synchronizeTransformsFromEngine() {
@@ -176,6 +177,8 @@ public class SceneManager {
             updateKeyframeAnimations(delta);
             synchronizeTransformsFromEngine();
         }
+
+        updateAudioComponents(delta);
 
         if (!cameraAttachments.isEmpty()) {
             com.badlogic.gdx.graphics.Camera cam = engine.getCamera();
@@ -232,6 +235,32 @@ public class SceneManager {
                 Log.e("SceneManager", "ОШИБКА ПРИВЯЗКИ: Кость '" + att.boneName + "' не найдена в модели!");
             }
         }
+    }
+
+    private void updateAudioComponents(float delta) {
+        for (GameObject go : gameObjects.values()) {
+            if (!isObjectActiveInHierarchy(go)) continue;
+            AudioComponent audio = go.getComponent(AudioComponent.class);
+            if (audio == null || audio.soundFileName == null || audio.soundFileName.isEmpty()) continue;
+            if (audio.playOnAwake && !audio.hasStarted) {
+                audio.delayTimer += delta;
+                if (audio.delayTimer >= audio.startDelay) {
+                    playAudioComponentSound(go, audio);
+                    audio.hasStarted = true;
+                }
+            }
+        }
+    }
+
+    public void playAudioComponentSound(GameObject go, AudioComponent audio) {
+        if (audio.soundFileName == null || audio.soundFileName.isEmpty()) return;
+        engine.prepareAudio(audio.soundFileName, audio.soundFileName, audio.isMusic);
+        engine.playSoundAttached(go.id, audio.soundFileName, go.id, audio.volume, audio.pitch,
+                audio.loop, audio.is3D, audio.maxDistance);
+    }
+
+    public void stopAudioComponentSound(GameObject go) {
+        engine.stopSound(go.id);
     }
 
     private final Vector3 tmpKeyframePos = new Vector3();

@@ -273,9 +273,14 @@ class BrickAdapter(val sprite: Sprite) :
             itemView.alpha = baseAlpha
         }
 
-        var brickViewContainer = itemView.getChildAt(1)
+        // getChildAt(1) can be toggle_wrapper (RelativeLayout added for CompositeBrick collapse)
+        // when the view is recycled — unwrap to the real brick container
+        var brickViewContainer: View? = itemView.getChildAt(1)
+        if (brickViewContainer?.tag == "toggle_wrapper" && brickViewContainer is ViewGroup) {
+            brickViewContainer = brickViewContainer.getChildAt(0)
+        }
         if (item is UserDefinedReceiverBrick) {
-            brickViewContainer = (itemView.getChildAt(1) as ViewGroup).getChildAt(0)
+            brickViewContainer = (brickViewContainer as? ViewGroup)?.getChildAt(0)
         }
 
         val scriptId = org.catrobat.catroid.collab.CollabGuards.scriptIdOf(item)
@@ -285,18 +290,18 @@ class BrickAdapter(val sprite: Sprite) :
         if (locker != null) {
             itemView.alpha = baseAlpha * 0.72f
             val color = org.catrobat.catroid.collab.PresenceColors.colorInt(locker.colorHue)
-            brickViewContainer.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(color), density)
+            brickViewContainer?.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(color), density)
         } else if (scriptId.isNotEmpty() && org.catrobat.catroid.collab.ScriptLockManager.isHeldByMe(scriptId)) {
             itemView.alpha = baseAlpha
             val myColor = org.catrobat.catroid.collab.PresenceColors.colorInt(org.catrobat.catroid.collab.PresenceRenderer.myHue)
-            brickViewContainer.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(myColor), density)
+            brickViewContainer?.foreground = org.catrobat.catroid.collab.PresenceBorderDrawable(listOf(myColor), density)
         } else {
-            if (brickViewContainer.foreground is org.catrobat.catroid.collab.PresenceBorderDrawable) {
-                brickViewContainer.foreground = null
+            if (brickViewContainer?.foreground is org.catrobat.catroid.collab.PresenceBorderDrawable) {
+                brickViewContainer?.foreground = null
             }
         }
 
-        val background = brickViewContainer.background
+        val background = brickViewContainer?.background
         if (background != null) {
             if (item.isCommentedOut || item is EmptyEventBrick) {
                 colorAsCommentedOut(background)
@@ -734,6 +739,10 @@ class BrickAdapter(val sprite: Sprite) :
 
     override fun getPosition(brick: Brick?): Int = items.indexOf(brick)
 
+    override fun restoreItemsFromModel() {
+        updateItemsFromCurrentScripts()
+    }
+
     override fun onItemMove(sourcePosition: Int, targetPosition: Int): Boolean {
         if (sourcePosition < 0 || sourcePosition >= items.size) return false
         if (targetPosition < 0 || targetPosition >= items.size) return false
@@ -855,8 +864,10 @@ class BrickAdapter(val sprite: Sprite) :
     override fun moveItemTo(position: Int, itemToMove: Brick?) {
         val brickAboveTargetPosition = getBrickAbovePosition(position)
 
-        if (itemToMove?.isLocked == true) return
-        if (position > 0 && brickAboveTargetPosition.isLocked) return
+        if (itemToMove?.isLocked == true || position > 0 && brickAboveTargetPosition.isLocked) {
+            restoreItemsFromModel()
+            return
+        }
 
         if (itemToMove is ScriptBrick) {
             moveScript(itemToMove, brickAboveTargetPosition)

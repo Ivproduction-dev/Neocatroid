@@ -14,6 +14,7 @@ public class SoundWrapper implements PlayableAudio {
     private Vector3 position = new Vector3();
     private String attachedToObjectId;
     private float maxDistance = 250f;
+    private boolean is3D = true;
 
     public SoundWrapper(Sound sound, float volume, float pitch, boolean loop) {
         this.sound = sound;
@@ -80,5 +81,15 @@ public class SoundWrapper implements PlayableAudio {
     @Override
     public float getMaxDistance() {
         return this.maxDistance;
+    }
+
+    @Override
+    public void set3D(boolean is3D) {
+        this.is3D = is3D;
+    }
+
+    @Override
+    public boolean is3D() {
+        return is3D;
     }
 }

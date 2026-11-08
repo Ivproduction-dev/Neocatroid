@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.danvexteam.lunoscript_annotations.LunoClass
 import org.catrobat.catroid.R
 import org.catrobat.catroid.content.Project
-import java.io.File
 
 @LunoClass
 class FilesAdapter(
@@ -21,7 +20,8 @@ class FilesAdapter(
     private val files: List<String>,
     private val onDelete: (String) -> Unit,
     private val onCopy: (String) -> Unit,
-    private val onOpen: (String) -> Unit
+    private val onOpen: (String) -> Unit,
+    private val onRename: (String) -> Unit
 ) : RecyclerView.Adapter<FilesAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -42,30 +42,27 @@ class FilesAdapter(
         val fileName = files[position]
         holder.fileName.text = fileName
 
+        val file = project?.getFile(fileName) ?: project?.getLib(fileName)
+        holder.deleteButton.visibility = View.VISIBLE
 
-        val extension = fileName.substringAfterLast('.', "").lowercase()
-        val iconRes = when (extension) {
-            "py", "lua", "js", "java", "kt", "xml", "json", "txt", "md" -> R.drawable.code_24px
-            "png", "jpg", "jpeg", "webp" -> R.drawable.ic_draw_image
-            "mp3", "wav", "ogg" -> R.drawable.ic_music_library
-            "rscene", "glb", "obj" -> R.drawable.deployed_code_24px
-            else -> R.drawable.file_present_24px
-        }
-        holder.fileIcon.setImageResource(iconRes)
-
-
-        project?.let {
-            var file: File? = it.getFile(fileName) ?: it.getLib(fileName)
-
-            if (file != null && file.exists()) {
-                holder.fileSize.text = formatFileSize(file.length())
+        if (file?.isDirectory == true) {
+            holder.fileIcon.setImageResource(R.drawable.folder_copy_24px)
+            val itemsCount = file.listFiles()?.size ?: 0
+            holder.fileSize.text = holder.itemView.context.getString(R.string.project_files_elements_count, itemsCount)
+        } else {
+            val extension = fileName.substringAfterLast('.', "").lowercase()
+            val iconRes = when (extension) {
+                "py", "lua", "js", "java", "kt", "xml", "json", "txt", "md" -> R.drawable.code_24px
+                "png", "jpg", "jpeg", "webp" -> R.drawable.ic_draw_image
+                "mp3", "wav", "ogg" -> R.drawable.ic_music_library
+                "rscene", "glb", "obj" -> R.drawable.deployed_code_24px
+                else -> R.drawable.file_present_24px
+            }
+            holder.fileIcon.setImageResource(iconRes)
+            holder.fileSize.text = if (file?.exists() == true) {
+                formatFileSize(file.length())
             } else {
-                file = it.getLib(fileName)
-                if (file != null && file.exists()) {
-                    holder.fileSize.text = formatFileSize(file.length())
-                } else {
-                    holder.fileSize.text = "Файл не найден"
-                }
+                "Файл не найден"
             }
         }
 
@@ -100,8 +97,20 @@ class FilesAdapter(
             onDelete(fileName)
         }
 
-        holder.itemView.setOnClickListener {
-            onOpen(fileName)
+        holder.itemView.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(view.context, view)
+            popup.menu.add(0, 1, 0, view.context.getString(R.string.project_files_menu_rename))
+            popup.menu.add(0, 2, 1, view.context.getString(R.string.project_files_menu_open_code))
+            popup.menu.add(0, 3, 2, view.context.getString(R.string.project_files_menu_copy_name))
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> onRename(fileName)
+                    2 -> onOpen(fileName)
+                    3 -> onCopy(fileName)
+                }
+                true
+            }
+            popup.show()
         }
 
         holder.itemView.setOnLongClickListener {

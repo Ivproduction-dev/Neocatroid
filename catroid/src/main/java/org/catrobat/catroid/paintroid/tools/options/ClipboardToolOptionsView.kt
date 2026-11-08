@@ -29,6 +29,8 @@ interface ClipboardToolOptionsView {
 
     fun toggleShapeSizeVisibility(isVisible: Boolean)
 
+    fun isTrimEnabled(): Boolean
+
     fun getClipboardToolOptionsLayout(): View
 
     interface Callback {

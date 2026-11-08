@@ -10,6 +10,7 @@ public class AdmobSetAppIdBrick extends FormulaBrick {
 
     public AdmobSetAppIdBrick() {
         addAllowedBrickField(BrickField.AD_APP_ID, R.id.brick_admob_app_id_edit);
+        setFormulaWithBrickField(BrickField.AD_APP_ID, new Formula("ca-app-pub-3940256099942544~3347511713"));
     }
 
     public AdmobSetAppIdBrick(String appId) {

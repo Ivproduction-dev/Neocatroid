@@ -1,6 +1,8 @@
 package org.catrobat.catroid.apkbuildV3
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.reandroid.apk.ApkModule
 import com.reandroid.archive.FileInputSource
@@ -20,6 +22,7 @@ import java.io.OutputStream
 import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.KeyStore
+import java.security.MessageDigest
 import java.security.PrivateKey
 import java.security.Security
 import java.util.Date
@@ -40,6 +43,9 @@ object V3ApkAssembler {
     private const val ATTR_TEST_ONLY = 0x01010272
     private const val ATTR_EXPORTED = 0x01010010
     private const val ATTR_AUTHORITIES = 0x01010018
+    private const val ATTR_CONFIG_CHANGES = 0x0101001f
+    private const val ATTR_RESIZEABLE_ACTIVITY = 0x01010476
+    private const val ATTR_SUPPORTS_PIP = 0x01010477
 
     private const val ACTION_MAIN = "android.intent.action.MAIN"
     private const val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
@@ -47,6 +53,8 @@ object V3ApkAssembler {
     private const val RUNTIME_LOADER = "org.catrobat.catroid.apkbuildV3.runtime.RuntimeLoaderActivityV3"
     private const val ASSET_PAYLOAD = "project.ncv3"
     private const val FULL_MARKER = "template_v3_full.marker"
+    private const val NEOUI_RUNTIME_MARKER = "neoui_runtime_v1.marker"
+    private val PAYLOAD_NAME_REGEX = Regex("p[0-9a-f]{16}\\.bin")
 
     init {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
@@ -54,52 +62,87 @@ object V3ApkAssembler {
         }
     }
 
+    internal fun nativePepperAvailable(apk: File): Boolean {
+        return ZipFile(apk).use { zf ->
+            val libs = zf.entries().asSequence()
+                .filter { NativePepperSlot.PEPPER_LIB_REGEX.matches(it.name) }
+                .toList()
+            if (libs.isEmpty()) {
+                false
+            } else {
+                libs.all { entry ->
+                    zf.getInputStream(entry).use { input ->
+                        NativePepperSlot.patchCount(input.readBytes()) == 1
+                    }
+                }
+            }
+        }
+    }
+
     fun assemble(
         context: Context,
         config: ApkBuilderV3Config,
         encryptedPayload: File,
-        keyFileNames: List<String>,
-        keyFileContents: List<String>,
+        payloadAssetName: String,
+        keyMaterial: ByteArray,
+        certSha256: ByteArray,
         workDir: File,
         firebaseConfig: FirebaseConfig? = null,
+        nativePepper: ByteArray? = null,
         onProgress: ((Float, String) -> Unit)? = null
     ): File {
         onProgress?.invoke(0f, "")
         workDir.mkdirs()
 
+        require(config.packageName.isNotBlank()) { "Package name is empty" }
+
         val baseApk = locateBaseApk(context, workDir, onProgress)
+        if (nativePepper == null || nativePepper.size != NativeKeyVault.PEPPER_SIZE) {
+            throw IllegalStateException("Pepper is required for the build")
+        }
+        if (!nativePepperAvailable(baseApk)) {
+            throw IllegalStateException(
+                "Runtime template does not contain the pepper slot in libapk_crypto.so. " +
+                    "Rebuild template_runtime.apk (copyTemplateApk) and update it before building."
+            )
+        }
+        if (config.loadingScreenMode == "CUSTOM" && config.loadingScreenLayoutJson != null) {
+            require(runCatching { ZipFile(baseApk).use { it.getEntry("assets/$NEOUI_RUNTIME_MARKER") != null } }.getOrDefault(false)) {
+                "Runtime template does not support customized loading screens. Update template_runtime.apk."
+            }
+        }
         onProgress?.invoke(0.15f, baseApk.name)
 
         val injectedApk = File(workDir, "v3_injected.apk")
-        injectAssets(baseApk, injectedApk, encryptedPayload, keyFileNames, keyFileContents, config.templateType, workDir)
+        injectAssetsV4(baseApk, injectedApk, encryptedPayload, payloadAssetName, config.templateType, workDir, config)
         onProgress?.invoke(0.4f, injectedApk.name)
 
         val patchedApk = File(workDir, "v3_patched.apk")
         patchManifest(injectedApk, patchedApk, config)
         onProgress?.invoke(0.55f, patchedApk.name)
 
-        val firebaseApk = if (firebaseConfig != null) {
-            val fApk = File(workDir, "v3_firebase.apk")
-            injectFirebaseConfig(patchedApk, fApk, firebaseConfig, config.packageName)
-            fApk
+        val resourcesApk = if (firebaseConfig != null || !config.admobAppId.isNullOrBlank()) {
+            val rApk = File(workDir, "v3_resources.apk")
+            injectRuntimeResources(patchedApk, rApk, firebaseConfig, config.admobAppId)
+            rApk
         } else {
             patchedApk
         }
-        onProgress?.invoke(0.7f, firebaseApk.name)
+        onProgress?.invoke(0.7f, resourcesApk.name)
 
         val iconFile = config.iconFile
         val iconApk = if (iconFile != null) {
             val iApk = File(workDir, "v3_icon.apk")
-            if (injectAppIcon(firebaseApk, iApk, iconFile)) iApk else firebaseApk
+            if (injectAppIcon(resourcesApk, iApk, iconFile)) iApk else resourcesApk
         } else {
-            firebaseApk
+            resourcesApk
         }
         onProgress?.invoke(0.8f, iconApk.name)
 
         onProgress?.invoke(0.85f, iconApk.name)
 
         val alignedApk = File(workDir, "v3_aligned.apk")
-        normalizeApkForInstall(iconApk, alignedApk, File(workDir, "v3_norm_tmp"))
+        normalizeApkForInstall(iconApk, alignedApk, File(workDir, "v3_norm_tmp"), nativePepper = nativePepper)
         onProgress?.invoke(0.9f, alignedApk.name)
 
         val signedApk = File(workDir, "v3_signed.apk")
@@ -112,7 +155,14 @@ object V3ApkAssembler {
             SigningKeyManager.keystorePassword(context), deleteKeystoreAfterUse = true)
         onProgress?.invoke(1f, signedApk.name)
 
-        verifyInstallable(signedApk)
+        verifyInstallableV4(
+            signedApk = signedApk,
+            payloadAssetName = payloadAssetName,
+            keyMaterial = keyMaterial,
+            packageName = config.packageName,
+            versionCode = config.versionCode.toLong(),
+            certSha256 = certSha256
+        )
 
         Log.i(TAG, "APK собран: ${signedApk.absolutePath} (${signedApk.length() / (1024 * 1024)} MB)")
         return signedApk
@@ -128,6 +178,60 @@ object V3ApkAssembler {
         }
     }
 
+    internal fun injectAssetsV4(
+        baseApk: File,
+        outApk: File,
+        payload: File,
+        payloadAssetName: String,
+        templateType: TemplateType,
+        workDir: File,
+        config: ApkBuilderV3Config? = null
+    ) {
+        ApkModule.loadApkFile(baseApk).use { module ->
+            module.setLoadDefaultFramework(false)
+            removeStaleProjectAssets(module)
+
+            module.add(FileInputSource(payload, "assets/$payloadAssetName"))
+
+            if (templateType == TemplateType.FULL) {
+                val markerFile = File(workDir, FULL_MARKER)
+                markerFile.writeText("FULL")
+                module.add(FileInputSource(markerFile, "assets/$FULL_MARKER"))
+            }
+
+            if (config != null) {
+                if (config.loadingScreenMode == "NO_UI") {
+                    val marker = File(workDir, "no_ui.marker")
+                    marker.writeText("NO_UI")
+                    module.add(FileInputSource(marker, "assets/neoui/no_ui.marker"))
+                } else if (config.loadingScreenMode == "CUSTOM" && config.loadingScreenLayoutJson != null) {
+                    val layoutFile = File(workDir, "neoui_layout.json")
+                    layoutFile.writeText(config.loadingScreenLayoutJson)
+                    module.add(FileInputSource(layoutFile, "assets/neoui/layout.json"))
+
+                    val bgFile = config.loadingScreenBgImage
+                    if (bgFile != null && bgFile.exists()) {
+                        module.add(FileInputSource(bgFile, "assets/neoui/background.png"))
+                    }
+
+                    val compilationLayoutJson = config.compilationScreenLayoutJson
+                    if (compilationLayoutJson != null) {
+                        val compilationLayoutFile = File(workDir, "neoui_compilation.json")
+                        compilationLayoutFile.writeText(compilationLayoutJson)
+                        module.add(FileInputSource(compilationLayoutFile, "assets/neoui/compilation.json"))
+
+                        val compilationBg = config.compilationScreenBgImage
+                        if (compilationBg != null && compilationBg.exists()) {
+                            module.add(FileInputSource(compilationBg, "assets/neoui/compilation_bg.png"))
+                        }
+                    }
+                }
+            }
+
+            module.writeApk(outApk)
+        }
+    }
+
     internal fun injectAssets(
         baseApk: File,
         outApk: File,
@@ -139,11 +243,7 @@ object V3ApkAssembler {
     ) {
         ApkModule.loadApkFile(baseApk).use { module ->
             module.setLoadDefaultFramework(false)
-
-            for (old in listOf("assets/project", "assets/project.zip", "assets/$ASSET_PAYLOAD", "assets/$FULL_MARKER")) {
-                runCatching { module.removeInputSource(old) }
-                runCatching { module.removeDir(old) }
-            }
+            removeStaleProjectAssets(module)
 
             module.add(FileInputSource(payload, "assets/$ASSET_PAYLOAD"))
 
@@ -164,6 +264,35 @@ object V3ApkAssembler {
         }
     }
 
+    private fun removeStaleProjectAssets(module: ApkModule) {
+        val fixed = listOf(
+            "assets/project",
+            "assets/project.zip",
+            "assets/$ASSET_PAYLOAD",
+            "assets/pepper.key",
+            "assets/$FULL_MARKER",
+            "assets/neoui/no_ui.marker",
+            "assets/neoui/layout.json",
+            "assets/neoui/background.png",
+            "assets/neoui/compilation.json",
+            "assets/neoui/compilation_bg.png"
+        )
+        for (name in fixed) {
+            runCatching { module.removeInputSource(name) }
+            runCatching { module.removeDir(name) }
+        }
+        runCatching { module.removeDir("assets/neoui") }
+
+        val stale = module.zipEntryMap.listInputSources().map { it.name }.filter { name ->
+            (name.startsWith("assets/nk_") && name.endsWith(".nk")) ||
+                (name.startsWith("assets/p") && name.endsWith(".bin") && PAYLOAD_NAME_REGEX.matches(name.removePrefix("assets/")))
+        }
+        for (name in stale) {
+            runCatching { module.removeInputSource(name) }
+            runCatching { module.zipEntryMap.remove(name) }
+        }
+    }
+
     internal fun injectAppIcon(inputApk: File, outputApk: File, iconFile: File): Boolean {
         if (!iconFile.exists()) {
             Log.w(TAG, "App icon file not found, keeping template icon: ${iconFile.absolutePath}")
@@ -174,25 +303,72 @@ object V3ApkAssembler {
             return false
         }
         val tmpFile = File(outputApk.absolutePath + ".tmp")
+        val preparedDir = File(outputApk.parentFile ?: File("."), "v3_icon_tmp")
         return try {
             if (outputApk.exists()) outputApk.delete()
-            val targets = mutableListOf<String>()
+            preparedDir.deleteRecursively()
+            preparedDir.mkdirs()
+            val rasterTargets = mutableListOf<String>()
+            val adaptiveTargets = mutableListOf<String>()
             ApkModule.loadApkFile(inputApk).use { module ->
                 module.setLoadDefaultFramework(false)
-                targets.addAll(module.zipEntryMap.listInputSources()
-                    .map { it.name }
-                    .filter { path ->
-                        val fileName = path.substringAfterLast('/')
-                        fileName.startsWith("ic_launcher") && fileName.endsWith(".png", ignoreCase = true)
-                    })
-                if (targets.isEmpty()) {
+                val table = module.getTableBlock(false)
+                if (table != null) {
+                    for (pkg in table.listPackages()) {
+                        for (spec in pkg.listSpecTypePairs()) {
+                            if (spec.typeName != "mipmap") continue
+                            val resources = spec.resources
+                            while (resources.hasNext()) {
+                                val resEntry = resources.next()
+                                val resName = resEntry.name ?: continue
+                                if (!resName.contains("ic_launcher")) continue
+                                for (entry in resEntry) {
+                                    val value = entry.resValue ?: continue
+                                    val path = value.valueAsString ?: continue
+                                    if (!path.startsWith("res/")) continue
+                                    when {
+                                        path.endsWith(".xml", ignoreCase = true) -> {
+                                            entry.setNull(true)
+                                            adaptiveTargets.add(path)
+                                        }
+                                        path.endsWith(".png", ignoreCase = true) ||
+                                            path.endsWith(".webp", ignoreCase = true) -> rasterTargets.add(path)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (rasterTargets.isEmpty()) {
+                    rasterTargets.addAll(module.zipEntryMap.listInputSources()
+                        .map { it.name }
+                        .filter { path ->
+                            val fileName = path.substringAfterLast('/')
+                            fileName.startsWith("ic_launcher") &&
+                                (fileName.endsWith(".png", ignoreCase = true) ||
+                                    fileName.endsWith(".webp", ignoreCase = true))
+                        })
+                }
+                if (rasterTargets.isEmpty() && adaptiveTargets.isEmpty()) {
                     Log.w(TAG, "No launcher icon entries found, keeping template icon")
                     return false
                 }
-                for (pathInApk in targets) {
-                    runCatching { module.removeInputSource(pathInApk) }
-                    runCatching { module.zipEntryMap.remove(pathInApk) }
-                    module.add(FileInputSource(iconFile, pathInApk))
+
+                for (path in adaptiveTargets.distinct()) {
+                    runCatching { module.removeInputSource(path) }
+                    runCatching { module.zipEntryMap.remove(path) }
+                }
+
+                val preparedBySize = HashMap<Int, File>()
+                for (path in rasterTargets.distinct()) {
+                    val size = iconSizeForPath(path)
+                    val png = preparedBySize.getOrPut(size) {
+                        val out = File(preparedDir, "icon_$size.png")
+                        prepareIconPng(iconFile, size, out) ?: iconFile
+                    }
+                    runCatching { module.removeInputSource(path) }
+                    runCatching { module.zipEntryMap.remove(path) }
+                    module.add(FileInputSource(png, path))
                 }
                 module.writeApk(tmpFile)
             }
@@ -206,13 +382,61 @@ object V3ApkAssembler {
                 tmpFile.copyTo(outputApk, overwrite = true)
                 tmpFile.delete()
             }
-            Log.i(TAG, "App icon injected into ${targets.size} entries")
+            Log.i(
+                TAG,
+                "App icon injected: ${rasterTargets.distinct().size} raster entries, " +
+                    "${adaptiveTargets.distinct().size} adaptive entries removed"
+            )
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to inject app icon, keeping template icon", e)
             runCatching { tmpFile.delete() }
             runCatching { if (outputApk.exists() && outputApk.length() < 4) outputApk.delete() }
             false
+        } finally {
+            preparedDir.deleteRecursively()
+        }
+    }
+
+    private fun iconSizeForPath(path: String): Int {
+        return when {
+            path.contains("mipmap-mdpi") -> 48
+            path.contains("mipmap-hdpi") -> 72
+            path.contains("mipmap-xhdpi") -> 96
+            path.contains("mipmap-xxhdpi") -> 144
+            path.contains("mipmap-xxxhdpi") -> 192
+            else -> 192
+        }
+    }
+
+    private fun prepareIconPng(source: File, size: Int, target: File): File? {
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(source.absolutePath, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= size && bounds.outHeight / (sample * 2) >= size) {
+                sample *= 2
+            }
+            val options = BitmapFactory.Options().apply { inSampleSize = sample }
+            val decoded = BitmapFactory.decodeFile(source.absolutePath, options) ?: return null
+            val side = minOf(decoded.width, decoded.height)
+            if (side <= 0) {
+                decoded.recycle()
+                return null
+            }
+            val cropped = Bitmap.createBitmap(
+                decoded, (decoded.width - side) / 2, (decoded.height - side) / 2, side, side
+            )
+            val scaled = Bitmap.createScaledBitmap(cropped, size, size, true)
+            target.outputStream().use { scaled.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            if (scaled !== cropped) scaled.recycle()
+            if (cropped !== decoded) cropped.recycle()
+            decoded.recycle()
+            if (target.length() > 0) target else null
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to prepare ${size}px icon: ${e.message}")
+            null
         }
     }
 
@@ -240,10 +464,12 @@ object V3ApkAssembler {
                     .setValueAsBoolean(config.debuggable)
                 appElem.getOrCreateAndroidAttribute("testOnly", ATTR_TEST_ONLY)
                     .setValueAsBoolean(false)
+                appElem.getOrCreateAndroidAttribute("resizeableActivity", ATTR_RESIZEABLE_ACTIVITY)
+                    .setValueAsBoolean(config.allowSplitScreen)
 
                 syncPermissions(manifest, config.permissions)
 
-                makeRuntimeLoaderLauncher(manifest)
+                makeRuntimeLoaderLauncher(manifest, config)
 
                 module.refreshManifest()
                 module.writeApk(outApk)
@@ -272,7 +498,10 @@ object V3ApkAssembler {
         }
     }
 
-    internal fun makeRuntimeLoaderLauncher(manifest: com.reandroid.arsc.chunk.xml.AndroidManifestBlock) {
+    internal fun makeRuntimeLoaderLauncher(
+        manifest: com.reandroid.arsc.chunk.xml.AndroidManifestBlock,
+        config: ApkBuilderV3Config
+    ) {
         val appElem = manifest.applicationElement
 
         val activities = appElem.listElements("activity")
@@ -295,6 +524,17 @@ object V3ApkAssembler {
             .setValueAsString(RUNTIME_LOADER)
         loaderElem.getOrCreateAndroidAttribute("exported", ATTR_EXPORTED)
             .setValueAsBoolean(true)
+
+        if (config.allowPip) {
+            loaderElem.getOrCreateAndroidAttribute("supportsPictureInPicture", ATTR_SUPPORTS_PIP)
+                .setValueAsBoolean(true)
+            val configChangesAttr = loaderElem.getOrCreateAndroidAttribute("configChanges", ATTR_CONFIG_CHANGES)
+            val existing = configChangesAttr.valueAsString ?: ""
+            val required = setOf("orientation", "screenSize", "smallestScreenSize", "screenLayout")
+            val merged = (existing.split('|').map { it.trim() }.filter { it.isNotEmpty() }.toSet() + required)
+                .joinToString("|")
+            configChangesAttr.setValueAsString(merged)
+        }
 
         val filter = loaderElem.createChildElement("intent-filter")
         val action = filter.createChildElement("action")
@@ -360,11 +600,11 @@ object V3ApkAssembler {
         }
     }
 
-    internal fun injectFirebaseConfig(
+    internal fun injectRuntimeResources(
         inputApk: File,
         outputApk: File,
-        firebaseConfig: FirebaseConfig,
-        targetPackage: String
+        firebaseConfig: FirebaseConfig?,
+        admobAppId: String?
     ) {
         try {
             ApkModule.loadApkFile(inputApk).use { module ->
@@ -372,26 +612,30 @@ object V3ApkAssembler {
                 val table = module.getTableBlock(false)
 
                 if (table == null) {
-                    Log.w(TAG, "Cannot inject Firebase config: no TableBlock found")
+                    Log.w(TAG, "Cannot inject runtime resources: no TableBlock found")
                     module.writeApk(outputApk)
                     return@use
                 }
 
-                val replacements = mapOf(
-                    "google_app_id" to firebaseConfig.mobileSdkAppId,
-                    "gcm_defaultSenderId" to firebaseConfig.projectNumber,
-                    "google_api_key" to firebaseConfig.apiKey,
-                    "google_crash_reporting_api_key" to firebaseConfig.apiKey,
-                    "project_id" to firebaseConfig.projectId,
-                    "google_storage_bucket" to firebaseConfig.storageBucket,
-                    "firebase_database_url" to firebaseConfig.databaseUrl,
-                    "default_web_client_id" to firebaseConfig.defaultWebClientId
-                )
+                val replacements = LinkedHashMap<String, String>()
+                if (firebaseConfig != null) {
+                    replacements["google_app_id"] = firebaseConfig.mobileSdkAppId
+                    replacements["gcm_defaultSenderId"] = firebaseConfig.projectNumber
+                    replacements["google_api_key"] = firebaseConfig.apiKey
+                    replacements["google_crash_reporting_api_key"] = firebaseConfig.apiKey
+                    replacements["project_id"] = firebaseConfig.projectId
+                    replacements["google_storage_bucket"] = firebaseConfig.storageBucket
+                    replacements["firebase_database_url"] = firebaseConfig.databaseUrl
+                    replacements["default_web_client_id"] = firebaseConfig.defaultWebClientId
+                }
+                if (!admobAppId.isNullOrBlank()) {
+                    replacements["admob_application_id"] = admobAppId.trim()
+                }
 
                 var updatedCount = 0
                 for ((resName, resValue) in replacements) {
                     if (resValue.isBlank()) {
-                        Log.d(TAG, "Firebase resource '$resName' has empty value, skipping")
+                        Log.d(TAG, "Runtime resource '$resName' has empty value, skipping")
                         continue
                     }
                     try {
@@ -399,26 +643,27 @@ object V3ApkAssembler {
                         if (entry != null) {
                             entry.resValue?.setValueAsString(resValue)
                             updatedCount++
-                            Log.d(TAG, "Updated Firebase resource: $resName = $resValue")
+                            Log.d(TAG, "Updated runtime resource: $resName = $resValue")
                         } else {
-                            Log.w(TAG, "Firebase resource '$resName' not found in resources.arsc")
+                            Log.w(TAG, "Runtime resource '$resName' not found in resources.arsc")
                         }
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to update Firebase resource '$resName'", e)
+                        Log.w(TAG, "Failed to update runtime resource '$resName'", e)
                     }
                 }
 
-                Log.i(TAG, "Firebase config injected: $updatedCount resources updated")
+                Log.i(TAG, "Runtime resources injected: $updatedCount resources updated")
                 module.refreshTable()
                 module.writeApk(outputApk)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to inject Firebase config", e)
+            Log.e(TAG, "Failed to inject runtime resources", e)
             throw e
         }
     }
 
-    internal fun normalizeApkForInstall(inputApk: File, outputApk: File, tmpDir: File) {
+    internal fun normalizeApkForInstall(inputApk: File, outputApk: File, tmpDir: File,
+                                        nativePepper: ByteArray? = null) {
         require(inputApk.exists() && inputApk.length() > 0) {
             "normalizeApkForInstall: входной APK отсутствует: ${inputApk.absolutePath}"
         }
@@ -426,6 +671,8 @@ object V3ApkAssembler {
         if (outputApk.exists()) outputApk.delete()
         val tmpOut = File(outputApk.absolutePath + ".tmp")
         if (tmpOut.exists()) tmpOut.delete()
+
+        val expectedDexSha256 = computeDexSha256(inputApk)
 
         data class CdEntry(
             val name: String, val method: Int, val crc: Int,
@@ -479,6 +726,26 @@ object V3ApkAssembler {
                             if (name == "META-INF/MANIFEST.MF" || name.endsWith(".SF") ||
                                 name.endsWith(".RSA") || name.endsWith(".EC")
                             ) continue
+
+                            val patchedLib: ByteArray? = if (nativePepper != null &&
+                                NativePepperSlot.PEPPER_LIB_REGEX.matches(name)) {
+                                NativePepperSlot.patch(zf.getInputStream(ze).readBytes(), nativePepper)
+                            } else null
+
+                            if (patchedLib != null) {
+                                val entryCrc = CRC32().apply { update(patchedLib) }
+                                val pad = alignPad(name)
+                                val offset = w.position.toInt()
+                                writeLocalHeader(name, patchedLib.size, patchedLib.size, ZipEntry.STORED,
+                                    entryCrc.value, pad)
+                                w.writeBytes(patchedLib)
+                                cdEntries.add(
+                                    CdEntry(name, ZipEntry.STORED, entryCrc.value.toInt(),
+                                        patchedLib.size, patchedLib.size, offset)
+                                )
+                                entryCount++
+                                continue
+                            }
 
                             if (ze.method == ZipEntry.STORED) {
                                 val size = ze.size
@@ -596,6 +863,11 @@ object V3ApkAssembler {
                 requireNotNull(zf.getEntry("AndroidManifest.xml")) {
                     "normalizeApkForInstall: потерян AndroidManifest.xml"
                 }
+                val actualDexSha256 = computeDexSha256(tmpOut)
+                require(actualDexSha256 != null) { "normalizeApkForInstall: classes.dex отсутствует после нормализации" }
+                require(MessageDigest.isEqual(expectedDexSha256, actualDexSha256)) {
+                    "normalizeApkForInstall: classes.dex изменён (SHA-256 mismatch)"
+                }
             }
             assertNoDataDescriptors(tmpOut)
             if (outputApk.exists()) outputApk.delete()
@@ -603,7 +875,7 @@ object V3ApkAssembler {
                 tmpOut.copyTo(outputApk, overwrite = true)
                 tmpOut.delete()
             }
-            Log.i(TAG, "normalize: $entryCount entries, ${outputApk.length() / (1024 * 1024)} MB, без дескрипторов")
+            Log.i(TAG, "normalize: $entryCount entries, ${outputApk.length() / (1024 * 1024)} MB, без дескрипторов, DEX verified")
         } finally {
             runCatching { tmpDir.deleteRecursively() }
             runCatching { if (tmpOut.exists() && !outputApk.exists()) tmpOut.delete() }
@@ -672,6 +944,25 @@ object V3ApkAssembler {
     private fun leShort(data: ByteArray, pos: Int): Int =
         (data[pos].toInt() and 0xFF) or ((data[pos + 1].toInt() and 0xFF) shl 8)
 
+    private fun computeDexSha256(apk: File): ByteArray? {
+        return runCatching {
+            java.util.zip.ZipFile(apk).use { zf ->
+                val dexEntry = zf.getEntry("classes.dex")
+                if (dexEntry == null) return@runCatching null
+                val digest = MessageDigest.getInstance("SHA-256")
+                val buffer = ByteArray(64 * 1024)
+                zf.getInputStream(dexEntry).use { input ->
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        if (read > 0) digest.update(buffer, 0, read)
+                    }
+                }
+                digest.digest()
+            }
+        }.getOrDefault(null)
+    }
+
     internal fun verifyInstallable(signedApk: File) {
         require(signedApk.exists() && signedApk.length() > 0) {
             "Собранный APK пуст: ${signedApk.absolutePath}"
@@ -694,6 +985,80 @@ object V3ApkAssembler {
                 "Файл ${signedApk.name} (${signedApk.length() / (1024 * 1024)} MB) ставить нельзя."
         }
         Log.i(TAG, "verify: подпись OK, warnings=${result.warnings}")
+    }
+
+    internal fun verifyInstallableV4(
+        signedApk: File,
+        payloadAssetName: String,
+        keyMaterial: ByteArray,
+        packageName: String,
+        versionCode: Long,
+        certSha256: ByteArray
+    ) {
+        require(signedApk.exists() && signedApk.length() > 0) {
+            "Собранный APK пуст: ${signedApk.absolutePath}"
+        }
+        require(payloadAssetName.isNotBlank()) { "Payload asset name is empty" }
+        require(PAYLOAD_NAME_REGEX.matches(payloadAssetName)) { "Invalid payload asset name" }
+        require(KeyMaterialV4.isValid(keyMaterial)) { "Invalid key material" }
+
+        ZipFile(signedApk).use { zf ->
+            requireNotNull(zf.getEntry("AndroidManifest.xml")) { "В APK нет AndroidManifest.xml" }
+            requireNotNull(zf.getEntry("classes.dex")) { "В APK нет classes.dex — шаблон повреждён" }
+            val payload = zf.getEntry("assets/$payloadAssetName")
+            require(payload != null && payload.size != 0L) {
+                "В APK нет assets/$payloadAssetName — игра не загрузится (payload потерян при сборке)"
+            }
+
+            val names = java.util.Collections.list(zf.entries()).map { it.name }
+            require(names.none { it.startsWith("assets/nk_") && it.endsWith(".nk") }) {
+                "В APK остались устаревшие ключи assets/nk_*.nk"
+            }
+            require(names.none { it == "assets/pepper.key" }) {
+                "В APK остался pepper.key — ключ должен жить только в libapk_crypto.so"
+            }
+            require(names.count { PAYLOAD_NAME_REGEX.matches(it.removePrefix("assets/")) } == 1) {
+                "В APK должен быть ровно один payload assets/p*.bin"
+            }
+
+            val cryptoLibs = names.filter { NativePepperSlot.PEPPER_LIB_REGEX.matches(it) }
+            require(cryptoLibs.isNotEmpty()) {
+                "В APK нет libapk_crypto.so — подтвердить ключ игры нечем"
+            }
+            for (libName in cryptoLibs) {
+                val libBytes = zf.getInputStream(zf.getEntry(libName)).readBytes()
+                require(NativePepperSlot.patchCount(libBytes) == 0) {
+                    "Pepper slot в $libName не подменён при сборке — игра не расшифруется"
+                }
+            }
+
+            val dexSha256 = computeDexSha256(signedApk)
+            require(dexSha256 != null) { "Не удалось вычислить SHA-256 classes.dex" }
+
+            zf.getInputStream(payload).use { input ->
+                val header = ProjectEncryptorV4.readHeader(input)
+                val keyBlob = ProjectEncryptorV4.readKeyBlob(input)
+                require(
+                    NativeKeyVault.verifyForBuild(
+                        certSha256 = certSha256,
+                        packageName = packageName,
+                        versionCode = versionCode,
+                        keyMaterial = keyMaterial,
+                        blob = keyBlob
+                    )
+                ) {
+                    "Ключевой блок payload не соответствует ключу подписи или пакету"
+                }
+                ProjectEncryptorV4.validateChunks(input, keyMaterial, header)
+            }
+        }
+
+        val result = ApkVerifier.Builder(signedApk).build().verify()
+        require(result.isVerified) {
+            "Подпись APK не прошла проверку: ${result.errors}. " +
+                "Файл ${signedApk.name} (${signedApk.length() / (1024 * 1024)} MB) ставить нельзя."
+        }
+        Log.i(TAG, "verify v4: payload OK, подпись OK, warnings=${result.warnings}")
     }
 
     private fun signApk(inputApk: File, outputApk: File, keystoreFile: File, alias: String, password: String,

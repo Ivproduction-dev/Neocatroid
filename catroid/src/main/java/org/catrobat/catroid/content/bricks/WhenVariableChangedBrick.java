@@ -87,14 +87,6 @@ public class WhenVariableChangedBrick extends BrickBaseType implements Composite
     }
 
     @Override
-    public void setCommentedOut(boolean commentedOut) {
-        super.setCommentedOut(commentedOut);
-        for (Brick brick : loopBricks) {
-            brick.setCommentedOut(commentedOut);
-        }
-    }
-
-    @Override
     public boolean consistsOfMultipleParts() {
         return true;
     }
@@ -121,6 +113,14 @@ public class WhenVariableChangedBrick extends BrickBaseType implements Composite
         super.setParent(parent);
         for (Brick brick : loopBricks) {
             brick.setParent(this);
+        }
+    }
+
+    @Override
+    public void setCommentedOut(boolean commentedOut) {
+        super.setCommentedOut(commentedOut);
+        for (Brick brick : loopBricks) {
+            brick.setCommentedOut(commentedOut);
         }
     }
 

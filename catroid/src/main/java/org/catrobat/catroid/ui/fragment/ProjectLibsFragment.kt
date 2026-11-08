@@ -116,10 +116,65 @@ class ProjectLibsFragment : Fragment() {
         filesAdapter = FilesAdapter(project, filesList,
             { fileName -> deleteFile(fileName) },
             { fileName -> copyFile(fileName) },
-            { fileName -> openFile(fileName) }
+            { fileName -> openFile(fileName) },
+            { fileName -> renameFile(fileName) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = filesAdapter
+    }
+
+    private fun renameFile(fileName: String) {
+        project?.let {
+            val dir = File(it.directory, "files")
+            val file = File(dir, fileName)
+            if (!file.exists()) {
+                Toast.makeText(requireContext(), "Файл не найден", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val input = android.widget.EditText(requireContext()).apply {
+                setText(fileName)
+                setSelection(fileName.length)
+                setSingleLine(true)
+            }
+            val container = android.widget.FrameLayout(requireContext()).apply {
+                setPadding(
+                    (16 * resources.displayMetrics.density).toInt(),
+                    (8 * resources.displayMetrics.density).toInt(),
+                    (16 * resources.displayMetrics.density).toInt(),
+                    0
+                )
+                addView(input)
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.project_files_rename_title)
+                .setView(container)
+                .setPositiveButton(R.string.ok) { _, _ ->
+                    val newName = input.text.toString().trim()
+                    if (newName.isEmpty() || newName == fileName) {
+                        return@setPositiveButton
+                    }
+                    if ("[\\\\/:*?\"<>|]".toRegex().containsMatchIn(newName)) {
+                        Toast.makeText(requireContext(), R.string.project_files_new_error_chars, Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    val target = File(dir, newName)
+                    if (target.exists()) {
+                        Toast.makeText(requireContext(), R.string.project_files_new_error_exists, Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    if (file.renameTo(target)) {
+                        updateFilesList(dir)
+                        org.catrobat.catroid.collab.SyncWorker.markDirty()
+                        Toast.makeText(requireContext(), R.string.project_files_renamed, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), R.string.project_files_rename_error, Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton(R.string.cancel_button_text, null)
+                .show()
+        }
     }
 
     private fun openFile(fileName: String) {
@@ -231,8 +286,10 @@ class ProjectLibsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        projectManager.currentProject = project
         project?.let {
+            if (projectManager.currentProject !== it) {
+                projectManager.currentProject = it
+            }
             LibraryManager.syncAndLoadLibraries(it)
         }
         hideBottomBar(requireActivity())

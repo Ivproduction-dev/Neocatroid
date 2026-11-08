@@ -4,15 +4,8 @@ import android.app.ActivityManager
 import android.content.Context
 import android.util.Log
 import org.catrobat.catroid.ProjectManager
-import org.catrobat.catroid.apkbuildV3.ProjectEncryptorV3
-import org.catrobat.catroid.common.Constants
-import org.catrobat.catroid.content.Project
 import org.catrobat.catroid.content.Scene
-import org.catrobat.catroid.io.XstreamSerializer
-import org.catrobat.catroid.io.ZipArchiver
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
 class LightTemplateStrategy(private val context: Context) {
     private val tag = "LightTemplateStrategy"
@@ -26,7 +19,7 @@ class LightTemplateStrategy(private val context: Context) {
         MemoryAwareCache.forDevice(totalRam / (1024 * 1024))
     }
 
-    private var metadata: ProjectLoaderV3.ProjectMetadata? = null
+    private var metadata: ProjectLoaderV4.ProjectMetadata? = null
     private val loadedScenes = mutableSetOf<String>()
 
     @Volatile
@@ -38,7 +31,7 @@ class LightTemplateStrategy(private val context: Context) {
         return try {
             onProgress?.invoke(0f)
 
-            val loader = ProjectLoaderV3(context)
+            val loader = ProjectLoaderV4(context)
             val meta = loader.loadLight(cacheDir) ?: run {
                 lastError = loader.lastError ?: "unknown loader failure"
                 return false
@@ -73,38 +66,6 @@ class LightTemplateStrategy(private val context: Context) {
         val scene = meta.project.getSceneByName(sceneName) ?: return null
 
         return try {
-            val extractDir = File(cacheDir, "scene_${sceneName}")
-            extractDir.deleteRecursively()
-            extractDir.mkdirs()
-
-            val sceneDirOld = scene.directory
-            val sceneExtractDir = File(extractDir, sceneDirOld.name)
-
-            val decryptedZip = File(cacheDir, "project_light_decrypted.zip")
-            if (decryptedZip.exists()) {
-                ZipArchiver().unzip(decryptedZip, extractDir)
-            } else {
-                Log.e(tag, "Decrypted zip not found for on-demand scene loading")
-                return null
-            }
-
-            val loadedSceneDir = File(extractDir, meta.projectDir.name)
-            val sceneFiles = loadedSceneDir.listFiles()
-
-            val sceneImagesDir = File(sceneExtractDir, "images")
-            val sceneSoundsDir = File(sceneExtractDir, "sounds")
-
-            if (sceneImagesDir.exists()) {
-                sceneImagesDir.listFiles()?.forEach { file ->
-                    MemoryAwarePipeline.copyFile(file, File(sceneExtractDir, file.name))
-                }
-            }
-            if (sceneSoundsDir.exists()) {
-                sceneSoundsDir.listFiles()?.forEach { file ->
-                    MemoryAwarePipeline.copyFile(file, File(sceneExtractDir, file.name))
-                }
-            }
-
             scene.setProject(meta.project)
 
             val sceneSize = estimateSceneSize(scene)
@@ -157,16 +118,5 @@ class LightTemplateStrategy(private val context: Context) {
             }
         }
         return total.coerceAtLeast(1024L * 1024L)
-    }
-}
-
-private object MemoryAwarePipeline {
-    fun copyFile(source: File, dest: File) {
-        dest.parentFile?.mkdirs()
-        FileInputStream(source).use { input ->
-            FileOutputStream(dest).use { output ->
-                input.channel.transferTo(0, source.length(), output.channel)
-            }
-        }
     }
 }

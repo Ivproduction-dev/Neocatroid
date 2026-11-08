@@ -59,16 +59,11 @@ object ThemeManager {
     )
 
     fun init(context: Context) {
-        currentPalette = try {
-            if (isMaterialYouEnabled(context)) {
-                dynamicPalette(context) ?: loadSelectedPalette(context)
-            } else {
-                loadSelectedPalette(context)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load selected theme, falling back to default", e)
-            ThemePalette.DEFAULT
-        }
+        prefs(context).edit()
+            .remove(PREF_KEY_SELECTED)
+            .remove(PREF_MATERIAL_YOU)
+            .apply()
+        currentPalette = ThemePalette.DEFAULT
     }
 
     private fun loadSelectedPalette(context: Context): ThemePalette {

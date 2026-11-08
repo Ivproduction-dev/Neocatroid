@@ -81,6 +81,7 @@ import org.catrobat.catroid.camera.CameraManager;
 import org.catrobat.catroid.common.LookData;
 import org.catrobat.catroid.common.ScreenModes;
 import org.catrobat.catroid.common.ScreenValues;
+import org.catrobat.catroid.admob.AdMobManager;
 import org.catrobat.catroid.common.ThreadScheduler;
 import org.catrobat.catroid.common.TilemapLookData;
 import org.catrobat.catroid.neo3d.Neo3DFacade;
@@ -1740,6 +1741,7 @@ public class StageListener implements ApplicationListener {
 		}
 		scene = newScene;
 		ProjectManager.getInstance().setCurrentlyPlayingScene(scene);
+		AdMobManager.INSTANCE.hideBanner();
 
 		CameraManager cameraManager = StageActivity.getActiveCameraManager();
 		if (cameraManager != null) {

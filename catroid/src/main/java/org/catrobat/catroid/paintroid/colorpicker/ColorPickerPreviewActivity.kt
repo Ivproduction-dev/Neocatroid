@@ -136,7 +136,7 @@ class ColorPickerPreviewActivity : AppCompatActivity(), OnImageViewPointClickedL
     }
 
     private fun showSaveChangesDialog() {
-        MaterialAlertDialogBuilder(this)
+        MaterialAlertDialogBuilder(this, R.style.PocketPaintAlertDialog)
             .setTitle(R.string.color_picker_save_dialog_title)
             .setMessage(R.string.color_picker_save_dialog_msg)
             .setNegativeButton(R.string.color_picker_no) { dialogInterface: DialogInterface, _: Int ->

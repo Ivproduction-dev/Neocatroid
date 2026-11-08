@@ -3,14 +3,20 @@ package org.catrobat.catroid.apkbuildV3.runtime
 import android.app.Activity
 import android.content.Intent
 import android.content.res.AssetManager
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.Gravity
+import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import org.catrobat.catroid.R
 import org.catrobat.catroid.apkbuildV3.TemplateType
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiLayout
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiRuntimeView
 import org.catrobat.catroid.stage.StageActivity
 import java.io.File
 
@@ -21,6 +27,9 @@ class RuntimeLoaderActivityV3 : Activity() {
     private val handler = Handler(Looper.getMainLooper())
     private var templateType: TemplateType = TemplateType.LIGHT
     private var projectPath: String? = null
+    private var isNoUi = false
+    private var customLayout: NeoUiLayout? = null
+    private var customRuntimeView: NeoUiRuntimeView? = null
 
     companion object {
         private const val TAG = "RuntimeLoaderV3"
@@ -47,9 +56,7 @@ class RuntimeLoaderActivityV3 : Activity() {
         factText = findViewById(R.id.v3_fact_text)
 
         templateType = detectTemplateType(assets)
-        statusText.text = getString(R.string.v3_loading)
-
-        showRandomFact()
+        setupCustomLoadingUi()
 
         Thread {
             try {
@@ -67,6 +74,8 @@ class RuntimeLoaderActivityV3 : Activity() {
                     if (success) {
                         startProject()
                     } else {
+                        customRuntimeView?.errorText = getString(R.string.v3_load_failed)
+                        statusText.visibility = View.VISIBLE
                         statusText.text = if (detail != null) {
                             "${getString(R.string.v3_load_failed)}: $detail"
                         } else {
@@ -77,10 +86,58 @@ class RuntimeLoaderActivityV3 : Activity() {
             } catch (t: Throwable) {
                 Log.e(TAG, "Loading failed", t)
                 handler.post {
+                    customRuntimeView?.errorText = getString(R.string.v3_load_failed)
+                    statusText.visibility = View.VISIBLE
                     statusText.text = "${getString(R.string.v3_load_failed)}: ${t.javaClass.simpleName}: ${t.message}"
                 }
             }
         }.start()
+    }
+
+    private fun setupCustomLoadingUi() {
+        val root = findViewById<android.widget.FrameLayout>(R.id.v3_runtime_root)
+        val defaultLoader = findViewById<View>(R.id.v3_default_loader)
+        val title = findViewById<TextView>(R.id.v3_runtime_title)
+
+        isNoUi = runCatching {
+            assets.open("neoui/no_ui.marker").use { true }
+        }.getOrDefault(false)
+
+        if (isNoUi) {
+            root.setBackgroundColor(Color.BLACK)
+            defaultLoader.visibility = View.GONE
+            title?.visibility = View.GONE
+            progressBar.visibility = View.GONE
+            statusText.visibility = View.GONE
+            factText.visibility = View.GONE
+            return
+        }
+
+        customLayout = runCatching {
+            assets.open("neoui/layout.json").use { input ->
+                val bytes = input.readBounded(1024 * 1024)
+                NeoUiLayout.fromJsonString(bytes.toString(Charsets.UTF_8)).also { it.requireValid() }
+            }
+        }.getOrNull()
+
+        val layout = customLayout
+        if (layout != null) {
+            val bgBmp = runCatching {
+                assets.open("neoui/background.png").use { input ->
+                    val bytes = input.readBounded(20 * 1024 * 1024)
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                    require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192 && bounds.outWidth.toLong() * bounds.outHeight <= 32_000_000)
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = 2 })
+                }
+            }.getOrNull()
+            customRuntimeView = NeoUiRuntimeView(this, layout, bgBmp)
+            defaultLoader.visibility = View.GONE
+            root.addView(customRuntimeView, android.widget.FrameLayout.LayoutParams(-1, -1))
+        } else {
+            statusText.text = getString(R.string.v3_loading)
+            showRandomFact()
+        }
     }
 
     private fun detectTemplateType(assets: AssetManager): TemplateType {
@@ -91,6 +148,20 @@ class RuntimeLoaderActivityV3 : Activity() {
         } catch (e: Exception) {
             return TemplateType.LIGHT
         }
+    }
+
+    private fun java.io.InputStream.readBounded(limit: Int): ByteArray {
+        val output = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var total = 0
+        while (true) {
+            val count = read(buffer)
+            if (count < 0) break
+            total += count
+            require(total <= limit)
+            output.write(buffer, 0, count)
+        }
+        return output.toByteArray()
     }
 
     @Volatile
@@ -150,11 +221,15 @@ class RuntimeLoaderActivityV3 : Activity() {
     }
 
     private fun updateProgress(progress: Float, stage: String) {
+        if (isNoUi) return
         handler.post {
+            customRuntimeView?.progress = (progress * 100).toInt()
             progressBar.progress = (progress * 100).toInt()
-            statusText.text = stage
-                    if (Math.random() < 0.3) {
-                showRandomFact()
+            if (customLayout == null) {
+                statusText.text = stage
+                if (Math.random() < 0.3) {
+                    showRandomFact()
+                }
             }
         }
     }
@@ -167,6 +242,7 @@ class RuntimeLoaderActivityV3 : Activity() {
     private fun startProject() {
         val stageIntent = Intent(this, StageActivity::class.java).apply {
             putExtra(StageActivity.EXTRA_PROJECT_PATH, projectPath)
+            putExtra(StageActivity.EXTRA_PROJECT_PRELOADED, true)
             putExtra("V3_TEMPLATE_TYPE", templateType.name)
         }
         startActivity(stageIntent)
@@ -181,10 +257,5 @@ class RuntimeLoaderActivityV3 : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        // NOTE: do NOT delete the extracted project cache here. StageActivity still
-        // loads textures/scripts from these files after the runtime permissions
-        // dialog and the first GL frame; deleting them causes a black screen.
-        // The cache dirs are cleaned at the next launch (deleteRecursively in
-        // loadFullTemplate/loadLightTemplate) and by the OS when storage is low.
     }
 }

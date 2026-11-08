@@ -61,14 +61,6 @@ public class RunAsSpriteBrick extends FormulaBrick implements CompositeBrick {
     }
 
     @Override
-    public void setCommentedOut(boolean commentedOut) {
-        super.setCommentedOut(commentedOut);
-        for (Brick brick : nestedBricks) {
-            brick.setCommentedOut(commentedOut);
-        }
-    }
-
-    @Override
     public Brick clone() throws CloneNotSupportedException {
         RunAsSpriteBrick clone = (RunAsSpriteBrick) super.clone();
         clone.endBrick = new EndBrick(clone);
@@ -106,6 +98,14 @@ public class RunAsSpriteBrick extends FormulaBrick implements CompositeBrick {
         super.setParent(parent);
         for (Brick brick : nestedBricks) {
             brick.setParent(this);
+        }
+    }
+
+    @Override
+    public void setCommentedOut(boolean commentedOut) {
+        super.setCommentedOut(commentedOut);
+        for (Brick brick : nestedBricks) {
+            brick.setCommentedOut(commentedOut);
         }
     }
 

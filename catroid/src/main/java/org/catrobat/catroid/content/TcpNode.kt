@@ -45,7 +45,9 @@ class TcpNode(val name: String) {
     private val sendJobs = mutableListOf<Job>()
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var sessionCounter = 0
+    @Volatile private var clientGeneration = 0
 
+    @Synchronized
     fun startOrJoin(ip: String?, port: String) {
         if (ip.isNullOrEmpty()) {
             if (isRunning && serverSocket != null && serverPort == port) {
@@ -76,17 +78,27 @@ class TcpNode(val name: String) {
                     (clientSocket != null && connectedIP == ip && connectedPort == port))) {
                 return
             }
-            isRunning = true
+            clientGeneration++
+            val generation = clientGeneration
+            clientSocket?.let {
+                clientSocket = null
+                removeClient(it)
+            }
+            if (serverSocket == null) {
+                connectedIP = null
+                connectedPort = null
+                isRunning = true
+            } else {
+                restoreServerConnectionInfo()
+            }
             val session = sessionCounter
             pendingTarget = target
             coroutineScope.launch {
                 try {
-                    connectToServer(ip, port, session)
+                    connectToServer(ip, port, session, generation)
                 } catch (e: Exception) {
-                    if (isRunning && session == sessionCounter) {
-                        connectedIP = null
-                        connectedPort = null
-                        isRunning = false
+                    if (session == sessionCounter && generation == clientGeneration) {
+                        resetClientConnectionState()
                         LocalServer.fireTcpDisconnectedEvent("refused", name)
                     }
                     Log.e(TAG, e.message.orEmpty())
@@ -181,6 +193,7 @@ class TcpNode(val name: String) {
     @Synchronized
     fun stop() {
         sessionCounter++
+        clientGeneration++
         if (!isRunning) {
             return
         }
@@ -222,28 +235,18 @@ class TcpNode(val name: String) {
         }
     }
 
+    @Synchronized
     fun disconnectFromServer() {
+        clientGeneration++
+        pendingTarget = null
         val socket = clientSocket
         if (socket == null) {
+            resetClientConnectionState()
             return
         }
         clientSocket = null
-        pendingTarget = null
-        if (serverSocket == null) {
-            connectedIP = null
-            connectedPort = null
-            isRunning = false
-        }
-        coroutineScope.launch {
-            try {
-                val out = socket.getOutputStream()
-                out.write("nil\n".toByteArray(Charsets.UTF_8))
-                out.flush()
-            } catch (e: IOException) {
-                Log.w(TAG, e.message.orEmpty())
-            }
-            removeClient(socket)
-        }
+        resetClientConnectionState()
+        removeClient(socket)
     }
 
     fun getValue(): String {
@@ -331,7 +334,7 @@ class TcpNode(val name: String) {
         }
     }
 
-    private suspend fun connectToServer(ip: String, port: String, session: Int) = withContext(Dispatchers.IO) {
+    private suspend fun connectToServer(ip: String, port: String, session: Int, generation: Int) = withContext(Dispatchers.IO) {
         val socket = Socket()
         try {
             socket.connect(InetSocketAddress(ip, port.toInt()), 10000)
@@ -343,7 +346,20 @@ class TcpNode(val name: String) {
             }
             throw e
         }
-        if (session != sessionCounter || !isRunning) {
+        val accepted = synchronized(this@TcpNode) {
+            if (session != sessionCounter || generation != clientGeneration || !isRunning) {
+                false
+            } else if (!acceptClient(socket, false)) {
+                resetClientConnectionState()
+                false
+            } else {
+                connectedIP = ip
+                connectedPort = port
+                clientSocket = socket
+                true
+            }
+        }
+        if (!accepted) {
             try {
                 socket.close()
             } catch (e: IOException) {
@@ -351,17 +367,6 @@ class TcpNode(val name: String) {
             }
             return@withContext
         }
-        connectedIP = ip
-        connectedPort = port
-        if (!acceptClient(socket, false)) {
-            try {
-                socket.close()
-            } catch (e: IOException) {
-                Log.w(TAG, e.message.orEmpty())
-            }
-            return@withContext
-        }
-        clientSocket = socket
         setupConnection(socket)
     }
 
@@ -397,6 +402,21 @@ class TcpNode(val name: String) {
         }
     }
 
+    private fun resetClientConnectionState() {
+        if (serverSocket != null) {
+            restoreServerConnectionInfo()
+        } else {
+            connectedIP = null
+            connectedPort = null
+            isRunning = false
+        }
+    }
+
+    private fun restoreServerConnectionInfo() {
+        connectedIP = getLocalIPAddress()
+        connectedPort = serverPort
+    }
+
     private suspend fun setupConnection(socket: Socket) = withContext(Dispatchers.IO) {
         socket.soTimeout = serverTimeoutSeconds.coerceAtLeast(1) * 1000
         var sawEof = false
@@ -413,7 +433,6 @@ class TcpNode(val name: String) {
                 }
                 lastActivityAt = System.currentTimeMillis()
                 if (message == "nil") {
-                    clearRecentMessages()
                     continue
                 }
                 if (message.startsWith(LocalServer.PING_PREFIX)) {
@@ -488,13 +507,11 @@ class TcpNode(val name: String) {
             }
         } finally {
             removeClient(socket)
-            if (socket === clientSocket) {
-                clientSocket = null
-                pendingTarget = null
-                if (serverSocket == null) {
-                    connectedIP = null
-                    connectedPort = null
-                    isRunning = false
+            synchronized(this@TcpNode) {
+                if (socket === clientSocket) {
+                    clientSocket = null
+                    pendingTarget = null
+                    resetClientConnectionState()
                 }
             }
         }

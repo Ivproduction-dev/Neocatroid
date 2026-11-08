@@ -79,6 +79,9 @@ public class LookData implements Cloneable, Nameable, Serializable {
 	protected transient Pixmap pixmap = null;
 	transient TextureRegion textureRegion = null;
 
+	private transient Pixmap shaderSourcePixmap = null;
+	private transient Pixmap shaderResultPixmap = null;
+
 	private transient CollisionInformation collisionInformation = null;
 
 	private boolean valid = true;
@@ -168,6 +171,11 @@ public class LookData implements Cloneable, Nameable, Serializable {
 	}
 
 	public void dispose() {
+		if (shaderSourcePixmap != null) {
+			shaderSourcePixmap.dispose();
+			shaderSourcePixmap = null;
+		}
+		shaderResultPixmap = null;
 		if (pixmap != null) {
 			pixmap.dispose();
 			pixmap = null;
@@ -228,6 +236,22 @@ public class LookData implements Cloneable, Nameable, Serializable {
 	@VisibleForTesting
 	public void setPixmap(Pixmap pixmap) {
 		this.pixmap = pixmap;
+	}
+
+	public Pixmap getShaderSourcePixmap() {
+		return shaderSourcePixmap;
+	}
+
+	public void setShaderSourcePixmap(Pixmap pixmap) {
+		shaderSourcePixmap = pixmap;
+	}
+
+	public Pixmap getShaderResultPixmap() {
+		return shaderResultPixmap;
+	}
+
+	public void setShaderResultPixmap(Pixmap pixmap) {
+		shaderResultPixmap = pixmap;
 	}
 
 	public Bitmap getThumbnailBitmap() {

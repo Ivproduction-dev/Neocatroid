@@ -30,7 +30,6 @@ import org.catrobat.catroid.common.BrickValues
 import org.catrobat.catroid.content.BroadcastScript
 import org.catrobat.catroid.content.RaspiInterruptScript
 import org.catrobat.catroid.content.WhenBounceOffScript
-import org.catrobat.catroid.content.WhenSwipedScript
 import org.catrobat.catroid.content.WhenConditionScript
 import org.catrobat.catroid.content.WhenGamepadButtonScript
 import org.catrobat.catroid.content.WhenButtonPressedScript
@@ -76,7 +75,6 @@ import org.catrobat.catroid.content.bricks.AttachToCameraBrick
 import org.catrobat.catroid.content.bricks.AttachToCameraWithOffsetBrick
 import org.catrobat.catroid.content.bricks.BackgroundRequestBrick
 import org.catrobat.catroid.content.bricks.BakeByPrefixBrick
-import org.catrobat.catroid.content.bricks.BigAskBrick
 import org.catrobat.catroid.content.bricks.BlinkSpriteBrick
 import org.catrobat.catroid.content.bricks.ClampPositionBrick
 import org.catrobat.catroid.content.bricks.CooldownBrick
@@ -142,7 +140,6 @@ import org.catrobat.catroid.content.bricks.Create3dJumpButtonBrick
 import org.catrobat.catroid.content.bricks.Create3dObjectBrick
 import org.catrobat.catroid.content.bricks.CreateBufferBrick
 import org.catrobat.catroid.content.bricks.CreateCubeBrick
-import org.catrobat.catroid.content.bricks.CreateDialogBrick
 import org.catrobat.catroid.content.bricks.CreateDiskBrick
 import org.catrobat.catroid.content.bricks.CreateDistanceJointBrick
 import org.catrobat.catroid.content.bricks.CreateFloatBrick
@@ -518,14 +515,11 @@ import org.catrobat.catroid.content.bricks.AppendToFileBrick
 import org.catrobat.catroid.content.bricks.ListFilesInFolderBrick
 import org.catrobat.catroid.content.bricks.ListShuffleBrick
 import org.catrobat.catroid.content.bricks.ApplyForceAtPointBrick
-import org.catrobat.catroid.content.bricks.CloseDialogueBrick
 import org.catrobat.catroid.content.bricks.CreateTextLabelBrick
 import org.catrobat.catroid.content.bricks.CrossFadeSoundBrick
 import org.catrobat.catroid.content.bricks.CrossfadeBrick
-import org.catrobat.catroid.content.bricks.CurrentDialogueTextBrick
 import org.catrobat.catroid.content.bricks.CurrentNodeIDBrick
 import org.catrobat.catroid.content.bricks.CurrentSpeakerBrick
-import org.catrobat.catroid.content.bricks.DialogueRunningBrick
 import org.catrobat.catroid.content.bricks.Export3dObjectToGlbBrick
 import org.catrobat.catroid.content.bricks.FadeFromBlackBrick
 import org.catrobat.catroid.content.bricks.FadeToBlackBrick
@@ -533,7 +527,6 @@ import org.catrobat.catroid.content.bricks.Fast2DSetZIndexBrick
 import org.catrobat.catroid.content.bricks.HttpCancelBrick
 import org.catrobat.catroid.content.bricks.HttpClearBrick
 import org.catrobat.catroid.content.bricks.InstantTransitionBrick
-import org.catrobat.catroid.content.bricks.JumpToNodeBrick
 import org.catrobat.catroid.content.bricks.LocalizeSpritesBrick
 import org.catrobat.catroid.content.bricks.MqttPublishBrick
 import org.catrobat.catroid.content.bricks.PauseSoundBrick
@@ -553,7 +546,6 @@ import org.catrobat.catroid.content.bricks.SlideDownBrick
 import org.catrobat.catroid.content.bricks.SlideLeftBrick
 import org.catrobat.catroid.content.bricks.SlideRightBrick
 import org.catrobat.catroid.content.bricks.SlideUpBrick
-import org.catrobat.catroid.content.bricks.StartDialogueBrick
 import org.catrobat.catroid.content.bricks.TweenPositionBrick
 import org.catrobat.catroid.content.bricks.WhenAIResponseBrick
 import org.catrobat.catroid.content.bricks.WhenHttpRequestFailedBrick
@@ -576,8 +568,6 @@ import org.catrobat.catroid.content.bricks.SaveLookBrick
 import org.catrobat.catroid.content.bricks.SaveLookFilesBrick
 import org.catrobat.catroid.content.bricks.SavePlotBrick
 import org.catrobat.catroid.content.bricks.SaveToInternalStorageBrick
-import org.catrobat.catroid.content.bricks.SayBubbleBrick
-import org.catrobat.catroid.content.bricks.SayForBubbleBrick
 import org.catrobat.catroid.content.bricks.SceneIdBrick
 import org.catrobat.catroid.content.bricks.SceneBackBrick
 import org.catrobat.catroid.content.bricks.SceneStartBrick
@@ -724,7 +714,6 @@ import org.catrobat.catroid.content.bricks.SetYBrick
 import org.catrobat.catroid.content.bricks.SewUpBrick
 import org.catrobat.catroid.content.bricks.ShaderBrick
 import org.catrobat.catroid.content.bricks.ShowBrick
-import org.catrobat.catroid.content.bricks.ShowDialogBrick
 import org.catrobat.catroid.content.bricks.ShowNotificationBrick
 import org.catrobat.catroid.content.bricks.PlaySpritesheetBrick
 import org.catrobat.catroid.content.bricks.PrepareNotificationBrick
@@ -745,6 +734,8 @@ import org.catrobat.catroid.content.bricks.BroadcastWithParamsBrick
 import org.catrobat.catroid.content.bricks.BroadcastWithParamsReceiverBrick
 import org.catrobat.catroid.content.bricks.ShowText3Brick
 import org.catrobat.catroid.content.bricks.ShowTextBrick
+import org.catrobat.catroid.content.bricks.ShowBarBrick
+import org.catrobat.catroid.content.bricks.HideBarBrick
 import org.catrobat.catroid.content.bricks.ShowTextColorSizeAlignmentBrick
 import org.catrobat.catroid.content.bricks.ShowTextFontBrick
 import org.catrobat.catroid.content.bricks.ShowTextRotationBrick
@@ -826,8 +817,6 @@ import org.catrobat.catroid.content.bricks.TableToFloatBrick
 import org.catrobat.catroid.content.bricks.TapAtBrick
 import org.catrobat.catroid.content.bricks.TapForBrick
 import org.catrobat.catroid.content.bricks.TestBrick
-import org.catrobat.catroid.content.bricks.ThinkBubbleBrick
-import org.catrobat.catroid.content.bricks.ThinkForBubbleBrick
 import org.catrobat.catroid.content.bricks.ThreedAlignNormalBrick
 import org.catrobat.catroid.content.bricks.ThreedAttachObjectToBoneBrick
 import org.catrobat.catroid.content.bricks.ThreedBindBoneToObjectBrick
@@ -894,7 +883,6 @@ import org.catrobat.catroid.content.bricks.WhenTouchingSpriteByNameBrick
 import org.catrobat.catroid.content.bricks.WhenNeo3DCollidesBrick
 import org.catrobat.catroid.content.bricks.WhenButtonPressedBrick
 import org.catrobat.catroid.content.bricks.VolumeButtonHoldBrick
-import org.catrobat.catroid.content.bricks.WhenSwipedBrick
 import org.catrobat.catroid.content.bricks.WhenBrick
 import org.catrobat.catroid.content.bricks.WhenClonedBrick
 import org.catrobat.catroid.content.bricks.WhenConditionBrick
@@ -1361,7 +1349,6 @@ open class CategoryBricksFactory {
                 eventBrickList.add(WhenAppRestoredBrick())
                 eventBrickList.add(WhenWindowResizedBrick())
                 eventBrickList.add(WhenMqttMessageBrick(WhenMqttMessageScript(Formula("room_1"))))
-                eventBrickList.add(WhenSwipedBrick(WhenSwipedScript(0)))
                 eventBrickList.add(WhenVariableChangedBrick())
                 eventBrickList.add(WhenButtonPressedBrick(WhenButtonPressedScript(WhenButtonPressedScript.BUTTON_VOLUME_UP)))
                 eventBrickList.add(VolumeButtonHoldBrick(VolumeButtonHoldScript(VolumeButtonHoldScript.BUTTON_VOLUME_UP, org.catrobat.catroid.formulaeditor.Formula(1.0f))))
@@ -1409,7 +1396,6 @@ open class CategoryBricksFactory {
         }
         eventBrickList.add(WhenBrick())
         eventBrickList.add(WhenTouchDownBrick())
-        eventBrickList.add(WhenSwipedBrick(WhenSwipedScript(0)))
         eventBrickList.add(WhenVariableChangedBrick())
         eventBrickList.add(WhenBackPressedBrick())
         eventBrickList.add(WhenButtonPressedBrick(WhenButtonPressedScript(WhenButtonPressedScript.BUTTON_VOLUME_UP)))
@@ -1531,7 +1517,6 @@ open class CategoryBricksFactory {
         }
         eventBrickList.add(WhenBrick())
         eventBrickList.add(WhenTouchDownBrick())
-        eventBrickList.add(WhenSwipedBrick(WhenSwipedScript(0)))
         eventBrickList.add(WhenVariableChangedBrick())
         eventBrickList.add(WhenBackPressedBrick())
         eventBrickList.add(WhenButtonPressedBrick(WhenButtonPressedScript(WhenButtonPressedScript.BUTTON_VOLUME_UP)))
@@ -2146,14 +2131,6 @@ open class CategoryBricksFactory {
                 looksBrickList.add(ShowSpritesByPrefixBrick("show_"))
                 looksBrickList.add(HideSpritesByPrefixBrick("hide_"))
                 looksBrickList.add(FlashColorBrick(0.0, 1.0))
-                looksBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
-                looksBrickList.add(BigAskBrick(context.getString(R.string.brick_ask_default_question), "Введите ответ:", "OK", "Отмена", "Ваш ответ"))
-                if (!isBackgroundSprite) {
-                    looksBrickList.add(SayBubbleBrick(context.getString(R.string.brick_say_bubble_default_value)))
-                    looksBrickList.add(SayForBubbleBrick(context.getString(R.string.brick_say_bubble_default_value), 1.0f))
-                    looksBrickList.add(ThinkBubbleBrick(context.getString(R.string.brick_think_bubble_default_value)))
-                    looksBrickList.add(ThinkForBubbleBrick(context.getString(R.string.brick_think_bubble_default_value), 1.0f))
-                }
                 looksBrickList.add(ShowTextBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION))
                 looksBrickList.add(ShowTextColorSizeAlignmentBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION, BrickValues.RELATIVE_SIZE_IN_PERCENT, BrickValues.SHOW_VARIABLE_COLOR))
                 looksBrickList.add(ShowTextRotationBrick())
@@ -2320,14 +2297,6 @@ open class CategoryBricksFactory {
         looksBrickList.add(ClearGraphicEffectBrick())
 
         looksBrickList.add(SubCategoryHeaderBrick(context.getString(R.string.subcategory_looks_dialogs), template))
-        if (!isBackgroundSprite) {
-            looksBrickList.add(SayBubbleBrick(context.getString(R.string.brick_say_bubble_default_value)))
-            looksBrickList.add(SayForBubbleBrick(context.getString(R.string.brick_say_bubble_default_value), 1.0f))
-            looksBrickList.add(ThinkBubbleBrick(context.getString(R.string.brick_think_bubble_default_value)))
-            looksBrickList.add(ThinkForBubbleBrick(context.getString(R.string.brick_think_bubble_default_value), 1.0f))
-        }
-        looksBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
-        looksBrickList.add(BigAskBrick(context.getString(R.string.brick_ask_default_question), "Введите ответ:", "OK", "Отмена", "Ваш ответ"))
         looksBrickList.add(ShowTextBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION))
         looksBrickList.add(ShowTextColorSizeAlignmentBrick(BrickValues.X_POSITION, BrickValues.Y_POSITION, BrickValues.RELATIVE_SIZE_IN_PERCENT, BrickValues.SHOW_VARIABLE_COLOR))
         looksBrickList.add(ShowTextRotationBrick())
@@ -2574,7 +2543,6 @@ open class CategoryBricksFactory {
                     ProjectManager.getInstance().currentProject.xmlHeader.islandscapeMode() -> dataBrickList.add(BackgroundRequestBrick(BrickValues.BACKGROUND_REQUEST_LANDSCAPE))
                     else -> dataBrickList.add(BackgroundRequestBrick(BrickValues.BACKGROUND_REQUEST))
                 }
-                dataBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
                 if (SettingsFragment.isAISpeechRecognitionSharedPreferenceEnabled(context)) {
                     dataBrickList.add(AskSpeechBrick(context.getString(R.string.brick_ask_speech_default_question)))
                 }
@@ -2600,6 +2568,17 @@ open class CategoryBricksFactory {
                 dataBrickList.add(StackPopBrick())
                 dataBrickList.add(SecureSaveVariableBrick())
                 dataBrickList.add(SecureReadVariableBrick())
+                dataBrickList.add(ShowBarBrick().apply {
+                    setFillColor(Formula("#4CAF50"))
+                    setTrackColor(Formula("#3A3A3C"))
+                    setWidthPct(Formula(50f))
+                    setHeightPct(Formula(8f))
+                    setMinValue(Formula(0f))
+                    setMaxValue(Formula(100f))
+                    setXPct(Formula(50f))
+                    setYPct(Formula(90f))
+                })
+                dataBrickList.add(HideBarBrick())
                 return dataBrickList
             }
         }
@@ -2690,7 +2669,6 @@ open class CategoryBricksFactory {
             ProjectManager.getInstance().currentProject.xmlHeader.islandscapeMode() -> dataBrickList.add(BackgroundRequestBrick(BrickValues.BACKGROUND_REQUEST_LANDSCAPE))
             else -> dataBrickList.add(BackgroundRequestBrick(BrickValues.BACKGROUND_REQUEST))
         }
-        dataBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
         dataBrickList.add(ListenMicroBrick("100"))
         if (SettingsFragment.isAISpeechRecognitionSharedPreferenceEnabled(context)) {
             dataBrickList.add(AskSpeechBrick(context.getString(R.string.brick_ask_speech_default_question)))
@@ -2714,6 +2692,17 @@ open class CategoryBricksFactory {
         dataBrickList.add(StackPushBrick())
         dataBrickList.add(StackPopBrick())
         dataBrickList.add(SetSeedBrick(1.0))
+        dataBrickList.add(ShowBarBrick().apply {
+            setFillColor(Formula("#4CAF50"))
+            setTrackColor(Formula("#3A3A3C"))
+            setWidthPct(Formula(50f))
+            setHeightPct(Formula(8f))
+            setMinValue(Formula(0f))
+            setMaxValue(Formula(100f))
+            setXPct(Formula(50f))
+            setYPct(Formula(90f))
+        })
+        dataBrickList.add(HideBarBrick())
 
         return dataBrickList
     }
@@ -3026,7 +3015,6 @@ bot.polling()""", "myVar"))
         deviceBrickList.add(ShowToastBrick("Hello World"))
         deviceBrickList.add(CopyTextBrick("Котлета"))
         deviceBrickList.add(ListenMicroBrick("100"))
-        deviceBrickList.add(AskBrick(context.getString(R.string.brick_ask_default_question)))
         if (SettingsFragment.isAISpeechSynthetizationSharedPreferenceEnabled(context)) {
             deviceBrickList.add(SpeakBrick(context.getString(R.string.brick_speak_default_value)))
             deviceBrickList.add(SpeakAndWaitBrick(context.getString(R.string.brick_speak_default_value)))
@@ -3697,20 +3685,14 @@ uniform sampler2D u_diffuseTexture;
 uniform float u_time;
 
 void main() {
-    // 1. Берем базовый цвет из текстуры объекта
     vec4 baseColor = texture2D(u_diffuseTexture, v_texCoord);
 
-    // 2. Создаем цвет для пульсации (ярко-фиолетовый)
     vec3 pulseColor = vec3(1.0, 0.0, 1.0);
 
-    // 3. Вычисляем коэффициент пульсации на основе времени
-    // sin(u_time * 5.0) колеблется от -1 до 1. Мы преобразуем это в диапазон от 0 до 1.
     float pulse = (sin(u_time * 5.0) + 1.0) * 0.5;
 
-    // 4. Смешиваем базовый цвет с цветом пульсации
     vec3 finalColor = mix(baseColor.rgb, pulseColor, pulse);
 
-    // 5. Устанавливаем итоговый цвет пикселя, сохраняя исходную прозрачность
     gl_FragColor = vec4(finalColor, baseColor.a);
 }"""))
         threedBrickList.add(SetScreenShaderBrick("""attribute vec4 a_position;
@@ -3728,9 +3710,9 @@ varying vec2 v_texCoords;
 uniform sampler2D u_texture0;
 uniform float u_time;
 
-const float DISTORTION = 0.22;   // Сила рыбьего глаза
-const float ZOOM = 1.12;         // Приближение
-const float CHROMATIC = 0.007;   // Сила RGB-расщепления по краям
+const float DISTORTION = 0.22;
+const float ZOOM = 1.12;
+const float CHROMATIC = 0.007;
 
 void main() {
     vec2 uv = v_texCoords;
@@ -3986,20 +3968,20 @@ void main() {
     private fun setupAdmobCategoryList(context: Context): List<Brick> {
         val admobBrickList: MutableList<Brick> = ArrayList()
         admobBrickList.add(AdmobEnableTestModeBrick())
-        admobBrickList.add(AdmobSetAppIdBrick())
+        admobBrickList.add(AdmobSetAppIdBrick("ca-app-pub-3940256099942544~3347511713"))
         admobBrickList.add(AdmobInitializeBrick())
-        admobBrickList.add(AdmobSetBannerUnitIdBrick())
+        admobBrickList.add(AdmobSetBannerUnitIdBrick("ca-app-pub-3940256099942544/6300978111"))
         admobBrickList.add(AdmobLoadBannerBrick())
-        admobBrickList.add(AdmobShowBannerBrick())
+        admobBrickList.add(AdmobShowBannerBrick(0))
         admobBrickList.add(AdmobHideBannerBrick())
         admobBrickList.add(AdmobDestroyBannerBrick())
-        admobBrickList.add(AdmobSetInterstitialUnitIdBrick())
+        admobBrickList.add(AdmobSetInterstitialUnitIdBrick("ca-app-pub-3940256099942544/1033173712"))
         admobBrickList.add(AdmobLoadInterstitialBrick())
         admobBrickList.add(AdmobShowInterstitialBrick())
-        admobBrickList.add(AdmobSetRewardedUnitIdBrick())
+        admobBrickList.add(AdmobSetRewardedUnitIdBrick("ca-app-pub-3940256099942544/5224354917"))
         admobBrickList.add(AdmobLoadRewardedBrick())
         admobBrickList.add(AdmobShowRewardedBrick())
-        admobBrickList.add(AdmobSetAppOpenUnitIdBrick())
+        admobBrickList.add(AdmobSetAppOpenUnitIdBrick("ca-app-pub-3940256099942544/9257390708"))
         admobBrickList.add(AdmobLoadAppOpenBrick())
         admobBrickList.add(AdmobShowAppOpenBrick())
         return admobBrickList

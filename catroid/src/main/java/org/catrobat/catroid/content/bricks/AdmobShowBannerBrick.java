@@ -10,6 +10,7 @@ public class AdmobShowBannerBrick extends FormulaBrick {
 
     public AdmobShowBannerBrick() {
         addAllowedBrickField(BrickField.AD_POSITION, R.id.brick_admob_position_edit);
+        setFormulaWithBrickField(BrickField.AD_POSITION, new Formula(0));
     }
 
     public AdmobShowBannerBrick(Formula position) {

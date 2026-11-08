@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <CheckBox
+        android:id="@+id/brick_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:visibility="gone" />
+
+    <org.catrobat.catroid.ui.BrickLayout
+        android:id="@+id/brick_show_bar_layout"
+        style="@style/BrickContainer.UserVariables.Big">
+
+        <include layout="@layout/icon_brick_category_data" />
+
+        <TextView
+            style="@style/BrickText.SingleLine"
+            android:text="@string/brick_show_bar" />
+
+        <Spinner
+            android:id="@+id/brick_show_bar_variable_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textDirection="locale" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_fill" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_fill_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_track" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_track_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_width" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_width_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_height" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_height_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_min" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_min_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_max" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_max_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_x" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_x_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_y" />
+
+            <TextView
+                android:id="@+id/brick_show_bar_y_edit"
+                style="@style/BrickEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_auto" />
+
+            <Spinner
+                android:id="@+id/brick_show_bar_auto_spinner"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/BrickText.SingleLine"
+                android:text="@string/brick_show_bar_pinned" />
+
+            <Spinner
+                android:id="@+id/brick_show_bar_pinned_spinner"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textDirection="locale" />
+        </LinearLayout>
+
+    </org.catrobat.catroid.ui.BrickLayout>
+
+</LinearLayout>

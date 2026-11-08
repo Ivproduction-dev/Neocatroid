@@ -132,3 +132,7 @@ target_link_libraries(neo2d_box2d PRIVATE ${log-lib})
 add_library(net_udp SHARED net_udp.cpp)
 target_compile_options(net_udp PRIVATE -O3)
 target_link_libraries(net_udp PRIVATE ${log-lib})
+
+add_library(apk_crypto SHARED apk_crypto_jni.cpp)
+target_compile_options(apk_crypto PRIVATE -O3)
+target_link_libraries(apk_crypto PRIVATE ${log-lib})

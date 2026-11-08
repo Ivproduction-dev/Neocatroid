@@ -80,14 +80,6 @@ public class SwitchBeginBrick extends FormulaBrick implements CompositeBrick {
 	}
 
 	@Override
-	public void setCommentedOut(boolean commentedOut) {
-		super.setCommentedOut(commentedOut);
-		for (Brick brick : caseBricks) {
-			brick.setCommentedOut(commentedOut);
-		}
-	}
-
-	@Override
 	public Brick clone() throws CloneNotSupportedException {
 		SwitchBeginBrick clone = (SwitchBeginBrick) super.clone();
 		clone.endBrick = new EndBrick(clone, R.layout.brick_switch_end);
@@ -125,6 +117,14 @@ public class SwitchBeginBrick extends FormulaBrick implements CompositeBrick {
 		super.setParent(parent);
 		for (Brick brick : caseBricks) {
 			brick.setParent(this);
+		}
+	}
+
+	@Override
+	public void setCommentedOut(boolean commentedOut) {
+		super.setCommentedOut(commentedOut);
+		for (Brick brick : caseBricks) {
+			brick.setCommentedOut(commentedOut);
 		}
 	}
 

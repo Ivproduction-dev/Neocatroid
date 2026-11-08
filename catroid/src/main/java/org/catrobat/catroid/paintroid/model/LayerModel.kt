@@ -85,7 +85,8 @@ open class LayerModel : LayerContracts.Model {
     }
 
     fun drawLayersOntoCanvas(canvas: Canvas?) {
-        layers.asReversed().forEach { layer ->
+        for (i in layers.size - 1 downTo 0) {
+            val layer = layers[i]
             if (layer.isVisible) {
                 updateAlphaPaint(layer)
                 canvas?.drawBitmap(layer.bitmap, 0f, 0f, alphaPaint)
@@ -99,8 +100,8 @@ open class LayerModel : LayerContracts.Model {
         drawingBoardCanvas: Canvas?,
         tool: Tool?
     ) {
-        layers.asReversed().forEach { layer ->
-            val layerIndex = getLayerIndexOf(layer)
+        for (layerIndex in layers.size - 1 downTo 0) {
+            val layer = layers[layerIndex]
             if (layer.isVisible) {
                 updateAlphaPaint(layer)
                 surfaceViewCanvas?.drawBitmap(layer.bitmap, 0f, 0f, alphaPaint)
@@ -122,8 +123,8 @@ open class LayerModel : LayerContracts.Model {
     ) {
         var bitmapWithEraseApplied: Bitmap?
         var eraseAppliedCanvas: Canvas?
-        layers.asReversed().forEach { layer ->
-            val layerIndex = getLayerIndexOf(layer)
+        for (layerIndex in layers.size - 1 downTo 0) {
+            val layer = layers[layerIndex]
             if (layer.isVisible) {
                 updateAlphaPaint(layer)
                 surfaceViewCanvas?.drawBitmap(layer.bitmap, 0f, 0f, alphaPaint)

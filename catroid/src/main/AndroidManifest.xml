@@ -253,12 +253,6 @@
             android:label="Plugins" />
 
         <activity
-            android:name=".ui.ThemesActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:theme="@style/Theme.NeoCatroid.LibraryEditor"
-            android:parentActivityName=".ui.SettingsActivity" />
-
-        <activity
             android:name=".ide.IdeActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="IDE" />
@@ -454,13 +448,6 @@
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
 
         <activity
-            android:name="org.catrobat.catroid.ui.swipe.SwipeEditorActivity"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-
-        <activity
             android:name="org.catrobat.catroid.ui.sceneeditor.SceneEditorActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
@@ -483,13 +470,6 @@
 
         <activity
             android:name="org.catrobat.catroid.ui.formulaeditor.FormulaEditor2Activity"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="unspecified"
-            android:theme="@style/Ui2Activity" />
-
-        <activity
-            android:name="org.catrobat.catroid.ui.dialogue.DialogueEditorActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="unspecified"

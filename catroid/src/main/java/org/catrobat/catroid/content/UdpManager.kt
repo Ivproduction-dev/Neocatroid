@@ -59,6 +59,7 @@ class UdpManager private constructor() {
                                         continue
                                     }
                                     val vars = brick.getVariables().filterNotNull()
+                                    vars.forEach { it.value = "" }
                                     if (vars.size > 1 && text.contains(LocalServer.VALUE_SEPARATOR)) {
                                         val parts = text.split(LocalServer.VALUE_SEPARATOR)
                                         for (i in vars.indices) {

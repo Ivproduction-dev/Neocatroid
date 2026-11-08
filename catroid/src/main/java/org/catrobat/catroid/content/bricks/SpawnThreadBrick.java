@@ -54,14 +54,6 @@ public class SpawnThreadBrick extends FormulaBrick implements CompositeBrick {
     }
 
     @Override
-    public void setCommentedOut(boolean commentedOut) {
-        super.setCommentedOut(commentedOut);
-        for (Brick brick : threadBricks) {
-            brick.setCommentedOut(commentedOut);
-        }
-    }
-
-    @Override
     public Brick clone() throws CloneNotSupportedException {
         SpawnThreadBrick clone = (SpawnThreadBrick) super.clone();
         clone.endBrick = new EndBrick(clone);
@@ -99,6 +91,14 @@ public class SpawnThreadBrick extends FormulaBrick implements CompositeBrick {
         super.setParent(parent);
         for (Brick brick : threadBricks) {
             brick.setParent(this);
+        }
+    }
+
+    @Override
+    public void setCommentedOut(boolean commentedOut) {
+        super.setCommentedOut(commentedOut);
+        for (Brick brick : threadBricks) {
+            brick.setCommentedOut(commentedOut);
         }
     }
 

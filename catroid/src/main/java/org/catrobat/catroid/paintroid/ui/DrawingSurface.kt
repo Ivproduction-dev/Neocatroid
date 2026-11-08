@@ -74,6 +74,7 @@ open class DrawingSurface : SurfaceView, SurfaceHolder.Callback {
     private lateinit var zoomController: ZoomWindowController
     private lateinit var sharedPreferences: UserPreferences
     private var cachedDrawingBoardBitmap: Bitmap? = null
+    private var cachedDrawingBoardCanvas: Canvas? = null
 
     constructor(context: Context?, attrSet: AttributeSet?) : super(context, attrSet)
 
@@ -176,20 +177,20 @@ open class DrawingSurface : SurfaceView, SurfaceHolder.Callback {
     private fun drawLayers(surfaceViewCanvas: Canvas): Bitmap? {
         val currentTool = toolReference.tool
         val currentLayerIndex = layerModel.currentLayer?.let { layerModel.getLayerIndexOf(it) }
-        val needDrawingBoard = currentTool != null &&
+        val zoomWindowEnabled = !::sharedPreferences.isInitialized || sharedPreferences.preferenceZoomWindowEnabled
+        val needDrawingBoard = zoomWindowEnabled && currentTool != null &&
             zoomController.checkIfToolCompatibleWithZoomWindow(currentTool) == Constants.COMPATIBLE
 
         if (currentTool?.toolType?.name.equals(ToolType.ERASER.name)) {
             (layerModel as LayerModel).drawLayersOntoCanvas(surfaceViewCanvas)
             if (needDrawingBoard) {
-                val drawingBoardBitmap = getOrCreateDrawingBoardBitmap()
-                if (drawingBoardBitmap != null) {
-                    val drawingBoardCanvas = Canvas(drawingBoardBitmap)
+                val drawingBoardCanvas = getOrCreateDrawingBoardCanvas()
+                if (drawingBoardCanvas != null) {
                     (layerModel as LayerModel).drawLayersOntoCanvasCorrectOrderEraser(
                         drawingBoardCanvas, currentLayerIndex, currentTool
                     )
                 }
-                return drawingBoardBitmap
+                return cachedDrawingBoardBitmap
             } else {
                 (layerModel as LayerModel).drawLayersOntoCanvasCorrectOrderEraser(
                     surfaceViewCanvas, currentLayerIndex, currentTool
@@ -197,9 +198,7 @@ open class DrawingSurface : SurfaceView, SurfaceHolder.Callback {
                 return null
             }
         } else {
-            val drawingBoardCanvas = if (needDrawingBoard) {
-                getOrCreateDrawingBoardBitmap()?.let { Canvas(it) }
-            } else null
+            val drawingBoardCanvas = if (needDrawingBoard) getOrCreateDrawingBoardCanvas() else null
             (layerModel as LayerModel).drawLayersOntoCanvasCorrectOrder(
                 surfaceViewCanvas, currentLayerIndex, drawingBoardCanvas, currentTool
             )
@@ -207,24 +206,28 @@ open class DrawingSurface : SurfaceView, SurfaceHolder.Callback {
         }
     }
 
-    private fun getOrCreateDrawingBoardBitmap(): Bitmap? {
+    private fun getOrCreateDrawingBoardCanvas(): Canvas? {
         synchronized(layerModel) {
             val w = layerModel.width
             val h = layerModel.height
             if (w <= 0 || h <= 0) return null
             val cached = cachedDrawingBoardBitmap
-            if (cached == null || cached.width != w || cached.height != h) {
+            if (cached == null || cached.isRecycled || cached.width != w || cached.height != h) {
                 cached?.recycle()
                 cachedDrawingBoardBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                cachedDrawingBoardCanvas = cachedDrawingBoardBitmap?.let { Canvas(it) }
             } else {
                 cached.eraseColor(Color.TRANSPARENT)
             }
-            return cachedDrawingBoardBitmap
+            return cachedDrawingBoardCanvas
         }
     }
 
     private fun handleZoomCompatibility(currentBitmap: Bitmap?) {
         val currentTool = toolReference.tool
+        if (::sharedPreferences.isInitialized && !sharedPreferences.preferenceZoomWindowEnabled) {
+            return
+        }
         if (zoomController.checkIfToolCompatibleWithZoomWindow(currentTool) == Constants.COMPATIBLE) {
             handler.post {
                 zoomController.setBitmap(currentBitmap)
@@ -282,6 +285,7 @@ open class DrawingSurface : SurfaceView, SurfaceHolder.Callback {
         drawingThread?.stop()
         cachedDrawingBoardBitmap?.recycle()
         cachedDrawingBoardBitmap = null
+        cachedDrawingBoardCanvas = null
     }
 
     private inner class DrawLoop : Runnable {

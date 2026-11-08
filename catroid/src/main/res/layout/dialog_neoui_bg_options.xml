@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="18dp"
+    android:background="@color/app_background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/v3_neoui_bg_title"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="@color/solid_white"
+        android:layout_marginBottom="12dp" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="110dp"
+        android:layout_marginBottom="14dp"
+        app:cardCornerRadius="4dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="#4A4A4A"
+        app:cardBackgroundColor="@color/surface_card">
+
+        <ImageView
+            android:id="@+id/neoui_bg_preview_img"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/neoui_btn_import_image"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="@string/v3_neoui_import_image"
+        android:textSize="13sp"
+        android:textColor="@color/solid_white"
+        app:cornerRadius="2dp"
+        app:backgroundTint="@color/surface_card" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/neoui_btn_clear_bg_image"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:text="@string/v3_neoui_clear_bg_image"
+        android:textColor="@color/solid_white" />
+
+</LinearLayout>

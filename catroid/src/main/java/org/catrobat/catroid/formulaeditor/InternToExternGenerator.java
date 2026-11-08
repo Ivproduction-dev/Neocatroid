@@ -487,6 +487,7 @@ public class InternToExternGenerator {
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.SYSTEM_LANGUAGE.name(), R.string.formula_system_language);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.SYSTEM_THEME.name(), R.string.formula_system_theme);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.CPU_NAME.name(), R.string.formula_cpu_name);
+        INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.CPU_MARKETING_NAME.name(), R.string.formula_cpu_marketing_name);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.CPU_ARCHITECTURE.name(), R.string.formula_cpu_architecture);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.CPU_CORES.name(), R.string.formula_cpu_cores);
         INTERN_EXTERN_LANGUAGE_CONVERTER_MAP.put(Functions.CPU_FREQUENCY.name(), R.string.formula_cpu_frequency);

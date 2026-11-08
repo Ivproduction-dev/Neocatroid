@@ -45,6 +45,7 @@ import org.catrobat.catroid.admob.AdMobManager;
 import org.catrobat.catroid.common.NewCatroidHttpManager;
 import org.catrobat.catroid.stage.StageActivity;
 import org.catrobat.catroid.stage.StageListener;
+import org.catrobat.catroid.utils.SocInfo;
 import org.catrobat.catroid.utils.lunoscript.Interpreter;
 import org.catrobat.catroid.utils.lunoscript.LunoRuntimeError;
 import org.catrobat.catroid.utils.lunoscript.LunoValue;
@@ -1324,21 +1325,10 @@ public class FormulaElement implements Serializable {
                     return (nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) ? "Dark" : "Light";
                 } catch (Exception e) { return "Unknown"; }
             }
-            case CPU_NAME: {
-                try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                        new java.io.FileReader("/proc/cpuinfo"))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.toLowerCase().contains("hardware")) {
-                            String[] parts = line.split(":");
-                            return parts.length > 1 ? parts[1].trim() : "Unknown";
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG_FORMULA_ELEMENT, "Failed to read CPU info", e);
-                }
-                return "Unknown";
-            }
+            case CPU_NAME:
+                return SocInfo.cpuName();
+            case CPU_MARKETING_NAME:
+                return SocInfo.marketingName();
             case CPU_ARCHITECTURE:
                 return android.os.Build.SUPPORTED_ABIS != null && android.os.Build.SUPPORTED_ABIS.length > 0
                     ? android.os.Build.SUPPORTED_ABIS[0] : "Unknown";

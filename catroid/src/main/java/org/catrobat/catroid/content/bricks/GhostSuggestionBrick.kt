@@ -1,8 +1,6 @@
 package org.catrobat.catroid.content.bricks
 
 import android.content.Context
-import android.view.GestureDetector
-import android.view.MotionEvent
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -35,8 +33,6 @@ class GhostSuggestionBrick(
     }
 
     private var isDismissed = false
-    private var swipeTranslationX = 0f
-    private val swipeThreshold = 200f
 
     override fun getViewResource(): Int = R.layout.brick_ghost_suggestion
 
@@ -58,27 +54,7 @@ class GhostSuggestionBrick(
         val dismissBtn = v.findViewById<TextView>(R.id.ghost_dismiss)
         dismissBtn?.setOnClickListener { onDismiss(context, v) }
 
-        setupSwipe(context, v)
-
         return v
-    }
-
-    private fun setupSwipe(context: Context, view: View) {
-        val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 == null) return false
-                val dx = e2.x - e1.x
-                if (dx < -swipeThreshold) {
-                    view.post { onDismiss(context, view) }
-                    return true
-                }
-                return false
-            }
-        })
-
-        view.setOnTouchListener { _, event ->
-            gestureDetector.onTouchEvent(event)
-        }
     }
 
     override fun addToFlatList(bricks: List<Brick?>?) {

@@ -21,7 +21,7 @@ class FullTemplateStrategy(private val context: Context) {
         return try {
             onProgress?.invoke(0f)
 
-            val loader = ProjectLoaderV3(context)
+            val loader = ProjectLoaderV4(context)
             val result = loader.loadFull(cacheDir) { progress ->
                 onProgress?.invoke(progress * 0.6f)
             } ?: run {

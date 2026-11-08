@@ -113,10 +113,12 @@ class BrickListView : ListView {
         invalidate()
     }
 
-    fun startMoving(brickToMove: Brick?) {
-        if (brickToMove != null
-            && !org.catrobat.catroid.collab.CollabGuards.claimForEdit(context, brickToMove)) {
-            return
+    fun startMoving(brickToMove: Brick?): Boolean {
+        if (brickToMove == null) {
+            return false
+        }
+        if (!org.catrobat.catroid.collab.CollabGuards.claimForEdit(context, brickToMove)) {
+            return false
         }
         dragMode = if (SettingsFragment.isOldDragEnabled(CatroidApplication.getAppContext())) {
             DragMode.NEW
@@ -125,15 +127,24 @@ class BrickListView : ListView {
         }
         cancelMove()
         val flatList: MutableList<Brick> = ArrayList()
-        brickToMove?.addToFlatList(flatList)
-        if (brickToMove?.parent is CompositeBrick && brickToMove is EndBrick) {
+        brickToMove.addToFlatList(flatList)
+        if (flatList.isEmpty()) {
+            return false
+        }
+        if (brickToMove.parent is CompositeBrick && brickToMove is EndBrick) {
             this.brickToMove = brickToMove
             flatList.clear()
         } else if (brickToMove !== flatList[0]) {
-            return
+            return false
         } else {
             this.brickToMove = flatList[0]
             flatList.removeAt(0)
+        }
+
+        currentPositionOfHoveringBrick = brickAdapterInterface?.getPosition(this.brickToMove) ?: -1
+        if (currentPositionOfHoveringBrick < 0) {
+            this.brickToMove = null
+            return false
         }
 
         when (dragMode) {
@@ -146,7 +157,6 @@ class BrickListView : ListView {
                 lowerScrollBound = height / LOWER_SCROLL_BOUND_DIVISOR
             }
         }
-        currentPositionOfHoveringBrick = brickAdapterInterface!!.getPosition(this.brickToMove)
         invalidateHoveringItem = true
 
         prepareHoveringItem(getChildAtVisiblePosition(currentPositionOfHoveringBrick))
@@ -155,6 +165,7 @@ class BrickListView : ListView {
         if (!brickAdapterInterface!!.removeItems(flatList)) {
             invalidateViews()
         }
+        return true
     }
 
     var onCancelMoveListener: (() -> Unit)? = null
@@ -180,6 +191,7 @@ class BrickListView : ListView {
             MotionEvent.ACTION_UP -> stopMoving()
             MotionEvent.ACTION_CANCEL -> {
                 cancelMove()
+                brickAdapterInterface?.restoreItemsFromModel()
                 onCancelMoveListener?.invoke()
             }
             MotionEvent.ACTION_DOWN -> {

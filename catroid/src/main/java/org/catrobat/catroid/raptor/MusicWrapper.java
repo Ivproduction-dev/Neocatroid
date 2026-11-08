@@ -12,6 +12,7 @@ public class MusicWrapper implements PlayableAudio {
     private String attachedToObjectId;
     private float baseVolume = 1.0f;
     private float maxDistance = 250f;
+    private boolean is3D = true;
 
     public MusicWrapper(Music music, float volume, float pitch, boolean loop) {
         this.music = music;
@@ -68,5 +69,15 @@ public class MusicWrapper implements PlayableAudio {
     @Override
     public float getMaxDistance() {
         return this.maxDistance;
+    }
+
+    @Override
+    public void set3D(boolean is3D) {
+        this.is3D = is3D;
+    }
+
+    @Override
+    public boolean is3D() {
+        return is3D;
     }
 }

@@ -10,6 +10,7 @@ public class AdmobSetAppOpenUnitIdBrick extends FormulaBrick {
 
     public AdmobSetAppOpenUnitIdBrick() {
         addAllowedBrickField(BrickField.AD_UNIT_ID, R.id.brick_admob_unit_id_edit);
+        setFormulaWithBrickField(BrickField.AD_UNIT_ID, new Formula("ca-app-pub-3940256099942544/9257390708"));
     }
 
     public AdmobSetAppOpenUnitIdBrick(String unitId) {

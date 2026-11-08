@@ -116,19 +116,25 @@ object AdMobManager {
                 MobileAds.initialize(activity) { status ->
                     mainHandler.post {
                         isSdkInitializing = false
-                        isInitialized = true
-                        if (status.adapterStatusMap.values.any { it.initializationState == com.google.android.gms.ads.initialization.AdapterStatus.State.READY }) {
+                        val isReady = status.adapterStatusMap.values.any {
+                            it.initializationState == com.google.android.gms.ads.initialization.AdapterStatus.State.READY
+                        }
+                        if (isReady) {
+                            isInitialized = true
                             Log.d(TAG, "AdMob initialized successfully")
                             fireEvent(EventId.ADMOB_INITIALIZED)
+                            invokeInitializationCallbacks(success = true)
                         } else {
+                            isInitialized = false
                             Log.w(TAG, "AdMob initialization incomplete")
                             fireEvent(EventId.ADMOB_INIT_FAILED)
+                            invokeInitializationCallbacks(success = false)
                         }
-                        invokeInitializationCallbacks(success = true)
                     }
                 }
             } catch (e: Exception) {
                 isSdkInitializing = false
+                isInitialized = false
                 lastErrorCode = -1
                 lastErrorMessage = e.message ?: "Unknown error"
                 Log.e(TAG, "AdMob initialization failed", e)
@@ -182,14 +188,6 @@ object AdMobManager {
                             Log.e(TAG, "Banner failed: $lastErrorMessage")
                             fireEvent(EventId.ADMOB_BANNER_FAILED)
                         }
-                        override fun onAdOpened() {
-                            Log.d(TAG, "Banner shown")
-                            fireEvent(EventId.ADMOB_BANNER_SHOWN)
-                        }
-                        override fun onAdClosed() {
-                            Log.d(TAG, "Banner hidden")
-                            fireEvent(EventId.ADMOB_BANNER_HIDDEN)
-                        }
                     })
                 }
             } catch (e: Exception) {
@@ -211,16 +209,25 @@ object AdMobManager {
             }
             try {
                 val rootView = activity.window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
+                val targetGravity = (when (bannerPosition) {
+                    BannerPosition.TOP -> android.view.Gravity.TOP
+                    BannerPosition.BOTTOM -> android.view.Gravity.BOTTOM
+                }) or android.view.Gravity.CENTER_HORIZONTAL
+
                 if (view.parent == null) {
                     val params = android.widget.FrameLayout.LayoutParams(
-                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
                     )
-                    params.gravity = when (bannerPosition) {
-                        BannerPosition.TOP -> android.view.Gravity.TOP
-                        BannerPosition.BOTTOM -> android.view.Gravity.BOTTOM
-                    }
+                    params.gravity = targetGravity
                     rootView.addView(view, params)
+                } else {
+                    (view.layoutParams as? android.widget.FrameLayout.LayoutParams)?.let { params ->
+                        if (params.gravity != targetGravity) {
+                            params.gravity = targetGravity
+                            view.layoutParams = params
+                        }
+                    }
                 }
                 view.visibility = android.view.View.VISIBLE
                 fireEvent(EventId.ADMOB_BANNER_SHOWN)
@@ -245,7 +252,10 @@ object AdMobManager {
     }
 
     private fun destroyBannerSync() {
-        adView?.destroy()
+        adView?.let { view ->
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+            view.destroy()
+        }
         adView = null
         isBannerLoaded = false
     }
@@ -281,9 +291,12 @@ object AdMobManager {
                                 fireEvent(EventId.ADMOB_INTERSTITIAL_SHOWN)
                             }
                             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                                interstitialAd = null
+                                isInterstitialLoaded = false
                                 lastErrorCode = adError.code
                                 lastErrorMessage = adError.message ?: ""
                                 Log.e(TAG, "Interstitial show failed: $lastErrorMessage")
+                                fireEvent(EventId.ADMOB_INTERSTITIAL_FAILED)
                             }
                         }
                     }
@@ -351,9 +364,12 @@ object AdMobManager {
                                 fireEvent(EventId.ADMOB_REWARDED_SHOWN)
                             }
                             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                                rewardedAd = null
+                                isRewardedLoaded = false
                                 lastErrorCode = adError.code
                                 lastErrorMessage = adError.message ?: ""
                                 Log.e(TAG, "Rewarded show failed: $lastErrorMessage")
+                                fireEvent(EventId.ADMOB_REWARDED_FAILED)
                             }
                         }
                     }
@@ -425,9 +441,12 @@ object AdMobManager {
                                     fireEvent(EventId.ADMOB_APP_OPEN_SHOWN)
                                 }
                                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                                    appOpenAd = null
+                                    isAppOpenLoaded = false
                                     lastErrorCode = adError.code
                                     lastErrorMessage = adError.message ?: ""
                                     Log.e(TAG, "App Open show failed: $lastErrorMessage")
+                                    fireEvent(EventId.ADMOB_APP_OPEN_FAILED)
                                 }
                             }
                         }

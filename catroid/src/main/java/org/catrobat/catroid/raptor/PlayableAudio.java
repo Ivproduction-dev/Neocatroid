@@ -25,4 +25,6 @@ public interface PlayableAudio {
 
     void setMaxDistance(float maxDistance);
     float getMaxDistance();
+    void set3D(boolean is3D);
+    boolean is3D();
 }

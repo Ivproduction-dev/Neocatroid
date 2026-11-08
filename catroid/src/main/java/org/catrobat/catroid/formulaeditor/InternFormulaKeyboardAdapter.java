@@ -569,6 +569,8 @@ case R.string.formula_editor_function_state_time:
                 return buildFunctionWithoutParametersAndBrackets(Functions.SYSTEM_THEME);
             case R.string.formula_cpu_name:
                 return buildFunctionWithoutParametersAndBrackets(Functions.CPU_NAME);
+            case R.string.formula_cpu_marketing_name:
+                return buildFunctionWithoutParametersAndBrackets(Functions.CPU_MARKETING_NAME);
             case R.string.formula_cpu_architecture:
                 return buildFunctionWithoutParametersAndBrackets(Functions.CPU_ARCHITECTURE);
             case R.string.formula_cpu_cores:

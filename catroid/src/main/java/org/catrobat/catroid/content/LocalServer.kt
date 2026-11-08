@@ -177,6 +177,7 @@ class LocalServer private constructor() {
                                         continue
                                     }
                                     val vars = brick.getVariables().filterNotNull()
+                                    vars.forEach { it.value = "" }
                                     if (vars.size > 1 && message.contains(VALUE_SEPARATOR)) {
                                         val parts = message.split(VALUE_SEPARATOR)
                                         for (i in vars.indices) {

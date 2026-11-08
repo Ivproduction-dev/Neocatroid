@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/v3_runtime_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#3A3A3C"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="40dp">
+    android:padding="0dp">
+
+    <LinearLayout
+        android:id="@+id/v3_default_loader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="40dp">
 
     <TextView
         android:id="@+id/v3_runtime_title"
@@ -52,4 +59,5 @@
         android:textColor="#A8DFF4"
         android:textSize="14sp" />
 
-</LinearLayout>
+    </LinearLayout>
+</FrameLayout>

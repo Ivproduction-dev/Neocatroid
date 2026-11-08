@@ -31,6 +31,7 @@ class DefaultClipboardToolOptionsView(rootView: ViewGroup) : ClipboardToolOption
     private val pasteChip: Chip
     private val copyChip: Chip
     private val cutChip: Chip
+    private val trimChip: Chip
     private val shapeSizeChip: Chip
     private val changeSizeShapeSizeChip: Chip
     private val clipboardToolOptionsView: View
@@ -55,6 +56,8 @@ class DefaultClipboardToolOptionsView(rootView: ViewGroup) : ClipboardToolOption
     override fun setCallback(callback: ClipboardToolOptionsView.Callback) {
         this.callback = callback
     }
+
+    override fun isTrimEnabled(): Boolean = trimChip.isChecked
 
     override fun enablePaste(enable: Boolean) {
         pasteChip.isEnabled = enable
@@ -84,6 +87,8 @@ class DefaultClipboardToolOptionsView(rootView: ViewGroup) : ClipboardToolOption
         copyChip = stampToolOptionsView.findViewById(R.id.action_copy)
         pasteChip = stampToolOptionsView.findViewById(R.id.action_paste)
         cutChip = stampToolOptionsView.findViewById(R.id.action_cut)
+        trimChip = stampToolOptionsView.findViewById(R.id.action_trim)
+        trimChip.isChecked = true
         enablePaste(false)
         initializeListeners()
         stampToolOptionsView.run {

@@ -27,92 +27,98 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction
+import org.catrobat.catroid.common.LookData
 import org.catrobat.catroid.content.Scope
 import org.catrobat.catroid.formulaeditor.Formula
-import kotlin.math.floor
-import kotlin.math.sin
 
 class CrtScreenShaderAction : TemporalAction() {
     var scope: Scope? = null
     var intensityFormula: Formula? = null
 
-    private var originalRef: Pixmap? = null
-    private var originalCopy: Pixmap? = null
-    private var lastDst: Pixmap? = null
-
     override fun update(percent: Float) {
         val s = scope ?: return
         val lookData = s.sprite.look.lookData ?: return
-        val src = lookData.pixmap ?: return
-        val w = src.width
-        val h = src.height
+        val source = sourcePixmap(lookData) ?: return
+        val w = source.width
+        val h = source.height
         if (w <= 0 || h <= 0) return
 
-        if (originalRef !== src || originalCopy == null) {
-            originalRef = src
-            originalCopy?.dispose()
-            originalCopy = Pixmap(w, h, Pixmap.Format.RGBA8888).also { it.drawPixmap(src, 0, 0) }
-            lastDst?.dispose()
-            lastDst = null
-        }
-
-        val f = ((intensityFormula?.interpretFloat(s) ?: 80f) / 100f).coerceIn(0f, 1f)
-        val original = originalCopy ?: return
+        val intensity = ((intensityFormula?.interpretFloat(s) ?: DEFAULT_INTENSITY) / 100f).coerceIn(0f, 1f)
         val dst = Pixmap(w, h, Pixmap.Format.RGBA8888)
-        val temp = Color()
+        val color = Color()
 
         val dw = (w - 1).coerceAtLeast(1).toFloat()
         val dh = (h - 1).coerceAtLeast(1).toFloat()
+        val scanline = SCANLINE_STRENGTH * intensity
+        val mask = MASK_STRENGTH * intensity
+        val vignette = VIGNETTE_STRENGTH * intensity
+        val grain = GRAIN_STRENGTH * intensity
+
+        val maskR = FloatArray(w)
+        val maskG = FloatArray(w)
+        val maskB = FloatArray(w)
+        val distanceX = FloatArray(w)
+        for (x in 0 until w) {
+            val phase = x % 3
+            maskR[x] = channelFactor(phase, 0, mask)
+            maskG[x] = channelFactor(phase, 1, mask)
+            maskB[x] = channelFactor(phase, 2, mask)
+            val nx = (x / dw - 0.5f) * 2f
+            distanceX[x] = nx * nx
+        }
 
         for (y in 0 until h) {
             val ny = (y / dh - 0.5f) * 2f
-            val scan = if (y % 3 == 2) 0.72f else 1f
+            val scan = if (y % 3 == 2) 1f - scanline else 1f
+            val distanceY = ny * ny
             for (x in 0 until w) {
-                val nx = (x / dw - 0.5f) * 2f
-                Color.rgba8888ToColor(temp, original.getPixel(x, y))
-                val r = temp.r
-                val g = temp.g
-                val b = temp.b
-
-                var mr = 0.95f
-                var mg = 0.95f
-                var mb = 0.95f
-                when (x % 3) {
-                    0 -> mr = 1.06f
-                    1 -> mg = 1.06f
-                    2 -> mb = 1.06f
-                }
-
-                val d2 = (nx * nx + ny * ny) * 0.5f
-                val vig = 1f - 0.45f * d2
-
-                val grain = (hash(x, y) - 0.5f) * 0.08f
-
-                val cr = ((r * scan * mr * vig + grain) * f + r * (1f - f)).coerceIn(0f, 1f)
-                val cg = ((g * scan * mg * vig + grain) * f + g * (1f - f)).coerceIn(0f, 1f)
-                val cb = ((b * scan * mb * vig + grain) * f + b * (1f - f)).coerceIn(0f, 1f)
-
-                temp.r = cr
-                temp.g = cg
-                temp.b = cb
-                dst.drawPixel(x, y, Color.rgba8888(temp))
+                Color.rgba8888ToColor(color, source.getPixel(x, y))
+                val vignetteFactor = (1f - vignette * (distanceX[x] + distanceY) * 0.5f).coerceAtLeast(0f)
+                val grainOffset = (hash(x, y) - 0.5f) * grain
+                color.r = (color.r * scan * maskR[x] * vignetteFactor + grainOffset).coerceIn(0f, 1f)
+                color.g = (color.g * scan * maskG[x] * vignetteFactor + grainOffset).coerceIn(0f, 1f)
+                color.b = (color.b * scan * maskB[x] * vignetteFactor + grainOffset).coerceIn(0f, 1f)
+                dst.drawPixel(x, y, Color.rgba8888(color))
             }
         }
 
-        lastDst?.dispose()
-        lastDst = dst
-
-        val oldTex = lookData.textureRegion
+        val oldTexture = lookData.textureRegion
         lookData.setPixmap(dst)
+        lookData.setShaderResultPixmap(dst)
         lookData.setTextureRegion(TextureRegion(Texture(dst)))
         s.sprite.look.refreshTextures(true)
-        if (oldTex != null) oldTex.texture.dispose()
+        if (oldTexture != null) oldTexture.texture.dispose()
+    }
+
+    private fun sourcePixmap(lookData: LookData): Pixmap? {
+        val current = lookData.pixmap ?: return null
+        val cached = lookData.shaderSourcePixmap
+        if (cached != null && current === lookData.shaderResultPixmap) {
+            return cached
+        }
+        val copy = Pixmap(current.width, current.height, Pixmap.Format.RGBA8888)
+        copy.drawPixmap(current, 0, 0)
+        cached?.dispose()
+        lookData.setShaderSourcePixmap(copy)
+        lookData.setShaderResultPixmap(null)
+        return copy
+    }
+
+    private fun channelFactor(phase: Int, channel: Int, strength: Float): Float =
+        if (phase == channel) 1f + strength else 1f - strength * 0.5f
+
+    private fun hash(x: Int, y: Int): Float {
+        var value = x * 374761393 + y * 668265263
+        value = (value xor (value shr 13)) * 1274126177
+        value = value xor (value shr 16)
+        return (value and 0xFFFF) / 65535f
     }
 
     companion object {
-        private fun hash(x: Int, y: Int): Float {
-            val h = sin((x * 12.9898 + y * 78.233).toDouble()) * 43758.5453
-            return (h - floor(h)).toFloat()
-        }
+        private const val DEFAULT_INTENSITY = 80f
+        private const val SCANLINE_STRENGTH = 0.4f
+        private const val MASK_STRENGTH = 0.25f
+        private const val VIGNETTE_STRENGTH = 0.55f
+        private const val GRAIN_STRENGTH = 0.12f
     }
 }

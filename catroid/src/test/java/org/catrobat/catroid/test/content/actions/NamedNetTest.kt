@@ -13,8 +13,10 @@ import org.catrobat.catroid.content.actions.ListenUdpAction
 import org.catrobat.catroid.content.actions.SendUdpAction
 import org.catrobat.catroid.content.actions.TcpPingAction
 import org.catrobat.catroid.content.actions.UdpPingAction
+import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction
 import org.catrobat.catroid.formulaeditor.Formula
 import org.catrobat.catroid.formulaeditor.UserVariable
+import com.badlogic.gdx.scenes.scene2d.Actor
 import org.catrobat.catroid.ui.SpriteActivity
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -161,6 +163,65 @@ class NamedNetTest {
         action.reset()
         action.act(1f)
         assertTrue(await { variable.value == "true" })
+    }
+
+    @Test
+    fun tcpPingAction_reusedAfterRestartRunsAgain() {
+        val port = freeTcpPort()
+        LocalServer.startOrJoin("srvA", null, port.toString())
+        assertTrue(await { LocalServer.node("srvA").getPort() == port.toString() })
+
+        val project = Project(activity, javaClass.simpleName)
+        val sprite = Sprite("s")
+        project.defaultScene.addSprite(sprite)
+        val scope = Scope(project, sprite, null)
+        val variable = UserVariable("result")
+        val action = TcpPingAction().apply {
+            this.scope = scope
+            serverName = Formula("srvA")
+            this.variable = variable
+        }
+
+        action.act(0.016f)
+        assertTrue(await { variable.value == "true" })
+
+        variable.value = "false"
+        action.restart()
+        action.act(0.016f)
+
+        assertTrue(await { variable.value == "true" })
+    }
+
+    @Test
+    fun twoTcpPingActionsInOneSequenceBothComplete() {
+        val port = freeTcpPort()
+        LocalServer.startOrJoin("srvA", null, port.toString())
+        assertTrue(await { LocalServer.node("srvA").getPort() == port.toString() })
+
+        val project = Project(activity, javaClass.simpleName)
+        val sprite = Sprite("s")
+        project.defaultScene.addSprite(sprite)
+        val scope = Scope(project, sprite, null)
+        val firstResult = UserVariable("first")
+        val secondResult = UserVariable("second")
+        val sequence = SequenceAction()
+        sequence.actor = Actor()
+
+        sequence.addAction(TcpPingAction().apply {
+            this.scope = scope
+            serverName = Formula("srvA")
+            variable = firstResult
+        })
+        sequence.addAction(TcpPingAction().apply {
+            this.scope = scope
+            serverName = Formula("srvA")
+            variable = secondResult
+        })
+
+        assertTrue(await {
+            sequence.act(0.016f)
+            firstResult.value == "true" && secondResult.value == "true"
+        })
     }
 
     @Test

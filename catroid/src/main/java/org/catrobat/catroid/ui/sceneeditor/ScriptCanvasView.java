@@ -1481,9 +1481,6 @@ if (brick instanceof VisualPlacementBrick) {
 		if (brick.isLocked()) {
 			items.add("Снять блокировку");
 			actions.add(() -> unlockBrick(brick));
-		} else {
-			items.add("Заблокировать блок");
-			actions.add(() -> showLockBrickDialog(brick));
 		}
 
 		if (!(brick instanceof ScriptBrick) && !(brick instanceof EndBrick)) {
@@ -1710,17 +1707,6 @@ if (brick instanceof VisualPlacementBrick) {
 			}
 		}
 		return true;
-	}
-
-	private void showLockBrickDialog(Brick brick) {
-		List<Brick> group = getLockGroup(brick);
-		showPasswordDialog("Заблокировать блок", password -> {
-			for (Brick lockedBrick : group) {
-				lockedBrick.setLock(password);
-			}
-			Toast.makeText(getContext(), "Блок заблокирован!", Toast.LENGTH_SHORT).show();
-			rebuildDeferred();
-		});
 	}
 
 	private void unlockBrick(Brick brick) {

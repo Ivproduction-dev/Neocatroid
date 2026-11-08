@@ -142,7 +142,7 @@ public abstract class Script implements Serializable, Cloneable {
 		}
 
 		for (Brick brick : brickList) {
-			if (!brick.isCommentedOut()) {
+			if (brick != null && !brick.isCommentedOut()) {
 				try {
 					brick.addActionToSequence(sprite, sequence);
 				} catch (Exception exception) {
@@ -162,9 +162,14 @@ public abstract class Script implements Serializable, Cloneable {
 	}
 
 	public void addToFlatList(List<Brick> bricks) {
-		bricks.add(getScriptBrick());
+		ScriptBrick scriptBrick = getScriptBrick();
+		if (scriptBrick != null) {
+			bricks.add(scriptBrick);
+		}
 		for (Brick brick : brickList) {
-			brick.addToFlatList(bricks);
+			if (brick != null) {
+				brick.addToFlatList(bricks);
+			}
 		}
 	}
 
@@ -177,7 +182,7 @@ public abstract class Script implements Serializable, Cloneable {
 			return true;
 		}
 		for (Brick brickInList : brickList) {
-			if (brickInList.removeChild(brick)) {
+			if (brickInList != null && brickInList.removeChild(brick)) {
 				return true;
 			}
 		}

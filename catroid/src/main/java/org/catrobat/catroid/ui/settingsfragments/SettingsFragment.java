@@ -41,8 +41,6 @@ import android.text.Html;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
-import com.google.android.material.color.DynamicColors;
-
 import org.catrobat.catroid.BuildConfig;
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
@@ -136,7 +134,6 @@ public class SettingsFragment extends PreferenceFragment {
 	public static final String RASPBERRY_SCREEN_KEY = "settings_raspberry_screen";
 	public static final String PLUGINS_SCREEN_KEY = "setting_plugins_screen";
     public static final String IDE_SCREEN_KEY = "setting_ide_screen";
-    public static final String THEMES_SCREEN_KEY = "setting_themes_screen";
     public static final String TELEMETRY_SCREEN_KEY = "setting_telemetry_screen";
 
 	public static final String NXT_SETTINGS_CATEGORY = "setting_nxt_category";
@@ -185,22 +182,6 @@ public class SettingsFragment extends PreferenceFragment {
 		setToChosenLanguage(getActivity());
 
 		addPreferencesFromResource(R.xml.preferences);
-		CheckBoxPreference materialYou = (CheckBoxPreference) findPreference("setting_material_you");
-		if (materialYou != null) {
-			if (!DynamicColors.isDynamicColorAvailable()) {
-				materialYou.setChecked(false);
-				materialYou.setEnabled(false);
-			} else {
-				materialYou.setOnPreferenceChangeListener((preference, value) -> {
-					if (getActivity() != null) {
-						org.catrobat.catroid.ui.theme.ThemeManager.INSTANCE.setMaterialYou(
-								getActivity(), Boolean.TRUE.equals(value));
-						getActivity().recreate();
-					}
-					return true;
-				});
-			}
-		}
 		setHintPreferences();
 		setLanguage();
 
@@ -527,9 +508,6 @@ public class SettingsFragment extends PreferenceFragment {
             case IDE_SCREEN_KEY:
                 Intent intent2 = new Intent(getActivity(), IdeDashboardActivity.class);
                 startActivity(intent2);
-                break;
-            case THEMES_SCREEN_KEY:
-                startActivity(new Intent(getActivity(), org.catrobat.catroid.ui.ThemesActivity.class));
                 break;
             case TELEMETRY_SCREEN_KEY:
                 getFragmentManager().beginTransaction()

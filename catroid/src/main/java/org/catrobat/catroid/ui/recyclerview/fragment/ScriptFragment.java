@@ -980,9 +980,41 @@ public class ScriptFragment extends ListFragment implements
 			int lastVisibleBrick = brickListView.getLastVisiblePosition();
 			int position = (1 + lastVisibleBrick - firstVisibleBrick) / 2;
 			position += firstVisibleBrick;
-			brickAdapter.addItem(position, brick);
-			brickListView.startMoving(brick);
+			if (brickAdapter.addItem(position, brick)) {
+				if (!brickListView.startMoving(brick)) {
+					brickAdapter.updateItems(sprite);
+				}
+			} else {
+				ToastUtil.showError(getContext(), R.string.brick_locked);
+			}
 		}
+	}
+
+	@Override
+	public boolean addTemplate(List<? extends Script> scripts) {
+		Sprite sprite = ProjectManager.getInstance().getCurrentSprite();
+		Project project = ProjectManager.getInstance().getCurrentProject();
+		if (sprite == null || project == null || scripts == null || scripts.isEmpty()) {
+			return false;
+		}
+		if (project.isProtectedProject()) {
+			return false;
+		}
+		stopAiAnalysisTimer();
+		int target = adapter.getCount();
+		for (Script script : scripts) {
+			sprite.addScript(script);
+		}
+		adapter.updateItems(sprite);
+		int firstVisible = listView.getFirstVisiblePosition();
+		int lastVisible = listView.getLastVisiblePosition();
+		if (target < firstVisible || target > lastVisible) {
+			listView.smoothScrollToPosition(Math.min(target, Math.max(0, adapter.getCount() - 1)));
+		}
+		if (getActivity() instanceof SpriteActivity) {
+			((SpriteActivity) getActivity()).setUndoMenuItemVisibility(false);
+		}
+		return true;
 	}
 
     @Override
@@ -1126,8 +1158,8 @@ public class ScriptFragment extends ListFragment implements
 			}
 		}
 
-		if (!brick.isLocked()) {
-			items.add(R.string.brick_context_dialog_lock);
+		if (brick.isLocked()) {
+			items.add(R.string.brick_context_dialog_unlock);
 		}
 
 		items.add(R.string.brick_context_dialog_system_info);
@@ -1157,11 +1189,8 @@ public class ScriptFragment extends ListFragment implements
 				brick.addToFlatList(bricksToPack);
 				showNewScriptGroupAlert(bricksToPack);
 				break;
-			case R.string.brick_context_dialog_lock:
-				showLockDialog(brick, false);
-				break;
 			case R.string.brick_context_dialog_unlock:
-				showLockDialog(brick, true);
+				showUnlockDialog(brick);
 				break;
 			case R.string.brick_context_dialog_copy_brick:
 			case R.string.brick_context_dialog_copy_script:
@@ -1173,7 +1202,9 @@ public class ScriptFragment extends ListFragment implements
 						currentPosition = position;
 					}
 					if (adapter.addItem(currentPosition, clonedBrick)) {
-						listView.startMoving(clonedBrick);
+						if (!listView.startMoving(clonedBrick)) {
+							adapter.updateItems(ProjectManager.getInstance().getCurrentSprite());
+						}
 					} else {
 						ToastUtil.showError(getContext(), R.string.brick_locked);
 					}
@@ -1872,35 +1903,22 @@ case R.string.brick_context_dialog_system_info:
 		return true;
 	}
 
-	private void showLockDialog(Brick brick, boolean unlock) {
+	private void showUnlockDialog(Brick brick) {
 		List<Brick> group = getLockGroup(brick);
-		if (unlock) {
-			if (!isGroupLocked(group)) {
-				return;
-			}
-			showPasswordDialog(R.string.brick_context_dialog_unlock, password -> {
-				if (verifyGroup(group, password)) {
-					for (Brick lockedBrick : group) {
-						lockedBrick.clearLock();
-					}
-					adapter.notifyDataSetChanged();
-					ToastUtil.showSuccess(getContext(), R.string.brick_unlocked);
-				} else {
-					ToastUtil.showError(getContext(), R.string.brick_wrong_password);
+		if (!isGroupLocked(group)) {
+			return;
+		}
+		showPasswordDialog(R.string.brick_context_dialog_unlock, password -> {
+			if (verifyGroup(group, password)) {
+				for (Brick lockedBrick : group) {
+					lockedBrick.clearLock();
 				}
-			});
-		} else {
-			showPasswordDialog(R.string.brick_context_dialog_lock, password -> applyLock(group, password));
-		}
-	}
-
-	private void applyLock(List<Brick> group, String password) {
-		for (Brick lockedBrick : group) {
-			lockedBrick.setLock(password);
-		}
-		adapter.notifyDataSetChanged();
-		ToastUtil.showSuccess(getContext(), R.string.brick_locked);
-		ToastUtil.showError(getContext(), R.string.brick_lock_warning);
+				adapter.notifyDataSetChanged();
+				ToastUtil.showSuccess(getContext(), R.string.brick_unlocked);
+			} else {
+				ToastUtil.showError(getContext(), R.string.brick_wrong_password);
+			}
+		});
 	}
 
 	private void showPasswordDialog(int titleRes, Consumer<String> onOk) {

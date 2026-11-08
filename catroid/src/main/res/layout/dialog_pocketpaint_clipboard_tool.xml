@@ -54,11 +54,29 @@
             android:layout_toEndOf="@+id/action_cut" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/action_paste"
+            android:id="@+id/action_trim"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_toEndOf="@+id/space_two"
+            android:checked="true"
+            android:text="@string/clipboard_tool_trim"
+            android:theme="@style/Theme.MaterialComponents.Light"
+            app:chipStartPadding="8dp" />
+
+        <Space
+            android:id="@+id/space_three"
+            style="@style/PocketPaintToolHorizontalSpace"
+            android:layout_alignParentBottom="true"
+            android:layout_toEndOf="@+id/action_trim" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/action_paste"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toEndOf="@+id/space_three"
             android:text="@string/clipboard_tool_paste"
             android:theme="@style/Theme.MaterialComponents.Light"
             app:chipIcon="@drawable/ic_pocketpaint_paste_chip_icon_selector"

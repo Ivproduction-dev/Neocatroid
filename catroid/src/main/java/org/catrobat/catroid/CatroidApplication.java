@@ -48,8 +48,6 @@ import com.huawei.agconnect.AGConnectInstance;
 import com.huawei.agconnect.config.AGConnectServicesConfig;
 import com.huawei.hms.mlsdk.common.MLApplication;
 
-import com.google.android.material.color.DynamicColors;
-import com.google.android.material.color.DynamicColorsOptions;
  
  import org.catrobat.catroid.ai.AiAgentManager;
 import org.catrobat.catroid.formulaeditor.CustomFormulaManager;
@@ -101,11 +99,6 @@ public class CatroidApplication extends Application {
 		}
 
 		super.onCreate();
-		DynamicColors.applyToActivitiesIfAvailable(this,
-				new DynamicColorsOptions.Builder()
-						.setPrecondition((activity, theme) ->
-								prefs.getBoolean("setting_material_you", false))
-						.build());
 
 		org.catrobat.catroid.ui.theme.ThemeManager.INSTANCE.init(this);
 

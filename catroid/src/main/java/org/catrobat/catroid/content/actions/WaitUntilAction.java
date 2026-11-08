@@ -36,9 +36,7 @@ public class WaitUntilAction extends Action {
 	private Formula condition;
 	private Scope scope;
 	private static final float LOOP_DELAY = 0.02f;
-	private static final float TIMEOUT = 10.0f;
 	private float currentTime = 0f;
-	private float totalTime = 0f;
 	private boolean hasError = false;
 
 	public WaitUntilAction() {
@@ -62,13 +60,6 @@ public class WaitUntilAction extends Action {
 		}
 
 		currentTime += delta;
-		totalTime += delta;
-		
-		if (totalTime >= TIMEOUT) {
-			Log.w(getClass().getSimpleName(), "WaitUntil timeout exceeded (" + TIMEOUT + "s), stopping");
-			return true;
-		}
-		
 		if (currentTime < LOOP_DELAY) {
 			return false;
 		} else {
@@ -91,6 +82,5 @@ public class WaitUntilAction extends Action {
 		completed = false;
 		hasError = false;
 		currentTime = 0f;
-		totalTime = 0f;
 	}
 }

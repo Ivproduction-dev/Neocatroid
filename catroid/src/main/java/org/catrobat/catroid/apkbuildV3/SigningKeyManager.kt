@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import java.io.File
 import java.security.KeyStore
+import java.security.MessageDigest
+import java.security.cert.X509Certificate
 
 object SigningKeyManager {
     private const val TAG = "SigningKeyManager"
@@ -38,6 +40,19 @@ object SigningKeyManager {
         generate(file, ALIAS, keystorePassword(context))
         Log.i(TAG, "Постоянный ключ подписи создан: ${file.absolutePath}")
         return file
+    }
+
+    fun certificateSha256(keystoreFile: File, password: String): ByteArray {
+        val keyStore = KeyStore.getInstance("PKCS12")
+        keystoreFile.inputStream().use { keyStore.load(it, password.toCharArray()) }
+        val certificate = keyStore.getCertificate(ALIAS) as? X509Certificate
+            ?: throw IllegalStateException("Signing certificate not found")
+        return MessageDigest.getInstance("SHA-256").digest(certificate.encoded)
+    }
+
+    fun ensureCertificateSha256(context: Context, generate: (File, String, String) -> Unit): ByteArray {
+        val keystore = ensureKeystore(context, generate)
+        return certificateSha256(keystore, keystorePassword(context))
     }
 
     private fun loadsOk(file: File, password: String): Boolean {

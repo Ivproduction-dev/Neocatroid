@@ -32,4 +32,5 @@ interface BrickAdapterInterface {
     fun getItem(position: Int): Brick?
     fun getPosition(brick: Brick?): Int
     fun removeItems(items: List<Brick>): Boolean
+    fun restoreItemsFromModel()
 }

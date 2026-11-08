@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources  xmlns:tools="http://schemas.android.com/tools">
+    <string name="component_audio">Audio Source</string>
+    <string name="editor_3d_audio_clip">Audio Clip</string>
+    <string name="editor_3d_audio_no_clip">No Audio Clip Selected</string>
+    <string name="editor_3d_audio_select">Select</string>
+    <string name="editor_3d_audio_preview_play">▶ Preview</string>
+    <string name="editor_3d_audio_preview_stop">■ Stop</string>
+    <string name="editor_3d_audio_play_on_awake">Play on Awake</string>
+    <string name="editor_3d_audio_loop">Looping</string>
+    <string name="editor_3d_audio_is_3d">3D Spatial Audio</string>
+    <string name="editor_3d_audio_is_music">Streaming Audio (Music)</string>
+    <string name="editor_3d_audio_delay">Start Delay (sec)</string>
+    <string name="editor_3d_audio_volume">Volume (0.0 - 1.0)</string>
+    <string name="editor_3d_audio_pitch">Pitch (0.5 - 2.0)</string>
+    <string name="editor_3d_audio_range">Hearing Distance (Radius)</string>
+    <string name="editor_3d_audio_select_title">Select Audio File</string>
+    <string name="editor_3d_audio_no_files">No audio files (.mp3, .ogg, .wav) found in project.</string>
     <string name="settings_material_you_title">Material You</string>
     <string name="settings_material_you_summary">Use system dynamic colors when available</string>
     <string name="settings_material_you_unavailable">Material You is not available on this device</string>
@@ -510,7 +526,6 @@
     <string name="component_prefab">Prefab Component</string>
     <string name="component_script">Script Component</string>
 
-    <!-- Inspector Base Fields & Buttons -->
     <string name="editor_3d_object_name_hint">GameObject Name</string>
     <string name="editor_3d_duplicate_object">Duplicate Object</string>
     <string name="editor_3d_delete_object">Delete GameObject</string>
@@ -518,17 +533,14 @@
     <string name="editor_3d_delete_object_confirm">Are you sure you want to delete \'%1$s\'?</string>
     <string name="editor_3d_delete_object_confirm_with_children">Are you sure you want to delete \'%1$s\' and its %2$d child object(s)?</string>
 
-    <!-- Transform Component -->
     <string name="editor_3d_position">Position</string>
     <string name="editor_3d_rotation">Rotation</string>
     <string name="editor_3d_scale">Scale</string>
 
-    <!-- Render Component -->
     <string name="editor_3d_model_file">Model File</string>
     <string name="editor_3d_no_model_selected">No model selected</string>
     <string name="editor_3d_select_model">Select Model...</string>
 
-    <!-- Material Component -->
     <string name="editor_3d_mat_color">Base Color</string>
     <string name="editor_3d_mat_metallic">Metallic</string>
     <string name="editor_3d_mat_roughness">Roughness</string>
@@ -537,7 +549,6 @@
     <string name="editor_3d_mat_met_rough">Metallic/Roughness Map</string>
     <string name="editor_3d_mat_occlusion">Occlusion Map</string>
 
-    <!-- Physics Component -->
     <string name="editor_3d_phys_state">State</string>
     <string name="editor_3d_phys_mass">Mass</string>
     <string name="editor_3d_phys_friction">Friction</string>
@@ -551,14 +562,12 @@
     <string name="editor_3d_phys_size">Size</string>
     <string name="editor_3d_phys_radius">Radius</string>
 
-    <!-- Camera Component -->
     <string name="editor_3d_cam_main">Is Main Camera</string>
     <string name="editor_3d_cam_fov">Field of View</string>
     <string name="editor_3d_cam_clipping">Clipping Planes</string>
     <string name="editor_3d_cam_near">Near</string>
     <string name="editor_3d_cam_far">Far</string>
 
-    <!-- Light Component -->
     <string name="editor_3d_light_type">Type</string>
     <string name="editor_3d_light_intensity">Intensity</string>
     <string name="editor_3d_light_range">Range</string>
@@ -567,13 +576,11 @@
     <string name="editor_3d_light_color">Color</string>
     <string name="editor_3d_light_select_color">Select Color</string>
 
-    <!-- Animation Component -->
     <string name="editor_3d_anim_clip">Animation Clip</string>
     <string name="editor_3d_anim_speed">Speed</string>
     <string name="editor_3d_anim_transition">Transition Time (s)</string>
     <string name="editor_3d_anim_loop">Loop</string>
 
-    <!-- Keyframe Component -->
     <string name="editor_3d_kf_autostart">Auto Start</string>
     <string name="editor_3d_kf_loop">Looping</string>
     <string name="editor_3d_kf_keyframes">Keyframes:</string>
@@ -581,7 +588,6 @@
     <string name="editor_3d_kf_time">Time:</string>
     <string name="editor_3d_kf_ease">Ease:</string>
 
-    <!-- Post Processing -->
     <string name="editor_3d_pp_enable">Enable Post Processing</string>
     <string name="editor_3d_pp_quality">Quality Scale (0.1 - 1.0)</string>
     <string name="editor_3d_pp_add_effect">Add Effect</string>
@@ -655,7 +661,7 @@
     <string name="subcategory_looks_particles">Particles</string>
     <string name="subcategory_looks_visibility">Visibility &amp; Size</string>
     <string name="subcategory_looks_effects">Graphic Effects</string>
-    <string name="subcategory_looks_dialogs">Text &amp; Dialogs</string>
+    <string name="subcategory_looks_dialogs">Text</string>
     <string name="subcategory_looks_camera2d">Camera 2D</string>
     <string name="subcategory_looks_camera_device">Device Camera &amp; Media</string>
     <string name="subcategory_looks_buffers">Buffers</string>
@@ -765,6 +771,7 @@
     <string name="formula_system_language" formatted="false">System_language</string>
     <string name="formula_system_theme" formatted="false">System_theme</string>
     <string name="formula_cpu_name" formatted="false">Cpu_name</string>
+    <string name="formula_cpu_marketing_name" formatted="false">Cpu_marketing_name</string>
     <string name="formula_cpu_architecture" formatted="false">Cpu_architecture</string>
     <string name="formula_cpu_cores" formatted="false">Cpu_cores</string>
     <string name="formula_cpu_frequency" formatted="false">Cpu_frequency</string>
@@ -1024,32 +1031,6 @@
     <string name="brick_set_post_processing_new">Set post-processing effect</string>
 
     <string-array name="pp_new_effect_types">
-        <item>Global Settings</item> <!-- 0 -->
-        <item>Bloom</item> <!-- 1 -->
-        <item>Vignette</item> <!-- 2 -->
-        <item>Levels (Color)</item> <!-- 3 -->
-        <item>Film Grain</item> <!-- 4 -->
-        <item>FXAA</item> <!-- 5 -->
-        <item>Chromatic Aberration</item> <!-- 6 -->
-        <item>Radial Blur</item> <!-- 7 -->
-        <item>Old TV</item> <!-- 8 -->
-        <item>CRT Monitor</item> <!-- 9 -->
-        <item>Fisheye</item> <!-- 10 -->
-        <item>Water Distortion</item> <!-- 11 -->
-        <item>Motion Blur</item> <!-- 12 -->
-        <item>Lens Flare</item> <!-- 13 -->
-        <item>Gaussian Blur</item> <!-- 14 -->
-        <item>Zoom Blur</item> <!-- 15 -->
-        <item>ACES Tonemapping</item> <!-- 16 -->
-        <item>Eye Adaptation</item> <!-- 17 -->
-        <item>Ray Tracing (SSR)</item> <!-- 18 -->
-        <item>SSAO</item> <!-- 19 -->
-        <item>Height Fog</item> <!-- 20 -->
-        <item>Depth of Field</item> <!-- 21 -->
-        <item>God Rays</item> <!-- 22 -->
-        <item>Volumetric Fog</item> <!-- 23 -->
-        <item>FSR Upscaler</item> <!-- 24 -->
-        <item>SSGI (Global Illum.)</item> <!-- 25 -->
     </string-array>
 
     <string-array name="pp_params_global"><item>Active (1/0)</item><item>Quality Scale</item></string-array>
@@ -2316,6 +2297,7 @@
 <string formatted="false" name="next">Next</string>
 <string formatted="false" name="ok">OK</string>
     <string formatted="false" name="project_files_new">New file</string>
+    <string name="project_files_elements_count">Elements: %1$d</string>
     <string formatted="false" name="project_files_new_name">File name</string>
     <string formatted="false" name="project_files_new_ext">Extension (optional)</string>
     <string formatted="false" name="project_files_new_error_name">Enter a file name</string>
@@ -4213,7 +4195,6 @@
 <string formatted="false" name="brick_enable_background">Enable background work</string>
 <string formatted="false" name="brick_stop_background">Stop background work</string>
 <string name="category_admob">AdMob</string>
-<!-- TODO(release): Replace Google's test App ID with NeoCatroid's production App ID. -->
 <string name="admob_application_id">ca-app-pub-3940256099942544~3347511713</string>
 <string name="brick_admob_enable_test_mode">Enable test mode</string>
 <string name="brick_admob_set_app_id">Set App ID</string>
@@ -5088,8 +5069,7 @@ needs read and write access to it. You can always change permissions through you
         <item>You can back up your projects and restore them later from a zip file.</item>
     </string-array>
 
-    <!-- ============ APK Builder V3 ============ -->
-    <string name="export_as_apk_v3">APK Builder V3</string>
+    <string name="export_as_apk_v3">APK Builder V4</string>
     <string name="v3_loading_title">NeoCatroid</string>
 
     <string name="v3_loading">Loading…</string>
@@ -5118,27 +5098,67 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_icon">App icon</string>
     <string name="v3_icon_project">Use project icon</string>
     <string name="v3_icon_default">Default icon</string>
+    <string name="v3_icon_custom">Custom image</string>
+    <string name="v3_icon_pick_failed">Could not load the image</string>
     <string name="v3_step_format">Step %1$d of %2$d: %3$s</string>
     <string name="v3_step_template">Template</string>
     <string name="v3_step_app">Application</string>
     <string name="v3_step_permissions">Permissions</string>
     <string name="v3_step_firebase">Firebase</string>
+    <string name="v3_step_loading_screen">Loading Screen</string>
+    <string name="v3_loading_screen_title">Loading &amp; Compilation</string>
+    <string name="v3_loading_screen_hint">Choose how the loading and compilation screens look when your game starts.</string>
+    <string name="v3_loading_mode_auto">Auto (Theme)</string>
+    <string name="v3_loading_mode_none">No UI (Black screen)</string>
+    <string name="v3_loading_mode_custom">Custom UI</string>
+    <string name="v3_btn_customize_ui">Customize UI</string>
+    <string name="v3_neoui_editor_title">UI Editor</string>
+    <string name="v3_neoui_screen_loading">Loading</string>
+    <string name="v3_neoui_screen_compilation">Compilation</string>
+    <string name="v3_neoui_reset">Reset</string>
+    <string name="v3_neoui_reset_confirm">Reset this screen to default?</string>
+    <string name="v3_neoui_export">Export UI (.neoui)</string>
+    <string name="v3_neoui_import">Import UI (.neoui)</string>
+    <string name="v3_neoui_import_confirm">Apply the imported loading and compilation screens?</string>
+    <string name="v3_neoui_import_single_confirm">Apply the imported screen to the currently selected screen?</string>
+    <string name="v3_neoui_text_limit">Maximum 20 text elements reached</string>
+    <string name="v3_neoui_import_image">Import image</string>
+    <string name="v3_neoui_clear_bg_image">Clear image</string>
+    <string name="v3_neoui_bg_title">Background Settings</string>
+    <string name="v3_neoui_edit_text_title">Edit Text</string>
+    <string name="v3_neoui_delete_element">Delete</string>
+    <string name="v3_neoui_progress_bar">Progress Bar</string>
+    <string name="v3_neoui_progress_color">Color</string>
+    <string name="v3_neoui_progress_visible">Visible</string>
+    <string name="v3_neoui_text_options">Text Options</string>
+    <string name="v3_neoui_compiling_text">Compiling scene: {scene}</string>
+    <string name="v3_neoui_bg_color">Background color</string>
+    <string name="v3_neoui_text_style">Text style</string>
+    <string name="v3_neoui_text_size">Text size</string>
+    <string name="v3_neoui_text_color">Text color</string>
+    <string name="v3_neoui_text_font">Font</string>
+    <string name="v3_neoui_font_default">Default</string>
+    <string name="v3_neoui_font_sans">Sans</string>
+    <string name="v3_neoui_font_serif">Serif</string>
+    <string name="v3_neoui_font_mono">Monospace</string>
+    <string name="v3_neoui_canvas_hint">Long press empty area to add text. Long press frame to change background.</string>
     <string name="v3_next">Next</string>
     <string name="v3_back">Back</string>
     <string name="v3_build">Build APK</string>
-    <string name="v3_title_full">NeoCatroid APK Builder V3</string>
+    <string name="v3_title_full">NeoCatroid APK Builder V4</string>
     <string name="v3_subtitle_desc">Standalone Android Game Exporter</string>
     <string name="v3_step1_badge">Engine</string>
     <string name="v3_step2_badge">Package</string>
     <string name="v3_step3_badge">Perms</string>
     <string name="v3_step4_badge">Build</string>
+    <string name="v3_step5_badge">Screen</string>
     <string name="v3_template_full_title">Full Runtime Engine</string>
-    <string name="v3_template_full_sub">Includes 3D + Jolt physics, Box2D, 2D lighting, AI, and sound engine</string>
+    <string name="v3_template_full_sub">Loads entire project at once — all scenes, sprites, sounds. For powerful devices.</string>
     <string name="v3_template_light_title">Lite Runtime Engine</string>
-    <string name="v3_template_light_sub">Optimized compact build for classic 2D games and lighter APK size</string>
+    <string name="v3_template_light_sub">Loads scenes on demand, saves memory. For weaker devices.</string>
     <string name="v3_recommended_tag">RECOMMENDED</string>
     <string name="v3_summary_title">Ready to Assemble</string>
-    <string name="v3_summary_local_speed">⚡ Fast local device compilation in 3–5 seconds without internet</string>
+    <string name="v3_summary_local_speed">Fast local device compilation in 3–5 seconds without internet</string>
     <string name="v3_perm_detected_count">Auto-detected in project blocks: %1$d</string>
     <string name="v3_debuggable_sub">Enables Android Studio debugging &amp; detailed runtime logcat</string>
     <string name="v3_icon_project_sub">Use project screenshot/cover</string>
@@ -5169,7 +5189,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_permission_coarse_location">Approximate location</string>
     <string name="v3_permission_unknown">Other permission</string>
 
-    <!-- Firebase config for APK Builder V3 -->
     <string name="v3_firebase_section">Firebase</string>
     <string name="v3_firebase_add_button">Add custom google-services.json</string>
     <string name="v3_firebase_file_added">google-services.json added</string>
@@ -5198,23 +5217,19 @@ needs read and write access to it. You can always change permissions through you
     <string name="v3_template_required">Download the runtime template first</string>
 
 
-    <!-- Text Buffer -->
     <string name="brick_add_text_buffer_title">Add text to buffer</string>
     <string name="brick_add_text_buffer_to">to</string>
     <string name="brick_set_text_buffer_only_title">Set text buffer</string>
     <string name="brick_set_text_buffer_only_name_label">name</string>
     <string name="brick_set_text_buffer_only_state_label">state</string>
-    <!-- Base64 -->
     <string name="brick_base64_to_file_title">Base64 to file</string>
     <string name="brick_base64_to_file_string">string</string>
     <string name="brick_base64_to_file_dest">destination</string>
-    <!-- Broadcast with params -->
     <string name="brick_broadcast_with_params">Broadcast with params</string>
     <string name="brick_broadcast_with_params_signal">signal</string>
     <string name="brick_broadcast_with_params_data">data</string>
     <string name="brick_broadcast_with_params_save">save</string>
     <string name="brick_broadcast_with_params_receive">receive</string>
-    <!-- Buffer/Shader -->
     <string name="brick_buf_uniform_title">Buffer uniform</string>
     <string name="brick_buf_uniform_in_buf">in</string>
     <string name="brick_buffer_shader_title">Buffer shader</string>
@@ -5230,14 +5245,12 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_buffer_cam_3d_pitch">pitch</string>
     <string name="brick_buffer_cam_3d_roll">roll</string>
     <string name="brick_buffer_cam_3d_fov">FOV</string>
-    <!-- Buffer recording -->
     <string name="brick_start_buffer_recording_title">Start buffer recording</string>
     <string name="brick_start_buffer_recording_buf">buffer</string>
     <string name="brick_start_buffer_recording_file">file</string>
     <string name="brick_start_buffer_recording_fps">FPS</string>
     <string name="brick_start_buffer_recording_bitrate">bitrate</string>
     <string name="brick_stop_buffer_recording_title">Stop buffer recording</string>
-    <!-- Native Views: Button -->
     <string name="brick_create_button_title">Create button</string>
     <string name="brick_create_button_id">ID</string>
     <string name="brick_create_button_text">text</string>
@@ -5245,13 +5258,11 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_create_button_bg">background</string>
     <string name="brick_create_button_size">size</string>
     <string name="brick_create_button_radius">radius</string>
-    <!-- Native Views: ImageView -->
     <string name="brick_create_image_view_title">Create image view</string>
     <string name="brick_create_image_view_id">ID</string>
     <string name="brick_create_image_view_src">source</string>
     <string name="brick_create_image_view_scale">scale</string>
     <string name="brick_create_image_view_radius">radius</string>
-    <!-- Native Views: ScrollView -->
     <string name="brick_create_scroll_view_title">Create scroll view</string>
     <string name="brick_create_scroll_view_id">ID</string>
     <string name="brick_create_scroll_view_bg">background</string>
@@ -5259,18 +5270,15 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_create_scroll_view_bars">scrollbars</string>
     <string name="brick_create_scroll_view_mode">mode</string>
     <string name="brick_create_scroll_view_overscroll">overscroll</string>
-    <!-- Native Views: Slider -->
     <string name="brick_create_slider_title">Create slider</string>
     <string name="brick_create_slider_id">ID</string>
     <string name="brick_create_slider_min">min</string>
     <string name="brick_create_slider_max">max</string>
     <string name="brick_create_slider_val">value</string>
-    <!-- Native Views: Switch -->
     <string name="brick_create_switch_title">Create switch</string>
     <string name="brick_create_switch_id">ID</string>
     <string name="brick_create_switch_text">text</string>
     <string name="brick_create_switch_state">state</string>
-    <!-- Native Views: TextLabel -->
     <string name="brick_create_text_label_title">Create text label</string>
     <string name="brick_create_text_label_id">ID</string>
     <string name="brick_create_text_label_text">text</string>
@@ -5283,7 +5291,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_create_text_label_spacing">spacing</string>
     <string name="brick_create_text_label_format">format</string>
     <string name="brick_create_text_label_scroll">scrollable</string>
-    <!-- Native Views: Bind/Animate/Config/Control/Listener -->
     <string name="brick_native_view_bind_title">Bind view to sprite</string>
     <string name="brick_native_view_bind_id">ID</string>
     <string name="brick_native_view_bind_sprite">sprite</string>
@@ -5310,7 +5317,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_set_native_parent_title">Set view parent</string>
     <string name="brick_set_native_parent_id">ID</string>
     <string name="brick_set_native_parent_target">parent</string>
-    <!-- 3D -->
     <string name="brick_threed_attach_obj_1">Attach</string>
     <string name="brick_threed_attach_obj_2">to</string>
     <string name="brick_threed_bind_bone_1">Bind bone</string>
@@ -5326,12 +5332,10 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_ease_3d_start_label">start</string>
     <string name="brick_ease_3d_end_label">end</string>
     <string name="brick_ease_3d_duration_label">duration</string>
-    <!-- 2D Ease animation -->
     <string name="brick_ease_title">Ease animation</string>
     <string name="brick_ease_start_label">start</string>
     <string name="brick_ease_end_label">end</string>
     <string name="brick_ease_duration_label">duration</string>
-    <!-- HTTP -->
     <string name="brick_http_create_title">HTTP request</string>
     <string name="brick_http_create_id">ID</string>
     <string name="brick_http_create_method">method</string>
@@ -5388,7 +5392,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_http_configure_particles_id">ID</string>
     <string name="brick_http_configure_particles_property">property</string>
     <string name="brick_http_configure_particles_value">value</string>
-    <!-- MQTT -->
     <string name="brick_mqtt_connect_title">MQTT connect</string>
     <string name="brick_mqtt_connect_id">ID</string>
     <string name="brick_mqtt_connect_host">host</string>
@@ -5403,7 +5406,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_mqtt_join_room_client_id">client ID</string>
     <string name="brick_mqtt_join_room_id">room</string>
     <string name="brick_mqtt_join_room_salt">salt</string>
-    <!-- Notification -->
     <string name="brick_notification_create_title">Create notification</string>
     <string name="brick_notification_id">ID</string>
     <string name="brick_notification_channel">channel</string>
@@ -5434,7 +5436,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_notif_btn_has_input">has input</string>
     <string name="brick_notif_btn_hint">hint</string>
     <string name="brick_notif_btn_auto_close">auto close</string>
-    <!-- Misc bricks -->
     <string name="brick_open_app_title">Open app</string>
     <string name="brick_open_app_pkg">package</string>
     <string name="brick_share_title">Share</string>
@@ -5471,23 +5472,19 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_object_look_at_correct_object">Look at</string>
     <string name="brick_object_look_at_correct_to">target</string>
     <string name="brick_set_shader_uniform_vec">Set shader uniform vec</string>
-    <!-- Threading -->
     <string name="brick_spawn_thread_title">Spawn thread</string>
     <string name="brick_stop_thread_title">Stop thread</string>
     <string name="brick_wait_thread_title">Wait for thread</string>
     <string name="brick_instant">Instant</string>
-    <!-- System -->
     <string name="brick_system_enable_background_title">Enable background</string>
     <string name="brick_system_enable_background_header">header</string>
     <string name="brick_system_enable_background_text">text</string>
     <string name="brick_system_disable_background">Disable background</string>
-    <!-- Zip/Unzip -->
     <string name="brick_zip_project_files_title">Zip project files</string>
     <string name="brick_zip_project_files_archive_name">archive name</string>
     <string name="brick_zip_project_files_list">file list</string>
     <string name="brick_unzip_project_files_title">Unzip project files</string>
     <string name="brick_unzip_project_files_archive_name">archive name</string>
-    <!-- Java -->
     <string name="brick_java_compile_title">Java compile</string>
     <string name="brick_java_compile_src">source</string>
     <string name="brick_java_compile_dest">destination</string>
@@ -5502,7 +5499,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_java_load_class">class</string>
     <string name="brick_java_load_method">method</string>
     <string name="brick_java_load_arg">arg</string>
-    <!-- Events -->
     <string name="brick_when_after_update">After update</string>
     <string name="brick_when_before_update">Before update</string>
     <string name="brick_when_cloned_with_name_title">When cloned with name</string>
@@ -5513,14 +5509,11 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_when_notification_clicked">When notification clicked</string>
     <string name="brick_when_sprite_released">When sprite released</string>
     <string name="brick_when_window_resized">When window resized</string>
-    <!-- Drone -->
     <string name="brick_drone_with">Drone with</string>
-    <!-- Play/Stop sound -->
     <string name="brick_play_sound_1">Play sound</string>
     <string name="brick_play_sound_2"> </string>
     <string name="brick_stop_sound_1">Stop sound</string>
     <string name="brick_stop_sound_2"> </string>
-    <!-- Create/Remove/Replace/Set -->
     <string name="brick_create_1">Create</string>
     <string name="brick_create_2"> </string>
     <string name="brick_remove_1">Remove</string>
@@ -5536,21 +5529,17 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_align_normal_2"> </string>
     <string name="brick_align_normal_3"> </string>
     <string name="brick_align_normal_4"> </string>
-    <!-- Fast2D -->
     <string name="fast2d_set_gravity">Set gravity</string>
     <string name="fast2d_gravity_x_param">x</string>
     <string name="fast2d_gravity_y_param">y</string>
-    <!-- Hitbox editor -->
     <string name="hitbox_mode_dialog_title">Collision mode</string>
     <string name="hitbox_mode_info_full_title">Full collision</string>
     <string name="hitbox_mode_info_full_text">The whole shape is used for collision detection. Best for precise \"touches\" checks, but heavier for many objects.</string>
     <string name="hitbox_mode_info_physics_title">Physics collision</string>
     <string name="hitbox_mode_info_physics_text">A simplified shape is used by the physics engine. Faster and recommended when objects collide and bounce off each other.</string>
 
-    <!-- Custom themes (.neotema) -->
     <string name="settings_themes_title">Themes</string>
 
-    <!-- Tilemap editor -->
     <string name="tilemap_editor_title">Tilemap Editor</string>
     <string name="tilemap_undo">Undo</string>
     <string name="tilemap_redo">Redo</string>
@@ -5573,7 +5562,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="tilemap_error_tileset">Could not load tileset</string>
     <string name="tilemap_save_error">Save failed</string>
 
-    <!-- Tilemap bricks -->
     <string name="brick_set_tile">set tile at column</string>
     <string name="brick_set_tile_row">row</string>
     <string name="brick_set_tile_index">to tile index</string>
@@ -5585,7 +5573,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="brick_set_tilemap_solid_off">not solid</string>
     <string name="subcategory_tilemap">Tilemap</string>
 
-    <!-- Tilemap formulas -->
     <string name="formula_tile_at_position">tile at</string>
     <string name="formula_is_solid_tile_at">solid at</string>
     <string name="formula_tilemap_width">tilemap width</string>
@@ -5596,11 +5583,9 @@ needs read and write access to it. You can always change permissions through you
     <string name="formula_tile_at_position_param" formatted="false">(column, row)</string>
     <string name="formula_is_solid_tile_at_param" formatted="false">(column, row)</string>
 
-    <!-- Look list entries -->
     <string name="look_new_tilemap">New Tilemap</string>
     <string name="look_edit_tilemap">Edit Tilemap</string>
 
-    <!-- Custom themes (.neotema) continued -->
     <string name="settings_themes_summary">Import and apply custom .neotema themes</string>
     <string name="theme_default_name">Default theme</string>
     <string name="theme_import_button">Import theme</string>
@@ -5657,6 +5642,10 @@ needs read and write access to it. You can always change permissions through you
     <string name="scene_editor_new_object">Новый объект</string>
     <string name="scene_editor_object_created">Объект создан: %1$s</string>
     <string name="scene_editor_scenes">Scenes</string>
+    <string name="scene_editor_scene_compilation">Compilation</string>
+    <string name="scene_editor_scene_loading">Loading</string>
+    <string name="scene_editor_scene_compilation_active">Compilation active</string>
+    <string name="scene_editor_scene_loading_active">Loading active</string>
     <string name="scene_editor_paint_error">Не удалось сохранить рисунок</string>
     <string name="scene_editor_objects">Objects</string>
     <string name="script_canvas_close">Close</string>
@@ -5733,7 +5722,6 @@ needs read and write access to it. You can always change permissions through you
     <string formatted="false" name="v3_perm_mode_auto">Automatic (from project blocks)</string>
     <string formatted="false" name="v3_perm_mode_manual">Manual selection</string>
 
-    <!-- UI 2.0 - Formula Editor 2 -->
     <string name="formula_editor_2_title">Formula Editor</string>
     <string name="formula_editor_2_copied">Copied</string>
     <string name="formula_editor_2_data_formulas">Data formulas</string>
@@ -5787,7 +5775,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="formula_editor_function_category_device">Device</string>
     <string name="formula_editor_function_category_object">Object</string>
 
-    <!-- UI 2.0 - Script Canvas -->
     <string name="script_canvas_choose_neoscript">Choose .neoscript module</string>
     <string name="script_canvas_no_scripts_to_export">No scripts to export</string>
     <string name="script_canvas_neoscript_imported">NeoScript module imported successfully!</string>
@@ -5828,11 +5815,9 @@ needs read and write access to it. You can always change permissions through you
     <string name="script_canvas_analysis_disabled">Code analysis is disabled in settings</string>
     <string name="script_canvas_analysis_complete">Analysis complete: %1$d issues found</string>
 
-    <!-- UI 2.0 - Panel Activity -->
     <string name="ui2_panel_project_files">Project Files 2.0</string>
     <string name="ui2_panel_project_options">Project Options 2.0</string>
 
-    <!-- UI 2.0 - Scene Editor -->
     <string name="scene_editor_2_paused">Paused. Select an action on the control panel.</string>
     <string name="scene_editor_2_resumed">Playback resumed.</string>
     <string name="scene_editor_2_stopped">Playback stopped. Editor unlocked.</string>
@@ -5881,7 +5866,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="scene_editor_2_objects_title">Objects</string>
     <string name="scene_editor_2_object_actions">Object Actions</string>
 
-    <!-- UI 2.0 - Project Options 2 -->
     <string name="project_options_2_title">Project Options 2.0</string>
     <string name="project_options_2_name_description">Name and Description</string>
     <string name="project_options_2_project_name">Project name:</string>
@@ -5896,7 +5880,7 @@ needs read and write access to it. You can always change permissions through you
     <string name="project_options_2_resolution_invalid">Resolution must be between 64 and 8192</string>
     <string name="project_options_2_export_backup">Export and Backups</string>
     <string name="project_options_2_export_zip">Export project (.catrobat / .zip)</string>
-    <string name="project_options_2_build_apk">Build APK (APK Builder V3)</string>
+    <string name="project_options_2_build_apk">Build APK (APK Builder V4)</string>
     <string name="project_options_2_export_baked">Baked project (.enc)</string>
     <string name="project_options_2_export_password">Export with password (.npc)</string>
     <string name="project_options_2_export_protected">Export protected project</string>
@@ -5958,7 +5942,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="telemetry_usage_no_ads_desc">Telemetry is not used for showing ads.</string>
     <string name="telemetry_privacy_policy">Privacy policy</string>
 
-    <!-- ===== Ported bricks (2026-08) ===== -->
     <string name="brick_pen_circle_radius">Radius</string>
     <string name="brick_pen_circle_start_angle">Angle</string>
     <string name="brick_pen_circle_sweep_angle">Arc (°)</string>
@@ -6028,7 +6011,6 @@ needs read and write access to it. You can always change permissions through you
     <string name="pt_zero_grad" formatted="false">Clear Gradients (Zero Grad)</string>
 
 
-    <!-- ===== Pen/Text property spinners (2026-08) ===== -->
     <string-array name="brick_pen_properties">
         <item>Layer (Z-Index)</item>
         <item>Transparency (%)</item>
@@ -6417,6 +6399,135 @@ needs read and write access to it. You can always change permissions through you
     <string name="developer_support_prompt_message">This project is made by one person. Watch a short ad to show your support.</string>
     <string name="developer_support_watch_ad">Watch ad</string>
     <string name="developer_support_not_now">Not now</string>
-    <!-- TODO(release): Replace Google's test rewarded ad unit ID with the production ID. -->
     <string name="developer_support_rewarded_ad_unit_id">ca-app-pub-3940256099942544/5224354917</string>
+    <string name="templates_button">Templates</string>
+    <string name="templates_screen_hint">Choose a template - its blocks will be added to the scripts of this object\nHold a card to see what the template does</string>
+    <string name="templates_close">Close</string>
+    <string name="template_admob_banner_caption">Template 1</string>
+    <string name="template_admob_banner_description">template 1 - banner at startup
+
+what it does
+- shows banner ad at launch
+- enables test mode - fake ads no risk at all
+- comes with google test ids - swap for yours before release
+
+what gets inserted
+- startup script with test mode test ids init load and show
+- comment blocks explaining each step
+
+what to replace
+- test ids with your own admob ids ca-app-pub-...
+
+where it goes well
+- anywhere with a menu or a long startup :) in long-session arcade games :3 it stays out of the way :D
+- not on splash screens or mid-level :/ silence is better there \\:</string>
+    <string name="template_admob_interstitial_caption">Template 2</string>
+    <string name="template_admob_rewarded_caption">Template 3</string>
+    <string name="template_admob_appopen_caption">Template 4</string>
+    <string name="template_admob_interstitial_description">template 2 - interstitial ad
+
+what it does
+- shows full-screen ad between screens
+- plays between stages not in the middle of gameplay
+- test mode and test ids are included
+
+what gets inserted
+- interstitial init load and show
+- comment blocks explaining each step
+
+what to replace
+- test ids with your own admob ids ca-app-pub-...
+
+where it goes well
+- between levels or rounds :) after game over screen :3 at the end of a session :D
+- not on startup or mid-gameplay :/ users uninstall in rage \\:</string>
+    <string name="template_admob_rewarded_description">template 3 - rewarded ad
+
+what it does
+- shows ad for which the user gets a reward
+- only plays when the user opts in
+- test ids included
+
+what gets inserted
+- rewarded init load and show
+- comment blocks explaining each step
+
+what to replace
+- test ids with your own admob ids ca-app-pub-...
+
+where it goes well
+- for hints or extra life :) for currency or a loot box :3
+- in shops and between levels :D
+- never for mandatory actions :/ reward must stay optional or google bans you \\:</string>
+    <string name="template_admob_appopen_description">template 4 - app open ad
+
+what it does
+- shows ad when the user returns to the app
+- does not fire on cold start
+- test ids included
+
+what gets inserted
+- app open init load and show
+- comment blocks explaining each step
+
+what to replace
+- test ids with your own admob ids ca-app-pub-...
+
+where it goes well
+- when the user comes back from menu or another app :)
+- after being away for a while :3 in short-session games :D
+- not on cold start :/ google dislikes it \\:</string>
+    <string name="v3_admob_section">AdMob App ID (optional)</string>
+    <string name="v3_admob_hint">Real AdMob App ID for the exported game. Leave empty to keep Google test ads. This is an app id like ca-app-pub-1234567890123456~1234567890, not an ad unit id.</string>
+    <string name="v3_admob_app_id_hint">ca-app-pub-...~...</string>
+    <string name="v3_admob_invalid">Invalid AdMob App ID. Expected format: ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY</string>
+    <string name="brick_show_bar" formatted="false">Show variable as bar</string>
+    <string name="brick_show_bar_fill" formatted="false">fill:</string>
+    <string name="brick_show_bar_track" formatted="false">track:</string>
+    <string name="brick_show_bar_width" formatted="false">width %:</string>
+    <string name="brick_show_bar_height" formatted="false">height %:</string>
+    <string name="brick_show_bar_min" formatted="false">min:</string>
+    <string name="brick_show_bar_max" formatted="false">max:</string>
+    <string name="brick_show_bar_x" formatted="false">X %:</string>
+    <string name="brick_show_bar_y" formatted="false">Y %:</string>
+    <string name="brick_show_bar_auto" formatted="false">auto update:</string>
+    <string name="brick_show_bar_pinned" formatted="false">pinned on screen:</string>
+    <string name="brick_bar_yes" formatted="false">yes</string>
+    <string name="brick_bar_no" formatted="false">no</string>
+    <string name="brick_hide_bar" formatted="false">Hide bar</string>
+    <string name="brick_hide_bar_all" formatted="false">all bars</string>
+    <string name="v3_allow_split_screen">Allow split screen</string>
+    <string name="v3_allow_pip">Allow picture-in-picture mode</string>
+    <string name="v3_pip_requires_split_screen">PIP requires split screen to be allowed</string>
+    <string name="project_files_menu_rename">Rename</string>
+    <string name="project_files_menu_open_code">Open code</string>
+    <string name="project_files_menu_copy_name">Copy name</string>
+    <string name="project_files_rename_title">Rename file</string>
+    <string name="project_files_renamed">File renamed</string>
+    <string name="project_files_rename_error">Failed to rename file</string>
+    <string name="clipboard_tool_trim">Object only</string>
+    <string name="v3_neoui_field_x">X %:</string>
+    <string name="v3_neoui_field_y">Y %:</string>
+    <string name="v3_neoui_field_width">Width %:</string>
+    <string name="v3_neoui_field_height">Height %:</string>
+    <string name="v3_neoui_size_and_position">Size and position</string>
+    <string name="v3_template_import_button">Pick from file</string>
+    <string name="v3_template_import_checking">Checking templateвЂ¦</string>
+    <string name="v3_template_import_hash_checking">Verifying .sha256вЂ¦</string>
+    <string name="v3_template_import_pick_hash">Signature ok now pick the .sha256 file</string>
+    <string name="v3_template_import_signature_ok">Template signature matches</string>
+    <string name="v3_template_import_success">Template imported and verified</string>
+    <string name="v3_template_import_cancelled">Import cancelled the .sha256 file is required</string>
+    <string name="v3_template_import_reason_not_apk">This is not an APK file</string>
+    <string name="v3_template_import_reason_marker">This is not a NeoCatroid runtime template</string>
+    <string name="v3_template_import_reason_too_old">Template is too old please update it</string>
+    <string name="v3_template_import_reason_signature">Template signature does not match the app this is not the original template</string>
+    <string name="v3_template_import_reason_hash_invalid">The .sha256 file does not contain a valid hash</string>
+    <string name="v3_template_import_reason_hash_mismatch">Hash mismatch the file is corrupted or from a different build</string>
+    <string name="v3_template_import_reason_io">Failed to read files</string>
 </resources>
+
+
+
+
+

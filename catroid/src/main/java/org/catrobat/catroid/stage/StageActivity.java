@@ -32,6 +32,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
@@ -94,6 +97,10 @@ import org.catrobat.catroid.CatroidApplication;
 import org.catrobat.catroid.ProjectManager;
 import org.catrobat.catroid.R;
 import org.catrobat.catroid.admob.AdMobManager;
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiLayout;
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiRuntimeView;
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiText;
+import org.catrobat.catroid.apkbuildV3.runtime.RuntimeLoaderActivityV3;
 import org.catrobat.catroid.bluetooth.base.BluetoothDeviceService;
 import org.catrobat.catroid.camera.CameraManager;
 import org.catrobat.catroid.common.CatroidService;
@@ -143,6 +150,7 @@ import org.catrobat.catroid.utils.ToastUtil;
 import org.catrobat.catroid.utils.VibrationManager;
 import org.catrobat.catroid.virtualmachine.VirtualMachineManager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -183,6 +191,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	private static boolean isLaunching = false;
 
 	public static final String EXTRA_PROJECT_PATH = "EXTRA_PROJECT_PATH";
+	public static final String EXTRA_PROJECT_PRELOADED = "EXTRA_PROJECT_PRELOADED";
 
 	private static final List<IntentListener> intentListeners2 = new ArrayList<>();
 
@@ -228,6 +237,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	private View precompileOverlay;
 	private TextView precompileStatusText;
 	private ProgressBar precompileProgressBar;
+	private NeoUiRuntimeView precompileRuntimeView;
 	private FrameLayout backgroundLayout;
 	private FrameLayout foregroundLayout;
 	private FrameLayout activeNativeLayer;
@@ -295,6 +305,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 		injectSafeKeyboardProvider();
 
 		org.catrobat.catroid.content.GlobalManager.resetSceneTracking();
+		org.catrobat.catroid.stage.BarManager.INSTANCE.clear();
 		org.catrobat.catroid.content.actions.PreloadSceneAction.Companion.getPreloadedScenes().clear();
 
 		org.catrobat.catroid.runtime.RuntimeServicesHolder.services =
@@ -313,9 +324,21 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 				new org.catrobat.catroid.notification.AndroidNotificationService(this);
 
 
+		boolean projectPreloaded = getIntent().getBooleanExtra(EXTRA_PROJECT_PRELOADED, false);
+
 		if (getIntent().hasExtra(EXTRA_PROJECT_PATH)) {
 			String projectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
 			File projectDir = new File(projectPath);
+
+			if (projectPreloaded && ProjectManager.getInstance().getCurrentProject() == null) {
+				startActivity(new Intent(this, RuntimeLoaderActivityV3.class));
+				finish();
+				return;
+			}
+
+			if (projectPreloaded && ProjectManager.getInstance().getCurrentProject() != null) {
+				ProjectManager.getInstance().getCurrentProject().setDirectory(projectDir);
+			}
 
 			File initTxt = new File(projectDir, "init.luno.txt");
 			File initBin = new File(projectDir, "init.bin");
@@ -352,7 +375,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 					finish();
 					return;
 				}
-			} else if (projectDir.exists() && projectDir.isDirectory()) {
+			} else if (!projectPreloaded && projectDir.exists() && projectDir.isDirectory()) {
 				try {
 					ProjectManager.getInstance().loadProject(projectDir);
 				} catch (ProjectException e) {
@@ -363,7 +386,7 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 				}
 			}
 
-			if (ProjectManager.getInstance().getCurrentProject() == null
+			if (!projectPreloaded && ProjectManager.getInstance().getCurrentProject() == null
 					&& projectDir.exists() && projectDir.isDirectory()) {
 				try {
 					ProjectManager.getInstance().loadProject(projectDir);
@@ -1752,11 +1775,41 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 		}
 
 		try {
+			deleteBakedPayloadIfCacheInternal();
+		} catch (Throwable t) {
+			Log.e(TAG, "Baked payload cleanup failed", t);
+		}
+
+		try {
 			injectSafeKeyboardProvider();
 			super.onDestroy();
 		} catch (Throwable t) {
 			Log.e(TAG, "Error during super.onDestroy in StageActivity; ignored to prevent app crash on exit", t);
 		}
+	}
+
+	private void deleteBakedPayloadIfCacheInternal() {
+		String bakedPath = getIntent() != null ? getIntent().getStringExtra(EXTRA_PROJECT_PATH) : null;
+		if (bakedPath == null || getCacheDir() == null) return;
+		try {
+			File baked = new File(bakedPath).getCanonicalFile();
+			File cache = getCacheDir().getCanonicalFile();
+			if (!baked.getPath().startsWith(cache.getPath() + File.separator)) return;
+			String name = baked.getName();
+			if (!("project_extracted".equals(name) || "project_light".equals(name) || "baked_project".equals(name))) return;
+			deleteRecursively(baked);
+		} catch (IOException ignored) {
+		}
+	}
+
+	private void deleteRecursively(File file) {
+		File[] children = file.listFiles();
+		if (children != null) {
+			for (File child : children) {
+				deleteRecursively(child);
+			}
+		}
+		file.delete();
 	}
 
 	AndroidGraphics getGdxGraphics() {
@@ -2443,62 +2496,151 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 	}
 
 	private void showPrecompileOverlay(FrameLayout parent) {
+		try {
+			getAssets().open("neoui/no_ui.marker").close();
+			return;
+		} catch (IOException ignored) {
+		}
+
+		NeoUiLayout customLayout = loadCompilationLayout();
 		FrameLayout overlay = new FrameLayout(this);
-		overlay.setBackgroundColor(0xFF555555);
+		overlay.setBackgroundColor(customLayout != null ? 0xFF000000 : 0xFF555555);
 		overlay.setLayoutParams(new FrameLayout.LayoutParams(
 				ViewGroup.LayoutParams.MATCH_PARENT,
 				ViewGroup.LayoutParams.MATCH_PARENT));
 
-		LinearLayout content = new LinearLayout(this);
-		content.setOrientation(LinearLayout.VERTICAL);
-		content.setGravity(Gravity.CENTER);
-		content.setPadding(48, 48, 48, 48);
+		if (customLayout != null) {
+			NeoUiRuntimeView runtimeView = new NeoUiRuntimeView(this, customLayout, loadCompilationBitmap(), false);
+			overlay.addView(runtimeView, new FrameLayout.LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT));
+			precompileRuntimeView = runtimeView;
+			precompileProgressBar = null;
+			precompileStatusText = null;
+		} else {
+			LinearLayout content = new LinearLayout(this);
+			content.setOrientation(LinearLayout.VERTICAL);
+			content.setGravity(Gravity.CENTER);
+			content.setPadding(48, 48, 48, 48);
 
-		TextView appName = new TextView(this);
-		appName.setText(R.string.app_name);
-		appName.setTextColor(Color.WHITE);
-		appName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-		appName.setTypeface(null, Typeface.BOLD);
-		appName.setGravity(Gravity.CENTER);
-		content.addView(appName);
+			TextView appName = new TextView(this);
+			appName.setText(R.string.app_name);
+			appName.setTextColor(Color.WHITE);
+			appName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+			appName.setTypeface(null, Typeface.BOLD);
+			appName.setGravity(Gravity.CENTER);
+			content.addView(appName);
 
-		String sceneName = ProjectManager.getInstance().getCurrentlyPlayingScene() != null
-				? ProjectManager.getInstance().getCurrentlyPlayingScene().getName()
-				: "...";
-		TextView compilingText = new TextView(this);
-		compilingText.setText(getString(R.string.preloader_compiling) + " " + sceneName);
-		compilingText.setTextColor(0xB2FFFFFF);
-		compilingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-		compilingText.setGravity(Gravity.CENTER);
-		compilingText.setPadding(0, 24, 0, 0);
-		content.addView(compilingText);
+			String sceneName = ProjectManager.getInstance().getCurrentlyPlayingScene() != null
+					? ProjectManager.getInstance().getCurrentlyPlayingScene().getName()
+					: "...";
+			TextView compilingText = new TextView(this);
+			compilingText.setText(getString(R.string.preloader_compiling) + " " + sceneName);
+			compilingText.setTextColor(Color.WHITE);
+			compilingText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+			compilingText.setGravity(Gravity.CENTER);
+			compilingText.setPadding(0, 24, 0, 0);
+			content.addView(compilingText);
 
-		ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-		progressBar.setIndeterminate(true);
-		LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT, 24);
-		barParams.topMargin = 32;
-		progressBar.setLayoutParams(barParams);
-		content.addView(progressBar);
+			ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+			progressBar.setIndeterminate(true);
+			LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT, 24);
+			barParams.topMargin = 32;
+			progressBar.setLayoutParams(barParams);
+			content.addView(progressBar);
 
-		overlay.addView(content);
+			overlay.addView(content);
 
-		precompileStatusText = new TextView(this);
-		precompileStatusText.setTextColor(0xCCFFFFFF);
-		precompileStatusText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-		precompileStatusText.setGravity(Gravity.CENTER);
-		precompileStatusText.setPadding(0, 0, 0, 48);
-		FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT,
-				ViewGroup.LayoutParams.WRAP_CONTENT);
-		statusParams.gravity = Gravity.BOTTOM;
-		precompileStatusText.setLayoutParams(statusParams);
-		overlay.addView(precompileStatusText);
+			precompileStatusText = new TextView(this);
+			precompileStatusText.setTextColor(Color.WHITE);
+			precompileStatusText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+			precompileStatusText.setGravity(Gravity.CENTER);
+			precompileStatusText.setPadding(0, 0, 0, 48);
+			FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.WRAP_CONTENT);
+			statusParams.gravity = Gravity.BOTTOM;
+			precompileStatusText.setLayoutParams(statusParams);
+			overlay.addView(precompileStatusText);
+			precompileProgressBar = progressBar;
+			precompileRuntimeView = null;
+		}
 
 		parent.addView(overlay);
 		this.precompileOverlay = overlay;
-		this.precompileProgressBar = progressBar;
 		this.precompileOverlay.bringToFront();
+	}
+
+	private NeoUiLayout loadCompilationLayout() {
+		try {
+			InputStream input = getAssets().open("neoui/compilation.json");
+			try {
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				byte[] buffer = new byte[8192];
+				int count;
+				int total = 0;
+				while ((count = input.read(buffer)) != -1) {
+					total += count;
+					if (total > 1024 * 1024) {
+						return null;
+					}
+					output.write(buffer, 0, count);
+				}
+				NeoUiLayout layout = NeoUiLayout.Companion.fromJsonString(output.toString("UTF-8"));
+				layout.requireValid();
+				String sceneName = ProjectManager.getInstance().getCurrentlyPlayingScene() != null
+						? ProjectManager.getInstance().getCurrentlyPlayingScene().getName()
+						: "";
+				for (NeoUiText text : layout.getTexts()) {
+					if (text.getContent().contains("{scene}")) {
+						text.setContent(text.getContent().replace("{scene}", sceneName));
+					}
+				}
+				return layout;
+			} finally {
+				input.close();
+			}
+		} catch (Throwable t) {
+			Log.w(TAG, "Custom compilation screen unavailable", t);
+			return null;
+		}
+	}
+
+	private Bitmap loadCompilationBitmap() {
+		try {
+			InputStream input = getAssets().open("neoui/compilation_bg.png");
+			try {
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				byte[] buffer = new byte[8192];
+				int count;
+				int total = 0;
+				while ((count = input.read(buffer)) != -1) {
+					total += count;
+					if (total > 20 * 1024 * 1024) {
+						return null;
+					}
+					output.write(buffer, 0, count);
+				}
+				byte[] bytes = output.toByteArray();
+				BitmapFactory.Options bounds = new BitmapFactory.Options();
+				bounds.inJustDecodeBounds = true;
+				BitmapFactory.decodeByteArray(bytes, 0, bytes.length, bounds);
+				if (bounds.outWidth < 1 || bounds.outHeight < 1 || bounds.outWidth > 8192 || bounds.outHeight > 8192) {
+					return null;
+				}
+				if ((long) bounds.outWidth * bounds.outHeight > 32_000_000L) {
+					return null;
+				}
+				BitmapFactory.Options options = new BitmapFactory.Options();
+				options.inSampleSize = 2;
+				return BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+			} finally {
+				input.close();
+			}
+		} catch (Throwable t) {
+			return null;
+		}
 	}
 
 	public void updatePrecompileStatus(final String name) {
@@ -2508,6 +2650,9 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 				if (precompileStatusText != null) {
 					precompileStatusText.setText(name);
 				}
+				if (precompileRuntimeView != null) {
+					precompileRuntimeView.setStatusText(name);
+				}
 			}
 		});
 	}
@@ -2516,6 +2661,9 @@ public class StageActivity extends AndroidApplication implements ContextProvider
 		runOnMainThread(new Runnable() {
 			@Override
 			public void run() {
+				if (precompileRuntimeView != null) {
+					precompileRuntimeView.setProgress(max > 0 ? progress * 100 / max : 0);
+				}
 				if (precompileProgressBar != null) {
 					precompileProgressBar.setIndeterminate(false);
 					precompileProgressBar.setMax(Math.max(max, 1));

@@ -396,7 +396,7 @@ android {
         template {
             initWith debug
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt', 'proguard-runtime.pro' // both proguard files applied intentionally
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-project.txt', 'proguard-runtime.pro'
             matchingFallbacks = ['debug']
         }
     }

@@ -13,8 +13,6 @@ import java.util.concurrent.TimeUnit
 class ListenTcpServerAction() : Action() {
     companion object {
         private const val POLL_INTERVAL_MS = 30L
-        private const val MAX_TASKS = 32
-
         private var sharedScheduler: ScheduledExecutorService? = null
         private val tasks = mutableListOf<ScheduledFuture<*>>()
 
@@ -30,9 +28,7 @@ class ListenTcpServerAction() : Action() {
 
         @Synchronized
         private fun pruneTasks() {
-            while (tasks.size >= MAX_TASKS) {
-                tasks.removeAt(0).cancel(false)
-            }
+            tasks.removeAll { it.isCancelled || it.isDone }
         }
 
         @Synchronized
@@ -110,6 +106,7 @@ class ListenTcpServerAction() : Action() {
         val last = messages.last()
         if (last.indexOf(LocalServer.VALUE_SEPARATOR) >= 0) {
             val parts = last.split(LocalServer.VALUE_SEPARATOR)
+            vars.forEach { it.value = "" }
             for (i in vars.indices) {
                 val part = parts.getOrNull(i) ?: continue
                 vars[i].value = part
@@ -117,6 +114,7 @@ class ListenTcpServerAction() : Action() {
         } else {
             val k = vars.size
             val start = maxOf(0, messages.size - k)
+            vars.forEach { it.value = "" }
             for (i in 0 until k) {
                 val index = start + i
                 if (index < messages.size) {

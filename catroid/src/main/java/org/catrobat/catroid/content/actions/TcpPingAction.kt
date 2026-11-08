@@ -36,6 +36,13 @@ class TcpPingAction() : Action() {
         super.reset()
     }
 
+    override fun restart() {
+        generation++
+        started = false
+        finished = false
+        super.restart()
+    }
+
     private fun start() {
         val scope = scope
         if (scope == null) {

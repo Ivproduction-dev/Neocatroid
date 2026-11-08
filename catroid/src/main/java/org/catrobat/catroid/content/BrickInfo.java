@@ -808,6 +808,10 @@ public final class BrickInfo {
         addEn(HideStatusBarBrick.class, "Hides the system UI (status bar) during playback.");
         add(HideText3Brick.class, "Скрывает показанный на сцене текст с заданным именем (показанный блоком \"Показать текст\").");
         addEn(HideText3Brick.class, "Hides text shown on the stage under the given name (shown by the \"Show text\" block).");
+        add(ShowBarBrick.class, "Показывает переменную в виде полосы-бара: цвет заливки и фона, ширина и высота в процентах от экрана, минимум и максимум, позиция X и Y в процентах, авообновление при изменении и закрепление на экране.");
+        addEn(ShowBarBrick.class, "Shows a variable as a bar: fill and track colors, width and height in percent of the screen, minimum and maximum, X and Y position in percent, auto update on change and pinning to the screen.");
+        add(HideBarBrick.class, "Скрывает бар переменной, показанный блоком \"Показать переменную баром\". Отметка \"все бары\" скрывает все бары сразу.");
+        addEn(HideBarBrick.class, "Hides the variable bar shown by the \"Show variable as bar\" block. The \"all bars\" flag hides all bars at once.");
         add(HideTextBrick.class, "Скрывает показанное на сцене значение выбранной переменной.");
         addEn(HideTextBrick.class, "Hides the value of the selected variable that is currently shown on the stage.");
         add(IfLogicBeginBrick.class, "Выполняет блоки внутри, если условие истинно, иначе выполняет блоки в ветке \"иначе\".");

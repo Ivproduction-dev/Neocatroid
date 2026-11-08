@@ -33,5 +33,5 @@
         android:layout_height="wrap_content"
         android:checkable="false"
         android:checked="false"
-        android:textColor="@android:color/black" />
+        android:textColor="@color/pocketpaint_text_primary" />
 </LinearLayout>

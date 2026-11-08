@@ -728,7 +728,7 @@ class ProjectOptions2Fragment : Fragment() {
 
     private fun dp(value: Float): Float = value * resources.displayMetrics.density
 
-    private inner class FileProgressDialog(private val title: String) {
+        private inner class FileProgressDialog(private val title: String) {
         private var dialog: androidx.appcompat.app.AlertDialog? = null
         private var progressBar: android.widget.ProgressBar? = null
         private var fileNameView: TextView? = null
@@ -780,6 +780,23 @@ class ProjectOptions2Fragment : Fragment() {
                     dialog?.dismiss()
                 }
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_IMAGE) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onImagePicked(
+                if (resultCode == android.app.Activity.RESULT_OK) data?.data else null
+            )
+        }
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_NEOUI) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onNeouiImportPicked(
+                if (resultCode == android.app.Activity.RESULT_OK) data?.data else null
+            )
+        }
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_NEOUI_EXPORT) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onNeouiExportPicked(if (resultCode == android.app.Activity.RESULT_OK) data?.data else null)
         }
     }
 }

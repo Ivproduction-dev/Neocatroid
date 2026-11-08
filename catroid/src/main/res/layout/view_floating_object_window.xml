@@ -171,21 +171,6 @@
                     android:textColor="#FFFFFFFF" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/floating_window_swipe"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/scene_editor_add_blocks_bg"
-                android:paddingStart="12dp"
-                android:paddingTop="7dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="7dp"
-                android:stateListAnimator="@null"
-                android:text="@string/scene_editor_swipe"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFFFF"
-                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 

@@ -85,14 +85,6 @@ public class ScheduleBrick extends FormulaBrick implements CompositeBrick {
 	}
 
 	@Override
-	public void setCommentedOut(boolean commentedOut) {
-		super.setCommentedOut(commentedOut);
-		for (Brick brick : scheduledBricks) {
-			brick.setCommentedOut(commentedOut);
-		}
-	}
-
-	@Override
 	public Brick clone() throws CloneNotSupportedException {
 		ScheduleBrick clone = (ScheduleBrick) super.clone();
 		clone.endBrick = new EndBrick(clone);
@@ -130,6 +122,14 @@ public class ScheduleBrick extends FormulaBrick implements CompositeBrick {
 		super.setParent(parent);
 		for (Brick brick : scheduledBricks) {
 			brick.setParent(this);
+		}
+	}
+
+	@Override
+	public void setCommentedOut(boolean commentedOut) {
+		super.setCommentedOut(commentedOut);
+		for (Brick brick : scheduledBricks) {
+			brick.setCommentedOut(commentedOut);
 		}
 	}
 

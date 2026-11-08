@@ -1038,7 +1038,9 @@ class ProjectOptionsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        projectManager.currentProject = project
+        if (projectManager.currentProject !== project) {
+            projectManager.currentProject = project
+        }
         binding.projectOptionsNameLayout.editText?.setText(project?.name)
         setupDescriptionInputLayout()
         setupNotesAndCreditsInputLayout()
@@ -2135,6 +2137,19 @@ class ProjectOptionsFragment : Fragment() {
                     showToast("Ошибка при сохранении изображения: ${e.message}")
                 }
             } ?: showToast(getRandomError())
+        }
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_IMAGE) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onImagePicked(
+                if (resultCode == Activity.RESULT_OK) data?.data else null
+            )
+        }
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_NEOUI) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onNeouiImportPicked(
+                if (resultCode == Activity.RESULT_OK) data?.data else null
+            )
+        }
+        if (requestCode == org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.REQUEST_CODE_NEOUI_EXPORT) {
+            org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog.onNeouiExportPicked(if (resultCode == Activity.RESULT_OK) data?.data else null)
         }
     }
 

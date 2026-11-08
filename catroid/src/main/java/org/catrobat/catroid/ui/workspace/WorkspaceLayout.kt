@@ -93,6 +93,7 @@ class WorkspaceLayout @JvmOverloads constructor(
             "sounds" -> if (isRussian) "Звуки" else "Sounds"
             "categories" -> if (isRussian) "Категории блоков" else "Block Categories"
             "add_brick" -> if (isRussian) "Добавить блок" else "Add Block"
+            "templates_button" -> if (isRussian) "Шаблоны" else "Templates"
             "data_selection" -> if (isRussian) "Выбор данных" else "Select Data"
             "formula_editor" -> if (isRussian) "Редактор формул" else "Formula Editor"
             else -> key
@@ -724,6 +725,22 @@ class WorkspaceLayout @JvmOverloads constructor(
                 ?.findFragmentByTag(ScriptFragment.TAG)
                     as? ScriptFragment
             org.catrobat.catroid.ui.fragment.AddBrickFragment.newInstance(category, scriptsFragment)
+        }
+    }
+
+    fun openBrickTemplatesWindow(category: String) {
+        if (org.catrobat.catroid.ProjectManager.getInstance().currentProject?.isProtectedProject == true) {
+            android.widget.Toast.makeText(context, R.string.protected_project_cannot_edit,
+                android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        val tag = org.catrobat.catroid.ui.fragment.BrickTemplatesFragment.BRICK_TEMPLATES_FRAGMENT_TAG
+        openWindow(tag, getLocalizedString("templates_button") + ": $category") {
+            val scriptsFragment = (context as? androidx.fragment.app.FragmentActivity)
+                ?.supportFragmentManager
+                ?.findFragmentByTag(ScriptFragment.TAG)
+                    as? ScriptFragment
+            org.catrobat.catroid.ui.fragment.BrickTemplatesFragment.newInstance(category, scriptsFragment)
         }
     }
 

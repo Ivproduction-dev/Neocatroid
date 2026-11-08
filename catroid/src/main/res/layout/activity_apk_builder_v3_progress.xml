@@ -15,7 +15,7 @@
         android:text="@string/v3_building_apk"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@color/dialog_title_and_text_view"
+        android:textColor="@color/solid_white"
         android:layout_marginBottom="18dp" />
 
     <TextView
@@ -25,7 +25,7 @@
         android:text="0%"
         android:textSize="40sp"
         android:textStyle="bold"
-        android:textColor="@color/progress_blue"
+        android:textColor="@color/solid_white"
         android:layout_marginBottom="14dp" />
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -35,9 +35,9 @@
         android:max="100"
         android:progress="0"
         app:trackThickness="10dp"
-        app:trackCornerRadius="6dp"
-        app:indicatorColor="@color/progress_blue"
-        app:trackColor="@color/progress_blue_track"
+        app:trackCornerRadius="2dp"
+        app:indicatorColor="@color/solid_white"
+        app:trackColor="@color/surface_card"
         android:layout_marginBottom="18dp" />
 
     <TextView
@@ -47,7 +47,7 @@
         android:text="@string/v3_preparing"
         android:textSize="14sp"
         android:gravity="center"
-        android:textColor="@color/checkbox_and_radio_button_description"
+        android:textColor="@color/solid_white"
         android:layout_marginBottom="20dp" />
 
     <TextView
@@ -56,7 +56,7 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="12sp"
-        android:textColor="@color/spinner_icon_and_inactive_elements"
+        android:textColor="@color/solid_white"
         android:gravity="center"
         android:maxLines="2"
         android:ellipsize="middle"
@@ -68,7 +68,7 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="12sp"
-        android:textColor="@color/spinner_icon_and_inactive_elements"
+        android:textColor="@color/solid_white"
         android:gravity="center"
         android:maxLines="3"
         android:layout_marginHorizontal="8dp" />

@@ -7,6 +7,25 @@
     android:padding="12dp">
 
     <TextView
+        android:id="@+id/category_templates_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/templates_button"
+        android:textColor="#0B1020"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:letterSpacing="0.02"
+        android:visibility="gone"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="10dp"
+        android:elevation="3dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/bg_templates_button"
+        android:foreground="?attr/selectableItemBackground" />
+
+    <TextView
         android:id="@+id/category_help_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

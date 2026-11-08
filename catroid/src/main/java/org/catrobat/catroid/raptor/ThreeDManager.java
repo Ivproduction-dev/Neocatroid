@@ -2998,8 +2998,12 @@ public class ThreeDManager implements Disposable {
             String attachedId = audio.getAttachedObjectId();
             if (attachedId != null) {
                 ModelInstance attachedObject = sceneObjects.get(attachedId);
+                if (attachedObject == null) attachedObject = editorProxies.get(attachedId);
                 if (attachedObject != null) {
                     attachedObject.transform.getTranslation(tmpPos);
+                    audio.setPosition(tmpPos);
+                } else if (manager != null && manager.findGameObject(attachedId) != null) {
+                    manager.findGameObject(attachedId).transform.worldTransform.getTranslation(tmpPos);
                     audio.setPosition(tmpPos);
                 } else {
                     audio.stop();
@@ -3009,8 +3013,13 @@ public class ThreeDManager implements Disposable {
                 }
             }
 
+            if (!audio.is3D()) {
+                audio.update3D(globalSoundVolume, 0f);
+                continue;
+            }
+
             float distance = listenerPos.dst(audio.getPosition());
-            float maxDist = audio.getMaxDistance();
+            float maxDist = Math.max(0.1f, audio.getMaxDistance());
 
             float finalVolume;
             float finalPan;
@@ -3173,7 +3182,11 @@ public class ThreeDManager implements Disposable {
     }
 
     public void playSoundAt(String instanceName, String soundName, float x, float y, float z, float volume, float pitch, boolean loop) {
-        playSoundInternal(instanceName, soundName, volume, pitch, loop, new Vector3(x, y, z), null);
+        playSoundAt(instanceName, soundName, x, y, z, volume, pitch, loop, true, 250f);
+    }
+
+    public void playSoundAt(String instanceName, String soundName, float x, float y, float z, float volume, float pitch, boolean loop, boolean is3D, float maxDistance) {
+        playSoundInternal(instanceName, soundName, volume, pitch, loop, is3D, maxDistance, new Vector3(x, y, z), null);
     }
 
     public void playSoundAttached(String instanceName, String soundName, String objectId, float volume, float pitch, boolean loop) {
@@ -3181,6 +3194,19 @@ public class ThreeDManager implements Disposable {
         if (instance == null) return;
         Vector3 initialPos = instance.transform.getTranslation(new Vector3());
         playSoundInternal(instanceName, soundName, volume, pitch, loop, initialPos, objectId);
+    }
+
+    public void playSoundAttached(String instanceName, String soundName, String objectId, float volume, float pitch, boolean loop, boolean is3D, float maxDistance) {
+        Vector3 initialPos = new Vector3();
+        ModelInstance instance = sceneObjects.get(objectId);
+        if (instance != null) {
+            instance.transform.getTranslation(initialPos);
+        } else if (editorProxies.containsKey(objectId)) {
+            editorProxies.get(objectId).transform.getTranslation(initialPos);
+        } else if (manager != null && manager.findGameObject(objectId) != null) {
+            manager.findGameObject(objectId).transform.worldTransform.getTranslation(initialPos);
+        }
+        playSoundInternal(instanceName, soundName, volume, pitch, loop, is3D, maxDistance, initialPos, objectId);
     }
 
     public boolean prepareAudio(String soundName, String fileName, boolean asMusic) {
@@ -3203,6 +3229,10 @@ public class ThreeDManager implements Disposable {
 
 
     private void playSoundInternal(String instanceName, String soundName, float volume, float pitch, boolean loop, Vector3 position, String attachedToId) {
+        playSoundInternal(instanceName, soundName, volume, pitch, loop, true, 250f, position, attachedToId);
+    }
+
+    private void playSoundInternal(String instanceName, String soundName, float volume, float pitch, boolean loop, boolean is3D, float maxDistance, Vector3 position, String attachedToId) {
         if (instanceName == null || instanceName.isEmpty()) return;
         stopSound(instanceName);
 
@@ -3221,6 +3251,8 @@ public class ThreeDManager implements Disposable {
         playableAudio.setInstanceName(instanceName);
         playableAudio.setPosition(position);
         playableAudio.setAttachedObjectId(attachedToId);
+        playableAudio.set3D(is3D);
+        playableAudio.setMaxDistance(maxDistance);
 
         playableAudio.play();
         active3DSounds.add(playableAudio);

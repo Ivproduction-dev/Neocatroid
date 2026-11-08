@@ -9,15 +9,15 @@ import org.catrobat.catroid.content.Project
 import org.catrobat.catroid.io.XstreamSerializer
 import org.catrobat.catroid.io.ZipArchiver
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.security.SecureRandom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object ApkBuilderV3Engine {
     private const val TAG = "ApkBuilderV3Engine"
     private const val TEMPLATE_RUNTIME_APK = "template_runtime.apk"
-    private const val ASSET_PROJECT_PAYLOAD = "project.ncv3"
     private const val BUILD_HEADROOM_MB = 256L
     private const val TEMPLATE_SIZE_ESTIMATE_MB = 300L
     private const val APK_COPY_COUNT = 6L
@@ -29,6 +29,8 @@ object ApkBuilderV3Engine {
         listener: BuildProgressListener
     ): AssemblyResult = withContext(Dispatchers.IO) {
         var tempDir: File? = null
+        var keyMaterial: ByteArray? = null
+        var pepperBytes: ByteArray? = null
         try {
             listener.onProgress(0f, "Initializing build environment...", "")
 
@@ -47,8 +49,12 @@ object ApkBuilderV3Engine {
 
             listener.onProgress(5f, "Loading and serializing project...", "")
 
-            val project = ProjectManager.getInstance().currentProject
-                ?: XstreamSerializer.getInstance().loadProject(projectDir, context)
+            val currentProject = ProjectManager.getInstance().currentProject
+            val project = if (currentProject?.directory?.canonicalFile == projectDir.canonicalFile) {
+                currentProject
+            } else {
+                XstreamSerializer.getInstance().loadProject(projectDir, context)
+            }
 
             if (project == null || project.sceneList.isEmpty()) {
                 return@withContext AssemblyResult.Failure("Project is empty — no scenes to build.")
@@ -64,18 +70,40 @@ object ApkBuilderV3Engine {
 
             listener.onProgress(30f, "Generating encryption keys...", "")
 
-            val keyResult = DynamicKeyManager.generateKey(project.name)
-            if (!DynamicKeyManager.verifyKeyIntegrity(keyResult.keyFileContents)) {
-                return@withContext AssemblyResult.Failure("Key generation integrity check failed.")
+            if (config.packageName.isBlank()) {
+                return@withContext AssemblyResult.Failure("Package name is empty.")
             }
 
-            listener.onProgress(35f, "Encrypting project payload (V3 format)...", payloadZip.name)
+            val material = KeyMaterialV4.generate()
+            keyMaterial = material
 
-            val encryptedPayload = File(tempDir, ASSET_PROJECT_PAYLOAD)
-            ProjectEncryptorV3.encrypt(
+            val certSha256 = SigningKeyManager.ensureCertificateSha256(context) { file, alias, password ->
+                V3ApkAssembler.generateKeystore(file, alias, password)
+            }
+            val pepper = generatePerBuildPepper(certSha256, config.packageName, config.versionCode.toLong())
+            pepperBytes = pepper
+            NativeKeyVault.setPepperOverride(pepper)
+            val salt = ByteArray(ProjectEncryptorV4.SALT_SIZE).also { SecureRandom().nextBytes(it) }
+            val tag = ByteArray(NativeKeyVault.TAG_SIZE).also { SecureRandom().nextBytes(it) }
+            val keyBlob = NativeKeyVault.wrapForBuild(
+                certSha256 = certSha256,
+                packageName = config.packageName,
+                versionCode = config.versionCode.toLong(),
+                keyMaterial = material,
+                salt = salt,
+                tag = tag
+            )
+            val payloadAssetName = randomPayloadAssetName()
+
+            listener.onProgress(35f, "Encrypting project payload (V4 format)...", payloadZip.name)
+
+            val encryptedPayload = File(tempDir, "payload.bin")
+            ProjectEncryptorV4.encrypt(
                 sourceFile = payloadZip,
                 destFile = encryptedPayload,
-                key = keyResult.selectedKey,
+                keyMaterial = material,
+                salt = salt,
+                keyBlob = keyBlob,
                 onProgress = { p ->
                     listener.onProgress(35f + p * 15f, "Encrypting project payload...", payloadZip.name)
                 }
@@ -83,9 +111,19 @@ object ApkBuilderV3Engine {
 
             listener.onProgress(50f, "Verifying payload integrity...", encryptedPayload.name)
 
-            if (!IntegrityValidator.validate(encryptedPayload, keyResult.selectedKey, tempDir)) {
+            if (!IntegrityValidatorV4.validate(encryptedPayload, material)) {
                 return@withContext AssemblyResult.Failure("Payload integrity check failed. " +
                         "The encrypted project may be corrupted.")
+            }
+            if (!IntegrityValidatorV4.verifyKeyBlob(
+                    keyBlob = keyBlob,
+                    keyMaterial = material,
+                    certSha256 = certSha256,
+                    packageName = config.packageName,
+                    versionCode = config.versionCode.toLong()
+                )
+            ) {
+                return@withContext AssemblyResult.Failure("Key vault integrity check failed.")
             }
 
             payloadZip.delete()
@@ -97,10 +135,12 @@ object ApkBuilderV3Engine {
                 context = context,
                 config = config,
                 encryptedPayload = encryptedPayload,
-                keyFileNames = keyResult.keyFileNames,
-                keyFileContents = keyResult.keyFileContents,
+                payloadAssetName = payloadAssetName,
+                keyMaterial = material,
+                certSha256 = certSha256,
                 workDir = tempDir,
-                firebaseConfig = config.firebaseConfig
+                firebaseConfig = config.firebaseConfig,
+                nativePepper = pepper
             ) { p, file ->
                 listener.onProgress(55f + p * 43f, "Assembling APK...", file)
             }
@@ -127,7 +167,7 @@ object ApkBuilderV3Engine {
 
             AssemblyResult.Success(
                 apkFile = resultFile,
-                keyFileNames = keyResult.keyFileNames,
+                keyFileNames = emptyList(),
                 templateType = config.templateType,
                 totalSizeBytes = resultFile.length()
             )
@@ -146,7 +186,16 @@ object ApkBuilderV3Engine {
                 e.message ?: "Unknown build error: ${e.javaClass.simpleName}",
                 e
             )
+        } finally {
+            tempDir?.deleteRecursively()
+            KeyMaterialV4.zero(keyMaterial)
+            pepperBytes?.fill(0)
         }
+    }
+
+    private fun randomPayloadAssetName(): String {
+        val nameBytes = ByteArray(8).also { SecureRandom().nextBytes(it) }
+        return "p" + nameBytes.joinToString("") { "%02x".format(it) } + ".bin"
     }
 
     private fun stageProjectPayload(
@@ -230,5 +279,20 @@ object ApkBuilderV3Engine {
         if (!exists()) return 0L
         if (isFile) return length()
         return walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+    }
+
+    private fun generatePerBuildPepper(certSha256: ByteArray, packageName: String, versionCode: Long): ByteArray {
+        val random = SecureRandom()
+        val buildId = ByteArray(16).also { random.nextBytes(it) }
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(certSha256)
+        digest.update(packageName.toByteArray(StandardCharsets.UTF_8))
+        val versionBytes = ByteArray(8)
+        for (i in 0..7) {
+            versionBytes[i] = (versionCode shr (8 * (7 - i))).toByte()
+        }
+        digest.update(versionBytes)
+        digest.update(buildId)
+        return digest.digest()
     }
 }

@@ -2,6 +2,8 @@ package org.catrobat.catroid.ui.fragment
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -36,8 +38,11 @@ import org.catrobat.catroid.apkbuildV3.AssemblyResult
 import org.catrobat.catroid.apkbuildV3.BuildProgressListener
 import org.catrobat.catroid.apkbuildV3.FirebaseConfig
 import org.catrobat.catroid.apkbuildV3.FirebaseConfigManager
+import org.catrobat.catroid.apkbuildV3.TemplateImportRejectReason
 import org.catrobat.catroid.apkbuildV3.TemplateManagerV3
 import org.catrobat.catroid.apkbuildV3.TemplateType
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiEditorDialog
+import org.catrobat.catroid.apkbuildV3.neoui.NeoUiLayout
 import org.catrobat.catroid.io.asynctask.saveProjectSerial
 import org.catrobat.catroid.utils.ToastUtil
 import java.io.File
@@ -58,11 +63,21 @@ class ApkBuilderV3ExportDialog {
     private var settingsDialog: AlertDialog? = null
     private var currentStep = 1
     private var templateReady = false
+    private var selectedLoadingMode = "AUTO"
+    private var customNeoUiLayout: NeoUiLayout? = null
+    private var customBgImageFile: File? = null
+    private var customCompilationLayout: NeoUiLayout? = null
+    private var customCompilationBgFile: File? = null
+    private var customIconFile: File? = null
+    private var lastNonCustomIconId: Int = R.id.v3_icon_default
+    private var importHelper: TemplateImportHelperFragment? = null
+    private var pendingImportFile: File? = null
 
     private var firebaseLauncher: ActivityResultLauncher<Array<String>>? = null
 
     companion object {
-        private const val TOTAL_STEPS = 4
+        private const val TOTAL_STEPS = 5
+        private const val CUSTOM_ICON_SIZE = 512
 
         @Volatile
         var activeInstance: ApkBuilderV3ExportDialog? = null
@@ -78,9 +93,13 @@ class ApkBuilderV3ExportDialog {
         this.hostFragment = activity
         this.firebaseLauncher = firebaseLauncher
         activeInstance = this
+        attachImportHelper(activity)
         val dialog = buildDialog(activity)
         settingsDialog = dialog
-        dialog.setOnDismissListener { if (activeInstance === this) activeInstance = null }
+        dialog.setOnDismissListener {
+            if (activeInstance === this) activeInstance = null
+            detachImportHelper()
+        }
         dialog.show()
         val metrics = activity.resources.displayMetrics
         val horizontalMargin = (32 * metrics.density).toInt()
@@ -92,6 +111,189 @@ class ApkBuilderV3ExportDialog {
             )
             setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
+    }
+
+    private fun attachImportHelper(host: Fragment) {
+        val manager = host.childFragmentManager
+        val existing = manager.findFragmentByTag(TemplateImportHelperFragment.TAG) as? TemplateImportHelperFragment
+        importHelper = existing ?: TemplateImportHelperFragment().also {
+            manager.beginTransaction().add(it, TemplateImportHelperFragment.TAG).commitNow()
+        }
+        importHelper?.setListener(object : TemplateImportHelperFragment.Listener {
+            override fun onTemplatePicked(uri: Uri?) {
+                if (uri != null) onTemplateFilePicked(uri)
+            }
+
+            override fun onHashPicked(uri: Uri?) {
+                if (uri != null) onHashFilePicked(uri) else onHashFileCancelled()
+            }
+
+            override fun onIconPicked(uri: Uri?) {
+                onCustomIconPicked(uri)
+            }
+        })
+    }
+
+    private fun detachImportHelper() {
+        val host = hostFragment ?: return
+        val helper = importHelper ?: return
+        helper.setListener(null)
+        host.childFragmentManager.findFragmentByTag(TemplateImportHelperFragment.TAG)?.let {
+            host.childFragmentManager.beginTransaction().remove(it).commitAllowingStateLoss()
+        }
+        importHelper = null
+    }
+
+    private fun onTemplateFilePicked(uri: Uri) {
+        val ctx = hostContext ?: return
+        val scope = hostFragment?.lifecycleScope ?: return
+        val statusView = lastView?.findViewById<TextView>(R.id.v3_template_status)
+        val importButton = lastView?.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_template_import_button)
+        val downloadButton = lastView?.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_template_action_button)
+        importButton?.isEnabled = false
+        downloadButton?.isEnabled = false
+        statusView?.text = ctx.getString(R.string.v3_template_import_checking)
+        scope.launch(Dispatchers.IO) {
+            val result = TemplateManagerV3.beginTemplateImport(ctx, uri)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                importButton?.isEnabled = true
+                downloadButton?.isEnabled = true
+                when (result) {
+                    is TemplateManagerV3.TemplateImportResult.Success -> {
+                        pendingImportFile = result.file
+                        statusView?.text = ctx.getString(R.string.v3_template_import_pick_hash)
+                        ToastUtil.showSuccess(ctx, ctx.getString(R.string.v3_template_import_signature_ok))
+                        importHelper?.launchHashPicker()
+                    }
+                    is TemplateManagerV3.TemplateImportResult.Rejected -> {
+                        pendingImportFile = null
+                        showImportRejection(ctx, result)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onHashFilePicked(uri: Uri) {
+        val ctx = hostContext ?: return
+        val scope = hostFragment?.lifecycleScope ?: return
+        val pending = pendingImportFile
+        if (pending == null) {
+            ToastUtil.showError(ctx, ctx.getString(R.string.v3_template_import_cancelled))
+            return
+        }
+        val statusView = lastView?.findViewById<TextView>(R.id.v3_template_status)
+        val importButton = lastView?.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_template_import_button)
+        val downloadButton = lastView?.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_template_action_button)
+        importButton?.isEnabled = false
+        downloadButton?.isEnabled = false
+        statusView?.text = ctx.getString(R.string.v3_template_import_hash_checking)
+        scope.launch(Dispatchers.IO) {
+            val result = TemplateManagerV3.finishTemplateImport(ctx, pending, uri)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                importButton?.isEnabled = true
+                downloadButton?.isEnabled = true
+                pendingImportFile = null
+                when (result) {
+                    is TemplateManagerV3.TemplateImportResult.Success -> {
+                        templateReady = true
+                        statusView?.text = ctx.getString(
+                            R.string.v3_template_status_cached, formatSizeMb(result.file.length())
+                        )
+                        val actionButton = lastView?.findViewById<Button>(R.id.v3_template_action_button)
+                        actionButton?.text = ctx.getString(R.string.v3_template_refresh)
+                        ToastUtil.showSuccess(ctx, ctx.getString(R.string.v3_template_import_success))
+                    }
+                    is TemplateManagerV3.TemplateImportResult.Rejected -> {
+                        showImportRejection(ctx, result)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onHashFileCancelled() {
+        val ctx = hostContext ?: return
+        val pending = pendingImportFile
+        TemplateManagerV3.cancelTemplateImport(pending)
+        pendingImportFile = null
+        ToastUtil.showError(ctx, ctx.getString(R.string.v3_template_import_cancelled))
+    }
+
+    private fun onCustomIconPicked(uri: Uri?) {
+        val ctx = hostContext ?: return
+        if (uri == null) {
+            restoreIconSelection()
+            return
+        }
+        val scope = hostFragment?.lifecycleScope ?: return
+        scope.launch(Dispatchers.IO) {
+            val file = runCatching { prepareCustomIcon(ctx, uri) }.getOrNull()
+            withContext(Dispatchers.Main) {
+                if (file == null) {
+                    ToastUtil.showError(ctx, ctx.getString(R.string.v3_icon_pick_failed))
+                    restoreIconSelection()
+                } else {
+                    customIconFile = file
+                    lastView?.findViewById<RadioButton>(R.id.v3_icon_custom)?.isChecked = true
+                    lastView?.findViewById<android.widget.ImageView>(R.id.v3_icon_preview_image)
+                        ?.setImageBitmap(BitmapFactory.decodeFile(file.absolutePath))
+                }
+            }
+        }
+    }
+
+    private fun restoreIconSelection() {
+        val view = lastView ?: return
+        val custom = view.findViewById<RadioButton>(R.id.v3_icon_custom)
+        if (custom?.isChecked != true || customIconFile != null) return
+        view.findViewById<RadioButton>(lastNonCustomIconId)?.isChecked = true
+    }
+
+    private fun prepareCustomIcon(ctx: android.content.Context, uri: Uri): File? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        ctx.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= CUSTOM_ICON_SIZE &&
+            bounds.outHeight / (sample * 2) >= CUSTOM_ICON_SIZE
+        ) {
+            sample *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sample }
+        val decoded = ctx.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, options)
+        } ?: return null
+        val side = minOf(decoded.width, decoded.height)
+        if (side <= 0) {
+            decoded.recycle()
+            return null
+        }
+        val cropped = Bitmap.createBitmap(decoded, (decoded.width - side) / 2, (decoded.height - side) / 2, side, side)
+        val scaled = Bitmap.createScaledBitmap(cropped, CUSTOM_ICON_SIZE, CUSTOM_ICON_SIZE, true)
+        val target = File(ctx.cacheDir, "v3_custom_icon.png")
+        target.outputStream().use { scaled.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        if (scaled !== cropped) scaled.recycle()
+        if (cropped !== decoded) cropped.recycle()
+        decoded.recycle()
+        return if (target.length() > 0) target else null
+    }
+
+    private fun showImportRejection(ctx: android.content.Context, result: TemplateManagerV3.TemplateImportResult.Rejected) {
+        val message = when (result.reason) {
+            TemplateImportRejectReason.NOT_APK -> ctx.getString(R.string.v3_template_import_reason_not_apk)
+            TemplateImportRejectReason.MISSING_RUNTIME_MARKER -> ctx.getString(R.string.v3_template_import_reason_marker)
+            TemplateImportRejectReason.TOO_OLD -> ctx.getString(R.string.v3_template_import_reason_too_old)
+            TemplateImportRejectReason.SIGNATURE_MISMATCH -> ctx.getString(R.string.v3_template_import_reason_signature)
+            TemplateImportRejectReason.HASH_FILE_INVALID -> ctx.getString(R.string.v3_template_import_reason_hash_invalid)
+            TemplateImportRejectReason.HASH_MISMATCH -> ctx.getString(R.string.v3_template_import_reason_hash_mismatch)
+            TemplateImportRejectReason.NO_SPACE -> ctx.getString(R.string.v3_template_error_space)
+            TemplateImportRejectReason.IO_ERROR -> ctx.getString(R.string.v3_template_import_reason_io)
+        }
+        val detail = result.detail
+        val full = if (detail.isNullOrBlank()) message else "$message ($detail)"
+        ToastUtil.showError(ctx, full)
+        Log.e(tag, "Template import rejected: ${result.reason} ${result.detail}")
     }
 
     fun onFirebaseUriResult(uri: Uri?) {
@@ -138,6 +340,11 @@ class ApkBuilderV3ExportDialog {
         lastView = view
         currentStep = 1
         templateReady = false
+        selectedLoadingMode = "AUTO"
+        customNeoUiLayout = null
+        customBgImageFile = null
+        customCompilationLayout = null
+        customCompilationBgFile = null
 
         view.findViewById<TextInputEditText>(R.id.v3_app_name_input)?.setText(project.name)
         view.findViewById<TextInputEditText>(R.id.v3_package_input)?.setText("org.neocatroid.runtime.v3")
@@ -186,9 +393,14 @@ class ApkBuilderV3ExportDialog {
         ).firstOrNull { it.exists() && it.length() > 0 }
         val hasProjectIcon = projectIconFile != null
         val iconPreview = findV<android.widget.ImageView>(view, "v3_icon_preview_image")
-        fun updateIconPreview(useProject: Boolean) {
-            if (useProject && projectIconFile != null) {
-                val bitmap = android.graphics.BitmapFactory.decodeFile(projectIconFile.absolutePath)
+        val iconRadioGroup = view.findViewById<android.widget.RadioGroup>(R.id.v3_icon_radio_group)
+        val customIconRadio = view.findViewById<RadioButton>(R.id.v3_icon_custom)
+        lastNonCustomIconId = if (hasProjectIcon) R.id.v3_icon_project else R.id.v3_icon_default
+        customIconFile = null
+
+        fun showIconPreview(file: File?) {
+            if (file != null && file.exists()) {
+                val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
                 if (bitmap != null) {
                     iconPreview?.setImageBitmap(bitmap)
                     return
@@ -196,12 +408,23 @@ class ApkBuilderV3ExportDialog {
             }
             iconPreview?.setImageResource(R.drawable.logo)
         }
-        updateIconPreview(hasProjectIcon)
+        fun updateIconPreview(checkedId: Int) {
+            when (checkedId) {
+                R.id.v3_icon_project -> showIconPreview(projectIconFile)
+                R.id.v3_icon_custom -> showIconPreview(customIconFile)
+                else -> showIconPreview(null)
+            }
+        }
 
+        updateIconPreview(lastNonCustomIconId)
         view.findViewById<RadioButton>(R.id.v3_icon_project)?.isChecked = hasProjectIcon
         view.findViewById<RadioButton>(R.id.v3_icon_default)?.isChecked = !hasProjectIcon
-        view.findViewById<android.widget.RadioGroup>(R.id.v3_icon_radio_group)?.setOnCheckedChangeListener { _, checkedId ->
-            updateIconPreview(checkedId == R.id.v3_icon_project)
+        iconRadioGroup?.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId != R.id.v3_icon_custom) lastNonCustomIconId = checkedId
+            updateIconPreview(checkedId)
+        }
+        customIconRadio?.setOnClickListener {
+            importHelper?.launchIconPicker()
         }
 
         val cardFull = findV<View>(view, "v3_card_template_full")
@@ -249,8 +472,63 @@ class ApkBuilderV3ExportDialog {
 
         refreshTemplateStatus(view, ctx)
 
+        val loadingCardAuto = view.findViewById<View>(R.id.v3_loading_card_auto)
+        val loadingCardNone = view.findViewById<View>(R.id.v3_loading_card_none)
+        val loadingCardCustom = view.findViewById<View>(R.id.v3_loading_card_custom)
+        val customizeUiBtn = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.v3_btn_customize_ui)
+
+        fun applyLoadingCardSelection(mode: String) {
+            selectedLoadingMode = mode
+            loadingCardAuto?.setBackgroundResource(
+                if (mode == "AUTO") R.drawable.bg_v3_card_selected else R.drawable.bg_v3_card_selectable
+            )
+            loadingCardNone?.setBackgroundResource(
+                if (mode == "NO_UI") R.drawable.bg_v3_card_selected else R.drawable.bg_v3_card_selectable
+            )
+            loadingCardCustom?.setBackgroundResource(
+                if (mode == "CUSTOM") R.drawable.bg_v3_card_selected else R.drawable.bg_v3_card_selectable
+            )
+            customizeUiBtn?.visibility = if (mode == "CUSTOM") View.VISIBLE else View.GONE
+        }
+
+        applyLoadingCardSelection("AUTO")
+
+        loadingCardAuto?.setOnClickListener { applyLoadingCardSelection("AUTO") }
+        loadingCardNone?.setOnClickListener { applyLoadingCardSelection("NO_UI") }
+        loadingCardCustom?.setOnClickListener { applyLoadingCardSelection("CUSTOM") }
+
+        customizeUiBtn?.setOnClickListener {
+            val projectForEditor = ProjectManager.getInstance().currentProject
+            val projectNameForEditor = projectForEditor?.name ?: ""
+            val initLayout = customNeoUiLayout ?: NeoUiLayout.createDefault()
+            val initCompilationLayout = customCompilationLayout ?: NeoUiLayout.createDefaultCompilation()
+            NeoUiEditorDialog(
+                hostFragment = host,
+                initialLayout = initLayout,
+                initialBgImage = customBgImageFile,
+                initialCompilationLayout = initCompilationLayout,
+                initialCompilationBgImage = customCompilationBgFile,
+                projectName = projectNameForEditor,
+                themeBgColor = "#3A3A3C",
+                themeAccentColor = "#A8DFF4",
+                onApply = { layout, bgFile, compilationLayout, compilationBgFile ->
+                    customNeoUiLayout = layout
+                    customBgImageFile = bgFile
+                    customCompilationLayout = compilationLayout
+                    customCompilationBgFile = compilationBgFile
+                }
+            ).show()
+        }
+
         view.findViewById<Button>(R.id.v3_template_action_button)?.setOnClickListener {
             downloadTemplate(view, ctx)
+        }
+
+        view.findViewById<Button>(R.id.v3_template_import_button)?.setOnClickListener {
+            if (importHelper == null) {
+                attachImportHelper(host)
+            }
+            importHelper?.launchTemplatePicker()
         }
 
         findV<View>(view, "v3_btn_close")?.setOnClickListener {
@@ -289,6 +567,10 @@ class ApkBuilderV3ExportDialog {
                     currentStep = 4
                     updateStepUI(view, ctx)
                 }
+                4 -> {
+                    currentStep = 5
+                    updateStepUI(view, ctx)
+                }
                 else -> doBuild(host, view, project, permChecks)
             }
         }
@@ -305,7 +587,8 @@ class ApkBuilderV3ExportDialog {
             1 -> ctx.getString(R.string.v3_step_template)
             2 -> ctx.getString(R.string.v3_step_app)
             3 -> ctx.getString(R.string.v3_step_permissions)
-            else -> ctx.getString(R.string.v3_step_firebase)
+            4 -> ctx.getString(R.string.v3_step_firebase)
+            else -> ctx.getString(R.string.v3_step_loading_screen)
         }
     }
 
@@ -355,12 +638,14 @@ class ApkBuilderV3ExportDialog {
             Pair(findV<View>(view, "v3_step1_circle"), Pair(findV<TextView>(view, "v3_step1_num"), findV<View>(view, "v3_step1_done"))),
             Pair(findV<View>(view, "v3_step2_circle"), Pair(findV<TextView>(view, "v3_step2_num"), findV<View>(view, "v3_step2_done"))),
             Pair(findV<View>(view, "v3_step3_circle"), Pair(findV<TextView>(view, "v3_step3_num"), findV<View>(view, "v3_step3_done"))),
-            Pair(findV<View>(view, "v3_step4_circle"), Pair(findV<TextView>(view, "v3_step4_num"), findV<View>(view, "v3_step4_done")))
+            Pair(findV<View>(view, "v3_step4_circle"), Pair(findV<TextView>(view, "v3_step4_num"), findV<View>(view, "v3_step4_done"))),
+            Pair(findV<View>(view, "v3_step5_circle"), Pair(findV<TextView>(view, "v3_step5_num"), findV<View>(view, "v3_step5_done")))
         )
         val stepLines = listOf(
             findV<View>(view, "v3_step_line_1"),
             findV<View>(view, "v3_step_line_2"),
-            findV<View>(view, "v3_step_line_3")
+            findV<View>(view, "v3_step_line_3"),
+            findV<View>(view, "v3_step_line_4")
         )
         for (i in 1..TOTAL_STEPS) {
             val (circle, pair) = stepCircles.getOrNull(i - 1) ?: continue
@@ -383,11 +668,11 @@ class ApkBuilderV3ExportDialog {
                 }
             }
         }
-        for (i in 1..3) {
+        for (i in 1..4) {
             val line = stepLines.getOrNull(i - 1) ?: continue
             line?.setBackgroundColor(
-                if (i < currentStep) android.graphics.Color.parseColor("#3FB950")
-                else android.graphics.Color.parseColor("#383842")
+                if (i < currentStep) android.graphics.Color.parseColor("#3B82F6")
+                else android.graphics.Color.parseColor("#242633")
             )
         }
 
@@ -399,6 +684,8 @@ class ApkBuilderV3ExportDialog {
             if (currentStep == 3) View.VISIBLE else View.GONE
         view.findViewById<View>(R.id.v3_step4_container)?.visibility =
             if (currentStep == 4) View.VISIBLE else View.GONE
+        view.findViewById<View>(R.id.v3_step5_container)?.visibility =
+            if (currentStep == 5) View.VISIBLE else View.GONE
 
         if (currentStep == 4 && project != null) {
             val appName = view.findViewById<TextInputEditText>(R.id.v3_app_name_input)?.text.toString().ifBlank { project.name }
@@ -556,14 +843,40 @@ class ApkBuilderV3ExportDialog {
             recheck.config
         } else null
 
-        val iconFile: File? = if (view.findViewById<RadioButton>(R.id.v3_icon_project)?.isChecked == true) {
-            val manual = File(project.directory, "manual_screenshot.png")
-            val auto = File(project.directory, "automatic_screenshot.png")
-            when {
-                manual.exists() -> manual
-                auto.exists() -> auto
-                else -> null
+        val admobAppIdRaw = view.findViewById<TextInputEditText>(R.id.v3_admob_app_id_input)
+            ?.text.toString().trim()
+        if (admobAppIdRaw.isNotEmpty() && !admobAppIdRaw.matches(Regex("^ca-app-pub-\\d+~\\d+$"))) {
+            ToastUtil.showError(ctx, ctx.getString(R.string.v3_admob_invalid))
+            return
+        }
+
+        val allowSplitScreen = view.findViewById<CheckBox>(R.id.v3_split_screen_checkbox)?.isChecked ?: true
+        val allowPip = view.findViewById<CheckBox>(R.id.v3_pip_checkbox)?.isChecked ?: false
+        if (allowPip && !allowSplitScreen) {
+            ToastUtil.showError(ctx, ctx.getString(R.string.v3_pip_requires_split_screen))
+            return
+        }
+
+        val iconFile: File? = when {
+            view.findViewById<RadioButton>(R.id.v3_icon_custom)?.isChecked == true -> customIconFile
+            view.findViewById<RadioButton>(R.id.v3_icon_project)?.isChecked == true -> {
+                val manual = File(project.directory, "manual_screenshot.png")
+                val auto = File(project.directory, "automatic_screenshot.png")
+                when {
+                    manual.exists() -> manual
+                    auto.exists() -> auto
+                    else -> null
+                }
             }
+            else -> null
+        }
+
+        val loadingLayoutJson = if (selectedLoadingMode == "CUSTOM") {
+            (customNeoUiLayout ?: NeoUiLayout.createDefault()).toJsonString()
+        } else null
+
+        val compilationLayoutJson = if (selectedLoadingMode == "CUSTOM") {
+            (customCompilationLayout ?: NeoUiLayout.createDefaultCompilation()).toJsonString()
         } else null
 
         config = ApkBuilderV3Config(
@@ -577,7 +890,15 @@ class ApkBuilderV3ExportDialog {
             permissions = permissions,
             templateType = templateType,
             firebaseConfig = finalFirebaseConfig,
-            debuggable = view.findViewById<CheckBox>(R.id.v3_debuggable_checkbox)?.isChecked ?: true
+            admobAppId = admobAppIdRaw.ifBlank { null },
+            allowSplitScreen = allowSplitScreen,
+            allowPip = allowPip,
+            debuggable = view.findViewById<CheckBox>(R.id.v3_debuggable_checkbox)?.isChecked ?: true,
+            loadingScreenMode = selectedLoadingMode,
+            loadingScreenLayoutJson = loadingLayoutJson,
+            loadingScreenBgImage = if (selectedLoadingMode == "CUSTOM") customBgImageFile else null,
+            compilationScreenLayoutJson = compilationLayoutJson,
+            compilationScreenBgImage = if (selectedLoadingMode == "CUSTOM") customCompilationBgFile else null
         )
 
         settingsDialog?.dismiss()

@@ -42,6 +42,7 @@ import com.danvexteam.lunoscript_annotations.LunoClass
 import org.catrobat.catroid.ProjectManager
 import org.catrobat.catroid.R
 import org.catrobat.catroid.cast.CastManager
+import org.catrobat.catroid.content.Script
 import org.catrobat.catroid.content.bricks.Brick
 import org.catrobat.catroid.ui.SpriteActivity
 import org.catrobat.catroid.ui.adapter.PrototypeBrickAdapter
@@ -84,7 +85,40 @@ class AddBrickFragment : ListFragment() {
         helpButton?.setOnClickListener {
             showCategoryHelpDialog()
         }
+        val templatesButton = header.findViewById<TextView>(R.id.category_templates_button)
+        if (templatesButton != null) {
+            if (BrickTemplates.forCategory(arguments?.getString(BUNDLE_ARGUMENTS_SELECTED_CATEGORY), requireContext()).isNotEmpty()) {
+                templatesButton.visibility = View.VISIBLE
+                templatesButton.setOnClickListener {
+                    openTemplatesScreen()
+                }
+            } else {
+                templatesButton.visibility = View.GONE
+            }
+        }
         listView.addHeaderView(header, null, false)
+    }
+
+    private fun openTemplatesScreen() {
+        val host = activity ?: return
+        val category = arguments?.getString(BUNDLE_ARGUMENTS_SELECTED_CATEGORY)
+        val workspace = host.findViewById<View>(R.id.workspace_layout)
+        if (workspace != null && workspace.visibility == View.VISIBLE) {
+            (workspace as? org.catrobat.catroid.ui.workspace.WorkspaceLayout)
+                ?.openBrickTemplatesWindow(category ?: "")
+            return
+        }
+        if (parentFragmentManager.findFragmentByTag(BrickTemplatesFragment.BRICK_TEMPLATES_FRAGMENT_TAG) != null) {
+            return
+        }
+        parentFragmentManager.beginTransaction()
+            .add(
+                R.id.fragment_container,
+                BrickTemplatesFragment.newInstance(category, addBrickListener),
+                BrickTemplatesFragment.BRICK_TEMPLATES_FRAGMENT_TAG
+            )
+            .addToBackStack(BrickTemplatesFragment.BRICK_TEMPLATES_FRAGMENT_TAG)
+            .commit()
     }
 
     private fun setupSelectedBrickCategory() {
@@ -259,6 +293,7 @@ class AddBrickFragment : ListFragment() {
 
     interface OnAddBrickListener {
         fun addBrick(brick: Brick?)
+        fun addTemplate(scripts: List<Script>): Boolean
     }
 
     companion object {
@@ -494,6 +529,36 @@ class AddBrickFragment : ListFragment() {
         return sb.toString()
     }
 }
+fun addTemplateToScript(scripts: List<Script>, activity: android.app.Activity, addBrickListener: AddBrickFragment.OnAddBrickListener?, parentFragmentManager: FragmentManager) {
+    if (ProjectManager.getInstance().currentProject.isProtectedProject) {
+        ToastUtil.showError(activity, R.string.protected_project_cannot_edit)
+        return
+    }
+    try {
+        val inserted = addBrickListener?.addTemplate(scripts) == true
+        if (!inserted) {
+            ToastUtil.showError(activity, R.string.error_adding_brick)
+            return
+        }
+        SnackbarUtil.showHintSnackbar(activity, R.string.hint_scripts)
+        val workspace = activity.findViewById<View>(R.id.workspace_layout)
+        if (workspace != null && workspace.visibility == View.VISIBLE) {
+            val workspaceLayout = workspace as? org.catrobat.catroid.ui.workspace.WorkspaceLayout
+            workspaceLayout?.removeWindow(AddBrickFragment.ADD_BRICK_FRAGMENT_TAG, false)
+            workspaceLayout?.removeWindow(BrickCategoryFragment.BRICK_CATEGORY_FRAGMENT_TAG, false)
+            workspaceLayout?.removeWindow(BrickTemplatesFragment.BRICK_TEMPLATES_FRAGMENT_TAG, false)
+        } else {
+            parentFragmentManager.popBackStack(
+                BrickCategoryFragment.BRICK_CATEGORY_FRAGMENT_TAG,
+                FragmentManager.POP_BACK_STACK_INCLUSIVE
+            )
+        }
+    } catch (e: Exception) {
+        Log.e(AddBrickFragment.ADD_BRICK_FRAGMENT_TAG, e.localizedMessage)
+        ToastUtil.showError(activity, R.string.error_adding_brick)
+    }
+}
+
 fun addBrickToScript(brick: Brick, activity: android.app.Activity, addBrickListener: AddBrickFragment.OnAddBrickListener?, parentFragmentManager: FragmentManager, tag: String) {
     if (ProjectManager.getInstance().currentProject.isCastProject && CastManager.unsupportedBricks.contains(brick.javaClass)) {
         ToastUtil.showError(activity, R.string.error_unsupported_bricks_chromecast)
