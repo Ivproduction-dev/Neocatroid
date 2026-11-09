@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build and upload debug-chat APK
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
     env:
       ANDROID_NDK_VERSION: '27.2.12479018'
 
@@ -69,12 +69,12 @@ jobs:
         shell: bash
         run: |
           total_mib=$(awk '/MemTotal/ { print int($2 / 1024) }' /proc/meminfo)
-          # Reserve 3 GiB for native compilers and OS; cap heap to 10 GiB.
+          # Reserve 3 GiB for native compilers and OS; cap heap to 12 GiB.
           heap_mib=$((total_mib - 3072))
-          (( heap_mib > 10240 )) && heap_mib=10240
+          (( heap_mib > 12288 )) && heap_mib=12288
           (( heap_mib < 4096 )) && heap_mib=4096
           sed -i "s|^org.gradle.jvmargs=.*|org.gradle.jvmargs=-Xmx${heap_mib}m -XX:MaxMetaspaceSize=2048m -XX:+UseG1GC -XX:SoftRefLRUPolicyMSPerMB=0|" gradle.properties
-          echo "GRADLE_OPTS=-Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dkotlin.compiler.execution.strategy=in-process" >> "$GITHUB_ENV"
+          echo "GRADLE_OPTS=-Dorg.gradle.workers.max=4 -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dkotlin.compiler.execution.strategy=in-process" >> "$GITHUB_ENV"
           echo "Gradle heap: ${heap_mib} MiB (runner total: ${total_mib} MiB)"
 
       - name: Set up Gradle and cache
@@ -87,7 +87,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash ./gradlew :catroid:assembleDebugChatStoreRelease --no-daemon --console=plain --stacktrace -x lint -x test -x uploadCrashlyticsMappingFileDebugChatStoreRelease
+          bash ./gradlew :catroid:assembleDebugChatStoreRelease --no-daemon --console=plain --stacktrace -x lint -x test
 
           mapfile -t apks < <(find . -path './.git' -prune -o -type f -name '*.apk' -print)
           printf 'APK files found after Gradle completed:\n%s\n' "${apks[@]:-<none>}"

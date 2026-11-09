@@ -42,7 +42,7 @@ open class BaseExceptionHandler(context: Context) : Thread.UncaughtExceptionHand
         Log.e(TAG, "uncaughtException: ", exception)
         try {
             val logcat = CrashReporter.collectLogcat()
-            val report = CrashReporter.buildReport(thread, exception, logcat)
+            val report = CrashReporter.buildReport(appContext, thread, exception, logcat)
             val reportFile = CrashReporter.saveReport(appContext, report)
             try {
                 val crashFile = File(appContext.cacheDir, LAST_CRASH_LOG_FILE)

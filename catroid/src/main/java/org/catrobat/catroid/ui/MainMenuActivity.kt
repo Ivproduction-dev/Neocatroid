@@ -115,10 +115,6 @@ class MainMenuActivity : BaseCastActivity(), ProjectLoadListener {
         super.onCreate(savedInstanceState)
         requestDeveloperSupportPrompt()
 
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            BaseExceptionHandler(applicationContext).uncaughtException(thread, throwable)
-        }
-
         SettingsFragment.setToChosenLanguage(this)
 
         lifecycleScope.launch(Dispatchers.IO) {

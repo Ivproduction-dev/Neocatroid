@@ -213,7 +213,7 @@ public abstract class Script implements Serializable, Cloneable {
 
 	public void addRequiredResources(final Brick.ResourcesSet resourcesSet) {
 		for (Brick brick : brickList) {
-			if (!brick.isCommentedOut()) {
+			if (brick != null && !brick.isCommentedOut()) {
 				brick.addRequiredResources(resourcesSet);
 			}
 		}
@@ -250,9 +250,15 @@ public abstract class Script implements Serializable, Cloneable {
 	}
 
 	public List<Brick> findBricksInScript(List<UUID> brickIds) {
+		if (brickIds == null) {
+			return null;
+		}
 		List<Brick> bricks = new ArrayList<>();
 
 		for (Brick brick : brickList) {
+			if (brick == null) {
+				continue;
+			}
 			if (brickIds.contains(brick.getBrickID())) {
 				bricks.add(brick);
 			} else if (brick instanceof CompositeBrick) {
@@ -309,7 +315,7 @@ public abstract class Script implements Serializable, Cloneable {
 		}
 
 		for (Brick brick : brickList) {
-			if (brick.addBrickInNestedBrick(parentId, subStackIndex, bricksToAdd)) {
+			if (brick != null && brick.addBrickInNestedBrick(parentId, subStackIndex, bricksToAdd)) {
 				return true;
 			}
 		}

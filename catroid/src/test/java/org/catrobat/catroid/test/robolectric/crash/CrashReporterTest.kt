@@ -28,7 +28,7 @@ class CrashReporterTest {
     fun testBuildReportContainsHeaderAndStackTrace() {
         val throwable = IllegalStateException("boom")
         val logcat = "E/AndroidRuntime: FATAL EXCEPTION\nE/MyApp: some error"
-        val report = CrashReporter.buildReport(Thread.currentThread(), throwable, logcat)
+        val report = CrashReporter.buildReport(context, Thread.currentThread(), throwable, logcat)
 
         assertTrue(report.startsWith("TIME: "))
         assertTrue(report.contains("APP_VERSION: "))
@@ -44,13 +44,13 @@ class CrashReporterTest {
     @Test
     fun testBuildReportTruncatesOversizedLogcat() {
         val hugeLogcat = (0..3000).joinToString("\n") { "E/Line$it" }
-        val report = CrashReporter.buildReport(Thread.currentThread(), RuntimeException(), hugeLogcat)
+        val report = CrashReporter.buildReport(context, Thread.currentThread(), RuntimeException(), hugeLogcat)
         assertTrue(report.length <= 200_000)
     }
 
     @Test
     fun testSaveReportCreatesFileInCrashReportsDir() {
-        val report = CrashReporter.buildReport(Thread.currentThread(), RuntimeException("x"), "logcat")
+        val report = CrashReporter.buildReport(context, Thread.currentThread(), RuntimeException("x"), "logcat")
         val file = CrashReporter.saveReport(context, report)
 
         assertNotNull(file)

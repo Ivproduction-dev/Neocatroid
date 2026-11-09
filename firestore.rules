@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function dateKey(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function smallString(value, maxSize) {
+      return value is string && value.size() <= maxSize;
+    }
+
+    function crashSizeOk(data) {
+      return (!data.keys().hasAll(['crash']) || smallString(data.crash, 250000))
+        && (!data.keys().hasAll(['timestamp']) || data.timestamp is int)
+        && (!data.keys().hasAll(['app_version']) || smallString(data.app_version, 64));
+    }
+
+    function telemetrySizeOk(data) {
+      return (!data.keys().hasAll(['app_version']) || smallString(data.app_version, 64))
+        && (!data.keys().hasAll(['last_seen']) || smallString(data.last_seen, 32));
+    }
+
+    function validCrash(date, deviceKey, crashId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'schema_version', 'crash_id', 'install_id', 'session_id',
+          'timestamp_ms', 'time_iso', 'date', 'timezone', 'locale',
+          'device_name', 'device_model', 'manufacturer', 'brand', 'device', 'board', 'hardware',
+          'android_version', 'sdk_int', 'cpu', 'abi', 'screen',
+          'app_version', 'version_code', 'package_name', 'flavor', 'build_type',
+          'thread', 'is_main_thread', 'exception_type', 'exception_message', 'stacktrace', 'logcat'
+        ])
+        && data.schema_version == 2
+        && data.crash_id == crashId
+        && smallString(data.install_id, 64)
+        && smallString(data.session_id, 64)
+        && data.timestamp_ms is int
+        && data.timestamp_ms > 0
+        && smallString(data.time_iso, 64)
+        && dateKey(data.date)
+        && data.date == date
+        && deviceKey.size() >= 1
+        && deviceKey.size() <= 128
+        && smallString(data.timezone, 64)
+        && smallString(data.locale, 64)
+        && smallString(data.device_name, 128)
+        && smallString(data.device_model, 128)
+        && smallString(data.manufacturer, 64)
+        && smallString(data.brand, 64)
+        && smallString(data.device, 64)
+        && smallString(data.board, 64)
+        && smallString(data.hardware, 64)
+        && smallString(data.android_version, 32)
+        && data.sdk_int is int
+        && smallString(data.cpu, 256)
+        && smallString(data.abi, 128)
+        && smallString(data.screen, 32)
+        && smallString(data.app_version, 64)
+        && data.version_code is int
+        && smallString(data.package_name, 128)
+        && smallString(data.flavor, 64)
+        && smallString(data.build_type, 32)
+        && smallString(data.thread, 256)
+        && data.is_main_thread is bool
+        && smallString(data.exception_type, 512)
+        && smallString(data.exception_message, 4096)
+        && data.stacktrace.size() <= 100000
+        && data.logcat.size() <= 90000;
+    }
+
+    function validTelemetry(date, deviceKey, sessionId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'install_id', 'session_id', 'timestamp_ms', 'time_iso', 'date',
+          'launch_duration', 'device_model', 'app_version', 'android_version',
+          'cpu', 'abi', 'screen'
+        ])
+        && smallString(data.install_id, 64)
+        && smallString(data.session_id, 64)
+        && data.session_id == sessionId
+        && data.timestamp_ms is int
+        && data.timestamp_ms > 0
+        && smallString(data.time_iso, 64)
+        && dateKey(data.date)
+        && data.date == date
+        && deviceKey.size() >= 1
+        && deviceKey.size() <= 128
+        && data.launch_duration is int
+        && data.launch_duration >= 0
+        && smallString(data.device_model, 128)
+        && smallString(data.app_version, 64)
+        && smallString(data.android_version, 32)
+        && smallString(data.cpu, 256)
+        && smallString(data.abi, 128)
+        && smallString(data.screen, 32);
+    }
+
+    match /crashes/{date}/{deviceKey}/{crashId} {
+      allow create: if dateKey(date) && validCrash(date, deviceKey, crashId);
+      allow read, update, delete: if false;
+    }
+
+    match /crashes/{crashId} {
+      allow create: if request.resource.data.keys().size() <= 40 && crashSizeOk(request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    match /telemetry/{date}/{deviceKey}/{sessionId} {
+      allow create, update: if dateKey(date) && validTelemetry(date, deviceKey, sessionId);
+      allow read, delete: if false;
+    }
+
+    match /telemetry/{installId} {
+      allow create, update: if request.resource.data.keys().size() <= 40 && telemetrySizeOk(request.resource.data);
+      allow read, delete: if false;
+    }
+
+    match /collabSessions/{sid} {
+      allow read, write: if isSignedIn();
+
+      match /{sub=**} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
